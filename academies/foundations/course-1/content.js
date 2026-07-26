@@ -676,7 +676,7 @@ const BOOK_PAGES = [
     "chapter": "Chapter 5 · The Hannah Team Member Oath",
     "template": "video",
     "label": "Hannah Perspective",
-    "html": "<p class=\"kicker\">Hannah Perspective</p><div class=\"academy-video\"><div class=\"academy-video-label\">Hannah Academy Video</div><div class=\"video-frame\"><video controls preload=\"metadata\" playsinline title=\"From Pet Parent to Pet Advocate | Meet Christina, Service Manager at Hannah Pet Hospital - Tigard\"><source src=\"assets/videos/christina-service-manager-tigard.mp4\" type=\"video/mp4\">Your browser does not support the video tag. <a href=\"assets/videos/christina-service-manager-tigard.mp4\">Download the video</a>.</video></div></div>"
+    "html": "<p class=\"kicker\">Hannah Perspective</p><div class=\"academy-video\"><div class=\"academy-video-label\">Hear From Service Manager - Christina Lunski</div><div class=\"video-frame\"><video controls preload=\"metadata\" playsinline title=\"From Pet Parent to Pet Advocate | Meet Christina, Service Manager at Hannah Pet Hospital - Tigard\"><source src=\"assets/videos/christina-service-manager-tigard.mp4\" type=\"video/mp4\">Your browser does not support the video tag. <a href=\"assets/videos/christina-service-manager-tigard.mp4\">Download the video</a>.</video></div></div>"
   },
   {
     "id": "ch5-s10",
@@ -970,7 +970,7 @@ const BOOK_PAGES = [
     "chapter": "Chapter 6 · The Hannah Decision Framework™",
     "template": "video",
     "label": "A Framework for Everyone",
-    "html": "<p class=\"kicker\">A Framework for Everyone · continued</p><p>Leadership.</p><p>Every person at Hannah makes decisions that influence Pets, Members, teammates, and the organization.</p><p>The more consistently we use the same framework...</p><p>The more consistent our culture becomes.</p><p>Because culture isn't created by policies.</p><p>It's created by thousands of good decisions made every single day.</p><div class=\"academy-video\"><div class=\"academy-video-label\">Hannah Academy Video</div><div class=\"video-frame\"><video controls preload=\"metadata\" playsinline title=\"Careers | Practice Manager | Hannah Morrison\"><source src=\"assets/videos/hannah-morrison-practice-manager.mp4\" type=\"video/mp4\">Your browser does not support the video tag. <a href=\"assets/videos/hannah-morrison-practice-manager.mp4\">Download the video</a>.</video></div></div>"
+    "html": "<p class=\"kicker\">A Framework for Everyone · continued</p><p>Leadership.</p><p>Every person at Hannah makes decisions that influence Pets, Members, teammates, and the organization.</p><p>The more consistently we use the same framework...</p><p>The more consistent our culture becomes.</p><p>Because culture isn't created by policies.</p><p>It's created by thousands of good decisions made every single day.</p><div class=\"academy-video\"><div class=\"academy-video-label\">Hear From Practice Manager - Hannah Morrison</div><div class=\"video-frame\"><video controls preload=\"metadata\" playsinline title=\"Careers | Practice Manager | Hannah Morrison\"><source src=\"assets/videos/hannah-morrison-practice-manager.mp4\" type=\"video/mp4\">Your browser does not support the video tag. <a href=\"assets/videos/hannah-morrison-practice-manager.mp4\">Download the video</a>.</video></div></div>"
   },
   {
     "id": "ch6-s25",
@@ -1215,7 +1215,7 @@ const BOOK_PAGES = [
     "chapter": "Chapter 8 · The Hannah Learning Principles",
     "template": "video",
     "label": "Hannah Perspective",
-    "html": "<p class=\"kicker\">Hannah Perspective</p><div class=\"academy-video\"><div class=\"academy-video-label\">Hannah Academy Video</div><div class=\"video-frame\"><video controls preload=\"metadata\" playsinline title=\"Making a Difference Every Day | Meet Jenny Franklin, Nurse Aide III\"><source src=\"assets/videos/jenny-franklin-nurse-aide-iii.mp4\" type=\"video/mp4\">Your browser does not support the video tag. <a href=\"assets/videos/jenny-franklin-nurse-aide-iii.mp4\">Download the video</a>.</video></div></div>"
+    "html": "<p class=\"kicker\">Hannah Perspective</p><div class=\"academy-video\"><div class=\"academy-video-label\">Hear From Nurse Aide - Jenny Franklin</div><div class=\"video-frame\"><video controls preload=\"metadata\" playsinline title=\"Making a Difference Every Day | Meet Jenny Franklin, Nurse Aide III\"><source src=\"assets/videos/jenny-franklin-nurse-aide-iii.mp4\" type=\"video/mp4\">Your browser does not support the video tag. <a href=\"assets/videos/jenny-franklin-nurse-aide-iii.mp4\">Download the video</a>.</video></div></div>"
   },
   {
     "id": "ch8-s6",
@@ -1390,7 +1390,7 @@ const BOOK_PAGES = [
     "chapter": "Chapter 9 · Our Commitment to One Another",
     "template": "video",
     "label": "Hannah Perspective",
-    "html": "<p class=\"kicker\">Hannah Perspective</p><div class=\"academy-video\"><div class=\"academy-video-label\">Hannah Academy Video</div><div class=\"video-frame\"><iframe src=\"https://www.youtube-nocookie.com/embed/ScDWyskKgw8?rel=0\" title=\"Hannah Academy Video\" loading=\"lazy\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share\" referrerpolicy=\"strict-origin-when-cross-origin\" allowfullscreen></iframe></div><a class=\"video-fallback\" href=\"https://youtu.be/ScDWyskKgw8?si=o5eKCgJhPJd0cd2Z\" target=\"_blank\" rel=\"noopener\">Watch video on YouTube</a></div>"
+    "html": "<p class=\"kicker\">Hannah Perspective</p><div class=\"academy-video\"><div class=\"academy-video-label\">Hear From Service Manager - Misa Mora</div><div class=\"video-frame\"><video controls preload=\"metadata\" playsinline title=\"Why Hannah Is Different | A Healthcare Professional's Perspective\"><source src=\"assets/videos/misa-mora-service-manager.mp4\" type=\"video/mp4\">Your browser does not support the video tag. <a href=\"assets/videos/misa-mora-service-manager.mp4\">Download the video</a>.</video></div></div>"
   },
   {
     "id": "ch9-s6",

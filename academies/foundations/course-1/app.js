@@ -97,7 +97,8 @@
       .join(". ");
     if (!text) { narratorSpeaking = false; updateNarratorButton(); return; }
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.98;
+    utterance.rate = 1.05;
+    utterance.pitch = 1.15;
     utterance.onstart = () => { narratorSpeaking = true; updateNarratorButton(); };
     utterance.onend = () => { narratorSpeaking = false; updateNarratorButton(); };
     utterance.onerror = () => { narratorSpeaking = false; updateNarratorButton(); };
