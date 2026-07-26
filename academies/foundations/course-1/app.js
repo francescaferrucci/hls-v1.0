@@ -16,7 +16,13 @@
   const bookmarkButton = document.getElementById("bookmarkButton");
   const printButton = document.getElementById("printButton");
   const textSizeButton = document.getElementById("textSizeButton");
+  const narratorButton = document.getElementById("narratorButton");
   const printEdition = document.getElementById("printEdition");
+
+  const synth = window.speechSynthesis;
+  const narratorSupported = !!synth && typeof window.SpeechSynthesisUtterance === "function";
+  let narratorEnabled = false;
+  let narratorSpeaking = false;
 
   const mobileQuery = window.matchMedia("(max-width: 760px)");
   const STORAGE = {
@@ -48,6 +54,62 @@
     element.dataset.pageId = page.id;
     element.setAttribute("aria-label", `${page.label}, page ${pageNumber}`);
     element.scrollTop = 0;
+  }
+
+  function extractNarrationText(root) {
+    if (!root) return "";
+    const skipTags = new Set(["BUTTON", "INPUT", "TEXTAREA", "IFRAME", "AUDIO", "VIDEO", "PROGRESS", "SCRIPT", "STYLE"]);
+    const breakTags = new Set(["P", "H1", "H2", "H3", "LI", "BLOCKQUOTE", "DIV", "BR", "LEGEND"]);
+    let text = "";
+    (function walk(node) {
+      if (node.nodeType === Node.TEXT_NODE) { text += node.textContent; return; }
+      if (node.nodeType !== Node.ELEMENT_NODE) return;
+      if (skipTags.has(node.tagName)) return;
+      node.childNodes.forEach(walk);
+      if (breakTags.has(node.tagName)) text += ". ";
+    })(root);
+    return text.replace(/\s+/g, " ").replace(/(\.\s*){2,}/g, ". ").trim();
+  }
+
+  function updateNarratorButton() {
+    if (!narratorButton) return;
+    narratorButton.setAttribute("aria-pressed", String(narratorEnabled));
+    narratorButton.textContent = narratorSpeaking
+      ? "\uD83D\uDD0A Narrator: Reading\u2026"
+      : narratorEnabled
+        ? "\uD83D\uDD0A Narrator: On"
+        : "\uD83D\uDD0A Narrator: Off";
+  }
+
+  function stopNarration() {
+    if (narratorSupported && (synth.speaking || synth.pending)) synth.cancel();
+    narratorSpeaking = false;
+    updateNarratorButton();
+  }
+
+  function speakVisiblePages() {
+    if (!narratorSupported || !narratorEnabled) return;
+    synth.cancel();
+    const text = [left, right]
+      .filter(el => el && el.dataset.pageId)
+      .map(el => extractNarrationText(el))
+      .filter(Boolean)
+      .join(". ");
+    if (!text) { narratorSpeaking = false; updateNarratorButton(); return; }
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.98;
+    utterance.onstart = () => { narratorSpeaking = true; updateNarratorButton(); };
+    utterance.onend = () => { narratorSpeaking = false; updateNarratorButton(); };
+    utterance.onerror = () => { narratorSpeaking = false; updateNarratorButton(); };
+    synth.speak(utterance);
+  }
+
+  function toggleNarrator() {
+    if (!narratorSupported) return;
+    narratorEnabled = !narratorEnabled;
+    if (narratorEnabled) speakVisiblePages();
+    else stopNarration();
+    updateNarratorButton();
   }
 
   function bindDynamicControls() {
@@ -195,6 +257,7 @@
     updateBookmarkState();
     updateContentsActiveState();
     bindDynamicControls();
+    if (narratorEnabled) speakVisiblePages();
   }
 
   function animate(direction, callback) {
@@ -297,6 +360,16 @@
   bookmarkButton.addEventListener("click", toggleBookmark);
   printButton.addEventListener("click", () => window.print());
   textSizeButton.addEventListener("click", cycleTextSize);
+  if (narratorButton) {
+    if (narratorSupported) {
+      narratorButton.addEventListener("click", toggleNarrator);
+    } else {
+      narratorButton.disabled = true;
+      narratorButton.title = "Read-aloud isn't supported in this browser.";
+      narratorButton.textContent = "\uD83D\uDD0A Narrator: Unavailable";
+    }
+  }
+  contentsButton.addEventListener("click", stopNarration);
 
   document.addEventListener("keydown", event => {
     if (event.target.matches("textarea, input, select")) return;

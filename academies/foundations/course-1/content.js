@@ -676,7 +676,7 @@ const BOOK_PAGES = [
     "chapter": "Chapter 5 · The Hannah Team Member Oath",
     "template": "video",
     "label": "Hannah Perspective",
-    "html": "<p class=\"kicker\">Hannah Perspective</p><div class=\"academy-video\"><div class=\"academy-video-label\">Hannah Academy Video</div><div class=\"video-frame\"><iframe src=\"https://www.youtube-nocookie.com/embed/GATaPiuNgvQ?rel=0\" title=\"Hannah Academy Video\" loading=\"lazy\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share\" referrerpolicy=\"strict-origin-when-cross-origin\" allowfullscreen></iframe></div><a class=\"video-fallback\" href=\"https://youtu.be/GATaPiuNgvQ?si=kb9C5FDT7Qc6Q4C6\" target=\"_blank\" rel=\"noopener\">Watch video on YouTube</a></div>"
+    "html": "<p class=\"kicker\">Hannah Perspective</p><div class=\"academy-video\"><div class=\"academy-video-label\">Hannah Academy Video</div><div class=\"video-frame\"><video controls preload=\"metadata\" playsinline title=\"From Pet Parent to Pet Advocate | Meet Christina, Service Manager at Hannah Pet Hospital - Tigard\"><source src=\"assets/videos/christina-service-manager-tigard.mp4\" type=\"video/mp4\">Your browser does not support the video tag. <a href=\"assets/videos/christina-service-manager-tigard.mp4\">Download the video</a>.</video></div></div>"
   },
   {
     "id": "ch5-s10",
