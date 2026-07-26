@@ -46,3 +46,4 @@ Prototype progress is stored locally in the browser using localStorage. No serve
 
 CLINICAL GOVERNANCE
 This is an educational product prototype. Final production clinical content, thresholds, medications, doses, interventions, equipment procedures, role permissions, and specialty standards must be reviewed and approved by Hannah clinical leadership. Mechanical Ventilation is explicitly conditional on Hannah offering that service with approved equipment, protocols, and training.
+
