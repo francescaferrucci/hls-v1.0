@@ -143,7 +143,7 @@
       orbit.querySelectorAll("button").forEach(item => item.classList.remove("active"));
       orbit.querySelectorAll(".team-connector").forEach(line => line.remove());
       button.classList.add("active"); orbit.classList.add("has-active");
-      const o = orbit.getBoundingMemberRect(), b = button.getBoundingMemberRect();
+      const o = orbit.getBoundingClientRect(), b = button.getBoundingClientRect();
       const cx=o.width/2, cy=o.height/2, bx=b.left-o.left+b.width/2, by=b.top-o.top+b.height/2;
       const dx=bx-cx, dy=by-cy, length=Math.max(0,Math.hypot(dx,dy)-Math.min(b.width,b.height)/2-55);
       const line=document.createElement("span"); line.className="team-connector";
