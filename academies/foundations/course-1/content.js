@@ -970,7 +970,7 @@ const BOOK_PAGES = [
     "chapter": "Chapter 6 · The Hannah Decision Framework™",
     "template": "video",
     "label": "A Framework for Everyone",
-    "html": "<p class=\"kicker\">A Framework for Everyone · continued</p><p>Leadership.</p><p>Every person at Hannah makes decisions that influence Pets, Members, teammates, and the organization.</p><p>The more consistently we use the same framework...</p><p>The more consistent our culture becomes.</p><p>Because culture isn't created by policies.</p><p>It's created by thousands of good decisions made every single day.</p><div class=\"academy-video\"><div class=\"academy-video-label\">Hannah Academy Video</div><div class=\"video-frame\"><iframe src=\"https://www.youtube-nocookie.com/embed/EWyX4CvyqvI?rel=0\" title=\"Hannah Academy Video\" loading=\"lazy\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share\" referrerpolicy=\"strict-origin-when-cross-origin\" allowfullscreen></iframe></div><a class=\"video-fallback\" href=\"https://youtu.be/EWyX4CvyqvI?si=I6JFcLOeGqS-pfrt\" target=\"_blank\" rel=\"noopener\">Watch video on YouTube</a></div>"
+    "html": "<p class=\"kicker\">A Framework for Everyone · continued</p><p>Leadership.</p><p>Every person at Hannah makes decisions that influence Pets, Members, teammates, and the organization.</p><p>The more consistently we use the same framework...</p><p>The more consistent our culture becomes.</p><p>Because culture isn't created by policies.</p><p>It's created by thousands of good decisions made every single day.</p><div class=\"academy-video\"><div class=\"academy-video-label\">Hannah Academy Video</div><div class=\"video-frame\"><video controls preload=\"metadata\" playsinline title=\"Careers | Practice Manager | Hannah Morrison\"><source src=\"assets/videos/hannah-morrison-practice-manager.mp4\" type=\"video/mp4\">Your browser does not support the video tag. <a href=\"assets/videos/hannah-morrison-practice-manager.mp4\">Download the video</a>.</video></div></div>"
   },
   {
     "id": "ch6-s25",
@@ -1215,7 +1215,7 @@ const BOOK_PAGES = [
     "chapter": "Chapter 8 · The Hannah Learning Principles",
     "template": "video",
     "label": "Hannah Perspective",
-    "html": "<p class=\"kicker\">Hannah Perspective</p><div class=\"academy-video\"><div class=\"academy-video-label\">Hannah Academy Video</div><div class=\"video-frame\"><iframe src=\"https://www.youtube-nocookie.com/embed/f8BArhcKFj8?rel=0\" title=\"Hannah Academy Video\" loading=\"lazy\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share\" referrerpolicy=\"strict-origin-when-cross-origin\" allowfullscreen></iframe></div><a class=\"video-fallback\" href=\"https://youtu.be/f8BArhcKFj8?si=_BCFItphxW6MfLBO\" target=\"_blank\" rel=\"noopener\">Watch video on YouTube</a></div>"
+    "html": "<p class=\"kicker\">Hannah Perspective</p><div class=\"academy-video\"><div class=\"academy-video-label\">Hannah Academy Video</div><div class=\"video-frame\"><video controls preload=\"metadata\" playsinline title=\"Making a Difference Every Day | Meet Jenny Franklin, Nurse Aide III\"><source src=\"assets/videos/jenny-franklin-nurse-aide-iii.mp4\" type=\"video/mp4\">Your browser does not support the video tag. <a href=\"assets/videos/jenny-franklin-nurse-aide-iii.mp4\">Download the video</a>.</video></div></div>"
   },
   {
     "id": "ch8-s6",
