@@ -561,7 +561,7 @@ function renderContent(){
    <div class="cs-row-actions">
     <button data-cs-edit="${l.id}">Edit</button>
     <button data-cs-dup="${l.id}">Duplicate</button>
-    ${l.status==="published"?`<button data-cs-preview="${escapeHtml(l.slug)}">Preview</button>`:""}
+    <button data-cs-preview="${escapeHtml(l.slug)}">Preview</button>
     <button class="cs-danger" data-cs-del="${l.id}">Delete</button>
    </div>
   </div>`;
@@ -574,6 +574,9 @@ function renderContent(){
 
 function csPreview(slug){
  if(window.invalidateLessonCache)window.invalidateLessonCache(slug);
+ const lesson=csData.lessons.find(l=>l.slug===slug)||(csEd&&csEd.basic&&csEd.basic.slug===slug?{course_id:csEd.basic.course_id}:null);
+ const course=lesson?csData.courses.find(c=>c.id===lesson.course_id):null;
+ if(course&&window.setCourseContext)window.setCourseContext(course.slug,course.title);
  window.renderLessonPlayer(slug,"overview");
 }
 
@@ -831,6 +834,7 @@ function csTabHtml(){
     <label class="cs-field"><span>Status</span><select data-p="basic.status"><option value="draft" ${m.basic.status==="draft"?"selected":""}>Draft</option><option value="published" ${m.basic.status==="published"?"selected":""}>Published</option></select></label>
     ${csInput("basic.sort_order","Sort order",m.basic.sort_order,"number")}
    </div>
+   ${m.id?`<p class="cs-help cs-preview-hint">Before you publish, <button type="button" class="cs-link-btn" id="csInlinePreviewLink">preview this lesson in the learner view</button> so you can double-check it.</p>`:`<p class="cs-help">Save this lesson once to unlock a preview link before publishing.</p>`}
    <label class="cs-field cs-opt-row"><input type="checkbox" data-p="basic.requires_signoff" ${m.basic.requires_signoff?"checked":""} style="width:auto"> <span style="margin:0">Requires facilitator sign-off</span></label>
   </section>`;
  }
@@ -1012,6 +1016,8 @@ function csWireEditorBody(root){
    csRenderEditor();
   }
  });
+ const inlinePreviewLink=root.querySelector("#csInlinePreviewLink");
+ if(inlinePreviewLink)inlinePreviewLink.addEventListener("click",()=>{if(csEd&&csEd.basic&&csEd.basic.slug)csPreview(csEd.basic.slug)});
  csWireRich(root);
  root.querySelectorAll("[data-cs-add]").forEach(b=>b.addEventListener("click",()=>csAdd(b.dataset.csAdd)));
  root.querySelectorAll("[data-cs-rm]").forEach(b=>b.addEventListener("click",()=>csRemove(b.dataset.csRm)));
@@ -1736,6 +1742,7 @@ async function renderLevel2Hub(){
 }
 window.openLevel2Hub=openLevel2Hub;
 window.openCourseHub=openCourseHub;
+window.setCourseContext=(slug,label)=>{currentCourse={slug,label}};
 
 /* ---- Generic lesson player ---- */
 async function renderLessonPlayer(lessonSlug,tab){

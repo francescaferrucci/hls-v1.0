@@ -176,3 +176,4 @@ dialog{width:min(720px,calc(100% - 30px));border:0;border-radius:20px;background
 .cs-errors ul{margin:6px 0 0;padding-left:19px}
 .cs-warn{border:1px solid var(--yellow);background:rgba(197,165,38,.09);border-radius:11px;padding:12px 14px;font-size:12.5px;margin-bottom:15px}
 @media(max-width:780px){.cs-lesson-row{grid-template-columns:1fr}.cs-inline{grid-template-columns:1fr}.cs-editor-actions{width:100%}.cs-editor-actions button{flex:1}.cs-head{flex-direction:column;align-items:stretch}.cs-filters{width:100%}.cs-filters select{flex:1 1 140px;min-width:0}}
+.cs-link-btn{border:0;background:transparent;color:var(--blue);font-weight:800;padding:0;text-decoration:underline;cursor:pointer;font-size:inherit}.cs-link-btn:hover{color:var(--navy2)}.cs-preview-hint{background:var(--soft);border-radius:10px;padding:10px 12px;margin:10px 0!important}
