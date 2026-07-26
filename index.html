@@ -418,6 +418,41 @@
       </div>
     </section>
 
+    <section class="view" id="level2Nt">
+      <button class="back-link" id="backToAcademiesL2Nt">← Patient Assessment</button>
+      <div class="page-heading">
+        <div><span class="eyebrow">Hannah Medical Academy • Level 2 — Patient Assessment</span><h1>Nose-to-Tail Examination</h1><p>Systematic head-to-tail physical exam sequence, normal-finding documentation, and Member communication.</p></div>
+        <div class="page-actions"><button class="secondary" id="level2NtResourcesBtn">Resources</button><button class="primary" id="openAskHannahL2NtOverview">Ask Hannah</button></div>
+      </div>
+      <div class="level5-tabs" id="level2NtTabs">
+        <button class="chip active" data-l2nttab="overview">Overview</button>
+        <button class="chip" data-l2nttab="curriculum">Curriculum</button>
+        <button class="chip" data-l2nttab="cases">Case Studies</button>
+        <button class="chip" data-l2nttab="skillslab">Skills Lab</button>
+        <button class="chip" data-l2nttab="certification">Certification</button>
+      </div>
+      <div id="level2NtContent"></div>
+    </section>
+
+    <section class="view level5-case-runner" id="level2NtCaseRunner">
+      <button class="back-link" id="exitLevel2NtCase">← Return to Level 2</button>
+      <div class="case-workspace">
+        <header class="case-workspace-head">
+          <div><span class="eyebrow light">Level 2 case simulation</span><h1 id="l2NtCaseTitle">Case</h1><p id="l2NtCaseSubtitle"></p></div>
+          <div class="case-progress-box"><span id="l2NtCaseStepLabel">Signalment</span><div class="progress"><span id="l2NtCaseProgress"></span></div></div>
+        </header>
+        <div class="case-stage-nav" id="l2NtCaseStageNav"></div>
+        <div class="case-workspace-body">
+          <aside class="patient-snapshot">
+            <span class="case-pill">Patient snapshot</span><h2 id="l2NtCasePatientName">Patient</h2>
+            <dl><dt>Signalment</dt><dd id="l2NtCaseSignalment">—</dd><dt>History</dt><dd id="l2NtCaseHistory">—</dd><dt>Current step</dt><dd id="l2NtCaseStepName">—</dd></dl>
+            <button class="secondary full" id="openAskHannahL2Nt">Ask Hannah</button>
+          </aside>
+          <section class="case-stage-content" id="l2NtCaseStageContent"></section>
+        </div>
+      </div>
+    </section>
+
     <section class="view" id="level5">
       <button class="back-link" id="backToMedicalAcademy">← Medical Academy</button>
       <div class="page-heading">

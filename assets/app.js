@@ -1016,7 +1016,7 @@ function l2OverallPercent(){
 }
 
 const level2Lessons=[
- {id:'nose-to-tail',title:'Nose-to-Tail Examination',desc:'Systematic head-to-tail physical exam sequence and normal-finding documentation.',status:'planned'},
+ {id:'nose-to-tail',title:'Nose-to-Tail Examination',desc:'Systematic head-to-tail physical exam sequence and normal-finding documentation.',status:'live'},
  {id:'history',title:'Patient History',desc:'Structured history-taking, owner interview technique, and chart documentation.',status:'planned'},
  {id:'tpr',title:'TPR',desc:'Temperature, pulse, and respiration: technique, normal ranges, and red flags.',status:'planned'},
  {id:'bcs',title:'Body Condition Scoring',desc:'9-point body condition and muscle condition scoring with Member communication.',status:'planned'},
@@ -1033,14 +1033,14 @@ function openLevel2Hub(){renderLevel2Hub();switchView('level2Hub')}
 
 function renderLevel2Hub(){
  const oticPct=l2OverallPercent();
- const completeCount=level2Lessons.filter(l=>l.status==='live').length;
- const hubPct=Math.round((oticPct*completeCount)/level2Lessons.length);
+ const ntPct=l2NtOverallPercent();
+ const hubPct=Math.round((oticPct+ntPct)/level2Lessons.length);
  const ring=document.querySelector('#level2HubProgressRing'); if(ring)ring.innerHTML=`<strong>${hubPct}%</strong><span>Level complete</span>`;
  const grid=document.querySelector('#level2LessonGrid'); if(!grid)return;
  grid.innerHTML=level2Lessons.map((l,i)=>{
   const n=i+1;
   const isLive=l.status==='live';
-  const pct=isLive?oticPct:0;
+  const pct=l.id==='otic'?oticPct:l.id==='nose-to-tail'?ntPct:0;
   const badge=isLive?(pct>=100?'good':'warning'):'neutral';
   const badgeLabel=isLive?(pct>=100?'Complete':pct>0?'In progress':'Start here'):'Coming soon';
   const cta=isLive?(pct>0?'Continue lesson':'Start lesson'):'Coming soon';
@@ -1048,7 +1048,8 @@ function renderLevel2Hub(){
  }).join('');
  document.querySelectorAll('.l2-lesson-open').forEach(b=>b.onclick=()=>{
   const lesson=level2Lessons.find(x=>x.id===b.dataset.lesson);
-  if(lesson&&lesson.status==='live')openLevel2();
+  if(lesson&&lesson.id==='nose-to-tail')window.openLevel2Nt();
+  else if(lesson&&lesson.status==='live')openLevel2();
   else openModal(`<span class="eyebrow">Patient Assessment • Coming soon</span><h1 class="modal-title">${lesson.title}</h1><p>${lesson.desc}</p><p class="safety-note"><strong>In development</strong><span>This lesson is planned for Level 2 — Patient Assessment and will appear here once built and clinically reviewed.</span></p><button class="primary" onclick="document.querySelector('#modal').close()">Close</button>`);
  });
 }
@@ -1261,8 +1262,450 @@ document.querySelector('#exitLevel2Case')?.addEventListener('click',()=>openLeve
 document.querySelector('#level2ResourcesBtn')?.addEventListener('click',()=>openModal('<span class="eyebrow">Level 2 resources</span><h1>Ear Examination Foundation resource library</h1><p>Approved Hannah otoscopic technique guides, escalation criteria, and Member-communication scripts will appear here after clinical review.</p><p class="safety-note"><strong>Prototype boundary</strong><span>This build uses openly licensed reference images and original diagrams; production content requires Hannah-approved clinical photography and CMO review.</span></p>'));
 document.querySelectorAll('[data-l2tab]').forEach(b=>b.onclick=()=>{l2State.tab=b.dataset.l2tab;persistL2();renderLevel2()});
 
+
+/* ===== Nose-to-Tail Examination lesson (Level 2 — Patient Assessment) ===== */
+function ntBodySVG(species){
+ const canine = species !== 'feline';
+ const earsPath = canine
+  ? `<path d="M60 95 C40 100 32 130 45 148 C55 160 72 152 76 135 L82 108 C84 96 72 90 60 95 Z" fill="#eb9530" stroke="#063f63" stroke-width="2.5"/>`
+  : `<path d="M55 90 L75 60 L88 100 Z" fill="#eb9530" stroke="#063f63" stroke-width="2.5"/><path d="M105 90 L100 58 L122 96 Z" fill="#eb9530" stroke="#063f63" stroke-width="2.5"/>`;
+ const tailPath = canine
+  ? `<path d="M388 168 C420 168 445 145 448 108" fill="none" stroke="#f3a43b" stroke-width="16" stroke-linecap="round"/>`
+  : `<path d="M388 165 C415 165 428 130 415 98" fill="none" stroke="#f3a43b" stroke-width="14" stroke-linecap="round"/>`;
+ const muzzle = canine
+  ? `<ellipse cx="48" cy="140" rx="20" ry="14" fill="#f6b866" stroke="#063f63" stroke-width="2"/>`
+  : `<ellipse cx="52" cy="138" rx="16" ry="12" fill="#f6b866" stroke="#063f63" stroke-width="2"/>`;
+ const tailBadgeX = canine ? 432 : 410;
+ const tailBadgeY = canine ? 115 : 105;
+ return `<svg viewBox="0 0 700 260" role="img" aria-label="Diagram of ${canine?'canine':'feline'} body-region map showing head and face, neck and throat, thorax, abdomen and urogenital, integument and musculoskeletal, and tail and perineal zones">
+  <ellipse cx="250" cy="170" rx="140" ry="50" fill="#f3a43b" stroke="#063f63" stroke-width="3"/>
+  <circle cx="90" cy="128" r="40" fill="#f3a43b" stroke="#063f63" stroke-width="3"/>
+  ${muzzle}
+  ${earsPath}
+  <circle cx="78" cy="118" r="3" fill="#063f63"/>
+  <rect x="140" y="205" width="14" height="42" rx="4" fill="#f3a43b" stroke="#063f63" stroke-width="2"/>
+  <rect x="170" y="205" width="14" height="42" rx="4" fill="#f3a43b" stroke="#063f63" stroke-width="2"/>
+  <rect x="320" y="205" width="14" height="42" rx="4" fill="#f3a43b" stroke="#063f63" stroke-width="2"/>
+  <rect x="350" y="205" width="14" height="42" rx="4" fill="#f3a43b" stroke="#063f63" stroke-width="2"/>
+  ${tailPath}
+  ${l2LegendBadge(90,128,1)}
+  ${l2LegendBadge(140,158,2)}
+  ${l2LegendBadge(210,165,3)}
+  ${l2LegendBadge(300,170,4)}
+  ${l2LegendBadge(160,225,5)}
+  ${l2LegendBadge(tailBadgeX,tailBadgeY,6)}
+  <line x1="470" y1="15" x2="470" y2="245" stroke="#d8e2ea" stroke-width="2"/>
+  ${l2LegendRow(492,42,1,'Head & face')}
+  ${l2LegendRow(492,76,2,'Neck & throat')}
+  ${l2LegendRow(492,110,3,'Thorax (heart & lungs)')}
+  ${l2LegendRow(492,144,4,'Abdomen & urogenital')}
+  ${l2LegendRow(492,178,5,'Integument & musculoskeletal')}
+  ${l2LegendRow(492,212,6,'Tail & perineal area')}
+  </svg>`;
+}
+function mmColorReferenceSVG(){
+ return `<svg viewBox="0 0 700 150" role="img" aria-label="Mucous membrane color reference chart showing pink as normal, pale as a flag finding, blue as an emergency finding, and yellow as a flag finding">
+  <rect x="20" y="20" width="140" height="70" rx="10" fill="#e88fa0" stroke="#063f63" stroke-width="2"/>
+  <text x="90" y="110" font-size="13" font-weight="700" fill="#0b2338" text-anchor="middle">Pink</text>
+  <text x="90" y="128" font-size="11" fill="#0b2338" text-anchor="middle">Normal</text>
+  <rect x="195" y="20" width="140" height="70" rx="10" fill="#f0d9dd" stroke="#063f63" stroke-width="2"/>
+  <text x="265" y="110" font-size="13" font-weight="700" fill="#0b2338" text-anchor="middle">Pale</text>
+  <text x="265" y="128" font-size="11" fill="#0b2338" text-anchor="middle">Flag for review</text>
+  <rect x="370" y="20" width="140" height="70" rx="10" fill="#5b8fd6" stroke="#063f63" stroke-width="2"/>
+  <text x="440" y="110" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">Blue</text>
+  <text x="440" y="128" font-size="11" fill="#0b2338" text-anchor="middle">Emergency</text>
+  <rect x="545" y="20" width="140" height="70" rx="10" fill="#e8d24a" stroke="#063f63" stroke-width="2"/>
+  <text x="615" y="110" font-size="13" font-weight="700" fill="#0b2338" text-anchor="middle">Yellow</text>
+  <text x="615" y="128" font-size="11" fill="#0b2338" text-anchor="middle">Flag for review</text>
+  </svg>`;
+}
+
+const l2NtModules=[
+ {id:1,title:'Preparation, Initial Observation & Vital Signs (TPR)',minutes:15,icon:'🩺',
+  content:`<p><strong>Gather supplies</strong> before starting: thermometer, stethoscope, a watch or timer for respiratory/pulse rate, and an otoscope/ophthalmoscope if available. Approach the patient calmly and speak in a reassuring tone, moving slowly and confidently to minimize stress.</p>
+   <p><strong>Initial observation</strong> happens before any hands-on contact: watch the patient's overall behavior, posture, and gait as they move in the exam room. Note any lameness, ataxia (a lack of coordination resulting in an abnormal gait — not a disease itself, but a clinical sign), or reluctance to move, and check for respiratory distress such as open-mouth breathing or excessive panting.</p>
+   <p class="safety-note"><strong>Critter Clue</strong><span>Begin documentation (paper or electronic) of any observations before handling the patient.</span></p>
+   <p><strong>Vital signs (TPR) and weight:</strong></p>
+   <ul class="l2-obj-list">
+    <li>Temperature — take a rectal temperature unless another method is directed by the patient's condition.</li>
+    <li>Pulse/heart rate — palpate the femoral artery (usually on the inside of the hind leg) or use a stethoscope; count beats for 15 seconds and multiply by four for beats per minute.</li>
+    <li>Respiratory rate — observe or auscultate breathing for 15 seconds and multiply by four for breaths per minute; watch chest movements for rapid, shallow, or labored breathing.</li>
+    <li>Weight — confirm the recorded weight is accurate; reweigh and record if it wasn't captured at check-in or looks off.</li>
+    <li>Body Condition Score (BCS) — evaluate muscle mass and fat coverage and record the BCS accurately in Hannahware.</li>
+   </ul>
+   <figure class="l2-anatomy-figure">${ntBodySVG('canine')}<figcaption><strong>Original instructional diagram — canine body-region map.</strong> Illustrates the six regions used throughout the nose-to-tail sequence.</figcaption></figure>`,
+  quiz:[
+   {q:'According to the procedure, what should happen before handling the patient?',opts:['Administer any prescribed medication','Begin documentation of observations','Take the temperature first','Express the anal glands'],correct:1,exp:'Critter Clue: begin documentation of any observations before handling the patient.'},
+   {q:'True or False: Pulse and respiratory rate should each be counted for a full 60 seconds.',opts:['True','False'],correct:1,exp:'False. Count beats or breaths for 15 seconds and multiply by four to get the per-minute rate.'},
+   {q:'Where is the femoral artery typically palpated to check pulse?',opts:['On the inside of the hind leg','On top of the head','Along the tail','Behind the ear'],correct:0,exp:'The femoral artery is usually palpated on the inside of the hind leg.'},
+   {q:'What should be done if a patient\'s recorded weight looks inaccurate or wasn\'t captured at check-in?',opts:['Ignore it and proceed','Reweigh the patient and record the accurate weight','Estimate the weight visually','Skip the BCS'],correct:1,exp:'Weigh the patient and record the accurate weight so that BCS and dosing decisions are based on correct information.'}
+  ]},
+ {id:2,title:'Head and Face Examination',minutes:15,icon:'👁️',
+  content:`<p><strong>Nose</strong> — check for discharge, crusting, or asymmetry, and note color and moistness. A healthy nose can be moist or slightly dry; watch for excessive dryness or cracking.</p>
+   <p><strong>Eyes</strong> — look for redness, discharge, squinting, cloudiness, or other abnormalities of the sclera (whites) or cornea. Assess the eyelids and conjunctiva, and note any signs of pain or swelling. If directed by a Hannah DVM, use an ophthalmoscope for a more detailed look.</p>
+   <p><strong>Ears</strong> — inspect the external pinna for redness, hair loss, lesions, or parasites. If trained and directed, use an otoscope to examine the ear canal for wax, discharge, or odor. Detailed otoscopic technique, normal-vs-abnormal recognition, and cytology preview are covered in depth in the separate <strong>Otic Examination</strong> course.</p>
+   <p><strong>Oral cavity and teeth</strong> — gently lift the lips to check the gums (mucous membrane color and gum texture), and perform a capillary refill time (CRT) test by pressing on the gum and timing how long it takes for color to return. Normal CRT is under 2 seconds. Examine teeth for tartar buildup, fractures, or worn spots, and check the tongue and roof of the mouth for ulcers or masses if possible.</p>
+   <figure class="l2-anatomy-figure">${mmColorReferenceSVG()}<figcaption><strong>Original instructional diagram — mucous membrane color reference.</strong> Supports the gum-color check performed alongside the CRT test.</figcaption></figure>`,
+  quiz:[
+   {q:'What is the normal capillary refill time (CRT)?',opts:['Under 2 seconds','5 to 10 seconds','15 to 20 seconds','It should not return at all'],correct:0,exp:'Normal capillary refill time is under 2 seconds.'},
+   {q:'True or False: A moist nose is always an abnormal finding.',opts:['True','False'],correct:1,exp:'False. A healthy nose can be moist or slightly dry — the concern is excessive dryness or cracking.'},
+   {q:'Where is detailed ear canal examination technique (otoscopy) taught in this program?',opts:['In the separate Otic Examination course','Nowhere — it is not covered','In the Musculoskeletal module','In the Documentation module'],correct:0,exp:'Detailed otoscopic technique and normal-vs-abnormal ear findings are covered in the dedicated Otic Examination course.'},
+   {q:'Which oral finding should be specifically checked for on the tongue and roof of the mouth?',opts:['Tartar buildup','Ulcers or masses','Nail length','Coat brittleness'],correct:1,exp:'The tongue and roof of the mouth should be checked for ulcers or masses if possible.'}
+  ]},
+ {id:3,title:'Neck, Throat, Integument & Coat',minutes:12,icon:'🐾',
+  content:`<p><strong>Lymph nodes</strong> — palpate the submandibular (under the jaw) lymph nodes and note any enlargement or asymmetry.</p>
+   <p><strong>Thyroid region</strong> — gently feel the trachea and surrounding tissues for any masses or sensitivity.</p>
+   <p><strong>Jugular furrow</strong> — observe for distension of the veins or any lumps along the neck.</p>
+   <p><strong>Skin condition</strong> — part the hair in several locations to check for external parasites (fleas, ticks), redness, lesions, or dryness, and check for signs of alopecia (hair loss), matting, or abnormal lumps/bumps.</p>
+   <p><strong>Coat quality</strong> — note if the coat is dull, greasy, or brittle. A healthy, regularly groomed coat should appear shiny and well-maintained.</p>`,
+  quiz:[
+   {q:'Which lymph nodes are palpated during the neck and throat portion of the exam?',opts:['Submandibular (under the jaw)','Popliteal (behind the knee)','Axillary only','Inguinal only'],correct:0,exp:'The submandibular lymph nodes, under the jaw, are palpated and checked for enlargement or asymmetry.'},
+   {q:'True or False: The jugular furrow should be observed for vein distension or lumps.',opts:['True','False'],correct:0,exp:'True. Observing the jugular furrow for distension or lumps is part of the neck and throat exam.'},
+   {q:'What technique helps identify external parasites and skin lesions during the integument exam?',opts:['Parting the hair in several locations','Only looking at the tail','Checking the teeth','Auscultating the chest'],correct:0,exp:'Parting the hair in several locations helps reveal parasites, redness, lesions, or dryness.'},
+   {q:'Which coat description is a potential concern rather than a normal finding?',opts:['Shiny and well-maintained','Dull, greasy, or brittle','Regularly groomed','Smooth to the touch'],correct:1,exp:'A dull, greasy, or brittle coat is noted as a potential concern; a healthy coat should appear shiny and well-maintained.'}
+  ]},
+ {id:4,title:'Thoracic and Abdominal Examination',minutes:18,icon:'🫁',
+  content:`<p><strong>Heart auscultation</strong> — place the stethoscope on both sides of the chest, generally starting behind the elbow on the left side and then the right, and listen for rate, rhythm, and any murmurs or arrhythmias.</p>
+   <p><strong>Respiratory auscultation</strong> — while listening with a stethoscope, note lung sounds in multiple locations (cranial, middle, and caudal lung fields) and check for crackles, wheezes, or decreased breath sounds.</p>
+   <p><strong>Cardiac pulse synchronization</strong> — compare the femoral pulse while listening to the heart; pulse deficits (missing pulses) can be noted if any arrhythmias are present.</p>
+   <p><strong>Abdominal palpation</strong> — gently palpate each quadrant of the abdomen to identify any masses, fluid, or discomfort, and observe the patient's reaction for signs of pain or tension.</p>
+   <p><strong>Specific organ palpation</strong> (if trained and supervised) — attempt to palpate the liver edge (cranially), the spleen (left side), the kidneys (dorsally), and the bladder (caudally).</p>
+   <p><strong>Abdominal auscultation</strong> — often less emphasized in small pets, but can be done to listen for gut sounds if GI issues are suspected.</p>`,
+  quiz:[
+   {q:'Where does heart auscultation generally begin?',opts:['Behind the elbow on the left side','At the base of the tail','Over the trachea','On the paw pad'],correct:0,exp:'Heart auscultation generally starts with the stethoscope placed behind the elbow on the left side, then the right.'},
+   {q:'Which lung fields should be checked during respiratory auscultation?',opts:['Cranial, middle, and caudal lung fields','Only the caudal field','Only the left side','Only the trachea'],correct:0,exp:'Respiratory auscultation checks lung sounds in the cranial, middle, and caudal lung fields.'},
+   {q:'What is a pulse deficit?',opts:['A missing pulse relative to the heartbeats heard, often noted with arrhythmias','A normal finding in every healthy patient','A measurement of respiratory rate','A type of abdominal mass'],correct:0,exp:'A pulse deficit is a missing pulse compared to the heartbeats heard on auscultation, and can be noted when arrhythmias are present.'},
+   {q:'True or False: Specific organ palpation of the liver, spleen, kidneys, and bladder should only be attempted if trained and supervised.',opts:['True','False'],correct:0,exp:'True. The procedure specifies that specific organ palpation should only be attempted if trained and supervised.'}
+  ]},
+ {id:5,title:'Urogenital, Musculoskeletal & Neurologic Screening',minutes:15,icon:'🦴',
+  content:`<p><strong>External genitalia</strong> — evaluate for discharge, swelling, or redness. In males, observe the prepuce and check the male genital organ, if extruded, for abnormalities. In females, check the vulva for discharge or inflammation.</p>
+   <p><strong>Mammary glands</strong> — palpate along the mammary chain for lumps, swelling, or sensitivity.</p>
+   <p><strong>Limbs and joints</strong> — check each limb systematically, palpate joints for swelling, warmth, or signs of pain, and passively flex and extend major joints (shoulder, elbow, carpus, hip, stifle, hock) if allowed by the patient.</p>
+   <p><strong>Feet and nails</strong> — inspect paw pads for cuts, foreign bodies, or redness, and check nail length and condition.</p>
+   <p><strong>Gait assessment</strong> — if not already done during initial observation, walk the patient on a leash where applicable to observe any lameness or abnormal gait patterns.</p>
+   <p><strong>Neurological quick check (basic)</strong> — mentation: note if the patient is bright, alert, and responsive, or dull, depressed, or anxious. Cranial nerves: check for head tilt, facial symmetry, normal eye movements, and the ability to blink. Proprioception (if relevant and safe): gently flip a paw and see if the patient corrects it quickly.</p>`,
+  quiz:[
+   {q:'Which joints are commonly checked for passive flexion and extension?',opts:['Shoulder, elbow, carpus, hip, stifle, hock','Only the jaw','Only the tail vertebrae','Only the ears'],correct:0,exp:'The procedure lists shoulder, elbow, carpus, hip, stifle, and hock as the major joints checked, if allowed by the patient.'},
+   {q:'True or False: Proprioception can be checked by gently flipping a paw and observing whether the patient corrects it quickly.',opts:['True','False'],correct:0,exp:'True. This is the basic proprioception check described in the procedure.'},
+   {q:'Which findings should be documented during the urogenital exam?',opts:['Discharge, swelling, or redness of the external genitalia; lumps/swelling/sensitivity along the mammary chain','Only nail length','Only coat quality','Only tail position'],correct:0,exp:'The urogenital exam covers external genitalia findings and mammary gland palpation for lumps, swelling, or sensitivity.'},
+   {q:'What does the basic mentation check assess?',opts:['Whether the patient is bright, alert, and responsive versus dull, depressed, or anxious','Nail length','Coat texture','Respiratory rate'],correct:0,exp:'Mentation describes the patient\'s overall alertness and responsiveness.'}
+  ]},
+ {id:6,title:'Tail, Perineal Area, Documentation & Communication',minutes:12,icon:'📋',
+  content:`<p><strong>Tail</strong> — gently run a hand along the tail, feeling for lumps, pain, or irregularities in vertebral alignment.</p>
+   <p><strong>Anus and perineal region</strong> — check for swelling, masses, or anal sac issues; anal glands should only be expressed if indicated and under supervision.</p>
+   <p><strong>Documentation and follow-up</strong> — record all normal and abnormal findings thoroughly in the Physical Exam and New Findings sections of the patient's medical record in Hannahware. Enter any medications given, newly prescribed, or refilled in the medication tab. Immediately communicate any significant abnormalities to the attending Hannah DVM. Disinfect exam surfaces and tools per hospital standards, and provide the Hannah DVM or Member with any information needed as appropriate to your role. Review and print the Report Card found in the Actions tab dropdown.</p>
+   <p class="safety-note"><strong>Critter Clue</strong><span>Always prioritize safety — use proper restraint techniques and ask for help if the patient shows signs of distress or aggression. Practice gentle handling, maintain clear communication with the DVM and Traffic Controller, and keep the patient's comfort in mind: offer breaks, ensure they aren't standing on slippery surfaces, and watch for stress signals.</span></p>`,
+  quiz:[
+   {q:'When should anal glands be expressed during a nose-to-tail exam?',opts:['Every time, as a routine step','Only if indicated and under supervision','Only if the Member requests it','Never, under any circumstance'],correct:1,exp:'Anal gland expression should only be performed if indicated and under supervision.'},
+   {q:'True or False: Significant abnormalities can wait until the end of the shift to be reported to the veterinarian.',opts:['True','False'],correct:1,exp:'False. Significant abnormalities should be communicated to the attending Hannah DVM immediately.'},
+   {q:'Where should exam findings be documented?',opts:['The Physical Exam and New Findings sections of the medical record in Hannahware','A personal notebook only','Nowhere, if the patient is normal','Only in the Member\'s chat messages'],correct:0,exp:'Findings should be recorded thoroughly in the Physical Exam and New Findings sections in Hannahware.'},
+   {q:'What should be reviewed and printed at the end of the visit, per the procedure?',opts:['The Report Card from the Actions tab dropdown','The invoice only','The vaccine history only','Nothing further is needed'],correct:0,exp:'The procedure calls for reviewing and printing the Report Card found in the Actions tab dropdown.'}
+  ]}
+];
+
+const l2NtCases=[
+ {id:0,title:'Ranger — Annual Wellness Exam',patient:'Ranger',species:'Canine',signalment:'4-year-old neutered male Labrador retriever',history:'Presented for annual wellness exam; owner reports no concerns, patient is active and eating normally.',
+  stages:['Exam Findings','TPR Technique','Documentation','Member Communication','Next Steps'],
+  content:[
+   `<span class="eyebrow">Exam findings</span><h2>Review the head-to-tail findings</h2><p>Initial observation shows a bright, alert, comfortable dog with a normal gait, no lameness or ataxia, and no respiratory distress. Head-to-tail exam: pink moist gums with CRT under 2 seconds, clear eyes, no nasal discharge, no submandibular lymph node enlargement, clean coat, normal heart and lung auscultation with no murmurs or pulse deficits, soft non-painful abdomen, full pain-free range of motion in all joints, normal mentation and proprioception, and a normal tail and perineal exam.</p>${ntBodySVG('canine')}`,
+   `<span class="eyebrow">TPR technique</span><h2>Ranger's pulse is counted for 15 seconds and comes to 23 beats; his breathing is counted for 15 seconds at 6 breaths. How should these be calculated and interpreted?</h2><div class="choice-grid" id="l2ntc0s1"></div>`,
+   `<span class="eyebrow">Documentation</span><h2>Which documentation is most appropriate?</h2><div class="choice-grid" id="l2ntc0s2"></div>`,
+   `<span class="eyebrow">Member communication</span><h2>What should the team say to the Member?</h2><div class="choice-grid" id="l2ntc0s3"></div>`,
+   `<span class="eyebrow">Next steps</span><h2>Which upcoming Level 2 topic builds directly on this wellness exam?</h2><div class="choice-grid" id="l2ntc0s4"></div><button class="primary" id="completeL2NtCase0" style="margin-top:16px">Complete case</button>`
+  ],
+  decisions:{
+   l2ntc0s1:{opts:['Multiply each 15-second count by four: heart rate is 92 bpm and respiratory rate is 24 breaths per minute, both within normal canine reference ranges.','Use the 15-second counts as the final per-minute values without multiplying.','Divide each 15-second count by four.'],correct:0,exp:'Per the procedure, multiply the 15-second count by four to get the per-minute rate: 23×4=92 bpm and 6×4=24 breaths/min, both within normal ranges for a dog.'},
+   l2ntc0s2:{opts:['"Head-to-tail exam performed; pink moist gums with CRT <2 sec, no lymph node or auscultation abnormalities, soft non-painful abdomen, full pain-free joint range of motion, normal mentation and gait; TPR within normal limits."','"Dog is perfectly healthy forever."','"Nothing to report, exam was quick."'],correct:0,exp:'Objective, region-by-region documentation in the Physical Exam section supports the medical record and future comparison.'},
+   l2ntc0s3:{opts:['"Everything looks great today — no concerns from the head-to-tail exam, and his vitals are all within normal range."','"Your dog is guaranteed to never get sick."','"We didn\'t really check anything today."'],correct:0,exp:'This response is accurate, plain-language, and appropriately confident for a fully normal wellness exam.'},
+   l2ntc0s4:{opts:['Patient History, Body Condition Scoring, and Pain Assessment modules joining Level 2.','Surgical suturing technique.','Radiograph positioning for the thorax.'],correct:0,exp:'The Patient Assessment level continues with History, Body Condition Scoring, and Pain Assessment modules next.'}
+  }},
+ {id:1,title:'Willow — Post-Surgical Recheck',patient:'Willow',species:'Feline',signalment:'2-year-old spayed female domestic shorthair, day 5 post-spay',history:'Presented for a routine post-surgical incision recheck 5 days after spay surgery; owner reports the cat is eating and behaving normally.',
+  stages:['Exam Findings','Integument Findings','Documentation','Member Communication','Escalation Triggers'],
+  content:[
+   `<span class="eyebrow">Exam findings</span><h2>Review the head-to-tail findings</h2><p>Initial observation shows a bright, alert, comfortable cat with normal gait and no respiratory distress. TPR is within normal limits, gums are pink with CRT under 2 seconds, and the remainder of the head-to-tail exam is unremarkable.</p>`,
+   `<span class="eyebrow">Integument findings</span><h2>During the integument exam, mild redness is noted along the incision edges, with no discharge, swelling, or pain response on gentle palpation near the site. Which action is correct?</h2><div class="choice-grid" id="l2ntc1s1"></div>`,
+   `<span class="eyebrow">Documentation</span><h2>Which documentation is most appropriate?</h2><div class="choice-grid" id="l2ntc1s2"></div>`,
+   `<span class="eyebrow">Member communication</span><h2>What should the team say to the Member about the incision?</h2><div class="choice-grid" id="l2ntc1s3"></div>`,
+   `<span class="eyebrow">Escalation triggers</span><h2>Which change at a future recheck would require immediately reporting to the attending Hannah DVM?</h2><div class="choice-grid" id="l2ntc1s4"></div><button class="primary" id="completeL2NtCase1" style="margin-top:16px">Complete case</button>`
+  ],
+  decisions:{
+   l2ntc1s1:{opts:['Note the finding and report it to the attending Hannah DVM so they can examine the incision before the visit ends.','Declare the incision fully healed and skip mentioning it.','Apply a topical treatment without veterinary input.'],correct:0,exp:'Per the procedure, significant abnormalities — including new integument findings — should be reported to the attending DVM immediately, who then examines and decides next steps.'},
+   l2ntc1s2:{opts:['"Incision edges mildly red, no discharge, no swelling, no pain response on palpation; remainder of exam normal; reported to attending DVM for review."','"Incision looks perfect, totally healed."','"Nothing unusual with the incision."'],correct:0,exp:'Objective, specific documentation of the incision in the Physical Exam/New Findings sections supports accurate veterinary review.'},
+   l2ntc1s3:{opts:['"There\'s some mild redness at the incision edges; the doctor will take a quick look before you head out."','"Everything is 100% perfect, no need to check again."','"We didn\'t look at the incision today."'],correct:0,exp:'This response is accurate, non-diagnostic, and sets an appropriate next step for veterinarian review.'},
+   l2ntc1s4:{opts:['Increasing redness, swelling, discharge, an opening incision, or new pain','The cat purring during the exam','A slightly dusty exam room','The owner arriving a few minutes late'],correct:0,exp:'Increasing redness, swelling, discharge, incision opening, or new pain at the surgical site are findings that require immediate DVM notification.'}
+  }},
+ {id:2,title:'Gus — Senior Wellness with a New Lump',patient:'Gus',species:'Canine',signalment:'10-year-old neutered male beagle mix',history:'Presented for senior wellness exam; owner mentions a new lump on the left flank first noticed about two weeks ago.',
+  stages:['Exam Findings','Integument Findings','Documentation','Member Communication','Escalation Triggers'],
+  content:[
+   `<span class="eyebrow">Exam findings</span><h2>Review the head-to-tail findings</h2><p>Initial observation shows a bright, alert senior dog with a normal gait, no lameness or ataxia. TPR is within normal limits, heart and lung auscultation are unremarkable, and abdominal palpation reveals no masses or discomfort.</p>${ntBodySVG('canine')}`,
+   `<span class="eyebrow">Integument findings</span><h2>During the integument exam, a firm, freely movable, dime-sized subcutaneous mass is found on the left flank, non-painful on palpation, reportedly present for about two weeks. What is the correct next action?</h2><div class="choice-grid" id="l2ntc2s1"></div>`,
+   `<span class="eyebrow">Documentation</span><h2>Which documentation of the mass is most appropriate?</h2><div class="choice-grid" id="l2ntc2s2"></div>`,
+   `<span class="eyebrow">Member communication</span><h2>What should the team say to the Member about the new lump?</h2><div class="choice-grid" id="l2ntc2s3"></div>`,
+   `<span class="eyebrow">Escalation triggers</span><h2>Which change would require immediately reporting to the attending Hannah DVM rather than waiting for the next scheduled recheck?</h2><div class="choice-grid" id="l2ntc2s4"></div><button class="primary" id="completeL2NtCase2" style="margin-top:16px">Complete case</button>`
+  ],
+  decisions:{
+   l2ntc2s1:{opts:['Document the objective findings in the New Findings section and report the mass to the attending Hannah DVM before the visit ends.','Tell the owner it is definitely a benign fatty lump.','Ignore it since the dog isn\'t painful.'],correct:0,exp:'New masses found during the integument exam should be documented objectively and reported to the attending DVM immediately, per the procedure.'},
+   l2ntc2s2:{opts:['"Firm, freely movable, dime-sized subcutaneous mass on left flank, non-painful, reportedly present ~2 weeks; reported to attending DVM."','"Definitely a benign fatty lump, nothing to worry about."','"Small bump, probably fine."'],correct:0,exp:'Objective description — location, size, texture, mobility, pain response, and duration — supports veterinary evaluation without overdiagnosing.'},
+   l2ntc2s3:{opts:['"The doctor found a small lump and will want to take a closer look, possibly with a quick needle sample, to see what it is."','"It\'s definitely just a fatty lump, no need to worry."','"It\'s probably cancer, you should be very worried."'],correct:0,exp:'This response is accurate, non-diagnostic, and previews the likely next diagnostic step without overpromising or alarming the Member.'},
+   l2ntc2s4:{opts:['Rapid growth, texture change, ulceration, bleeding, or new pain in the mass','The mass staying the same size and texture','The dog eating normally','The owner asking general questions about lumps'],correct:0,exp:'Rapid growth, texture change, ulceration, bleeding, or new pain are recognized triggers to report to the DVM right away rather than waiting.'}
+  }}
+];
+
+const l2NtStations=[
+ {icon:'🧘',title:'Station 1: Calm Approach & Restraint',time:'18 min',desc:'Practice a calm introduction, proper restraint, and body-language reading for the full nose-to-tail sequence on an approved calm patient or teaching model.'},
+ {icon:'🩺',title:'Station 2: TPR Technique Practice',time:'18 min',desc:'Practice taking a rectal temperature, palpating the femoral pulse, and counting respiratory rate using the 15-second × 4 method, then record results in Hannahware.'},
+ {icon:'🔁',title:'Station 3: Head-to-Tail Sequence Practice',time:'18 min',desc:'Run the full 12-section sequence in order — preparation and observation through documentation — without skipping a section.'},
+ {icon:'🖼️',title:'Station 4: Image ID Gallery',time:'18 min',desc:'Sort body-region and mucous-membrane-color images into normal, flag-for-review, and escalate-immediately categories using observable language.'},
+ {icon:'🗣️',title:'Station 5: Member Roleplay',time:'18 min',desc:'Narrate a wellness exam and explain both a normal finding and a flagged finding to a "Member" using plain, non-diagnostic language.'}
+];
+
+const l2NtChecklistItems=[
+ {t:'Gathers necessary supplies (thermometer, stethoscope, timer, otoscope/ophthalmoscope) before starting.',critical:true},
+ {t:'Approaches the patient calmly and begins documentation before handling.',critical:true},
+ {t:'Completes initial observation for gait, lameness, ataxia, and respiratory distress.',critical:true},
+ {t:'Obtains temperature, pulse, and respiratory rate using correct technique (rectal temp; 15-second count × 4 for pulse and respiration).',critical:true},
+ {t:'Confirms weight and records an accurate Body Condition Score in Hannahware.',critical:false},
+ {t:'Completes head and face exam: nose, eyes, ears, oral cavity, and capillary refill time.',critical:true},
+ {t:'Palpates submandibular lymph nodes, thyroid region, and jugular furrow.',critical:false},
+ {t:'Performs heart and lung auscultation and compares femoral pulse for pulse deficits.',critical:true},
+ {t:'Palpates all four abdominal quadrants and notes pain, masses, or fluid.',critical:true},
+ {t:'Completes musculoskeletal, urogenital, and basic neurological screening as directed.',critical:true},
+ {t:'Checks tail and perineal area and follows supervision requirements for anal gland expression.',critical:true},
+ {t:'Documents all findings in the Physical Exam/New Findings sections and reports concerns to the attending DVM immediately.',critical:true}
+];
+
+const l2NtCertRows=[
+ {req:'Prework completion',criterion:'100% complete before lab'},
+ {req:'Module knowledge checks',criterion:'Average 85% across all six modules'},
+ {req:'TPR & vitals technique assessment',criterion:'85% correct on technique and normal-range questions'},
+ {req:'Image identification assessment',criterion:'85% correct on normal/flag/escalate set'},
+ {req:'Skills lab checklist',criterion:'100% of critical items signed off'},
+ {req:'Final attestation',criterion:'Learner signs scope-of-practice statement'}
+];
+
+let l2NtState=JSON.parse(localStorage.getItem('hlsTrueLevel2NoseToTail')||JSON.stringify({tab:'overview',moduleProgress:{},moduleScores:{},caseId:null,caseStep:0,casesCompleted:[],checklist:{},attested:false,signoffRequested:false}));
+function persistL2Nt(){localStorage.setItem('hlsTrueLevel2NoseToTail',JSON.stringify(l2NtState))}
+
+function l2NtCompletedModuleCount(){return Object.values(l2NtState.moduleProgress).filter(Boolean).length}
+function l2NtOverallPercent(){
+ const modulePct=(l2NtCompletedModuleCount()/l2NtModules.length)*100;
+ const checklistPct=(Object.values(l2NtState.checklist).filter(Boolean).length/l2NtChecklistItems.length)*100;
+ const casePct=(l2NtState.casesCompleted.length/l2NtCases.length)*100;
+ return Math.round((modulePct+checklistPct+casePct)/3);
+}
+
+function openLevel2Nt(tab){if(tab)l2NtState.tab=tab;persistL2Nt();renderLevel2Nt();switchView('level2Nt')}
+
+function renderLevel2Nt(){
+ document.querySelectorAll('[data-l2nttab]').forEach(b=>b.classList.toggle('active',b.dataset.l2nttab===l2NtState.tab));
+ const host=document.querySelector('#level2NtContent'); if(!host)return;
+ const pct=l2NtOverallPercent();
+ const ring=document.querySelector('#l2NtProgressRing'); if(ring)ring.innerHTML=`<strong>${pct}%</strong><span>Complete</span>`;
+
+ if(l2NtState.tab==='overview'){
+  host.innerHTML=`<div class="l5-dashboard-grid">
+   <section class="panel span-2">
+    <span class="eyebrow">Why this matters</span>
+    <h2>A consistent sequence prevents missed findings</h2>
+    <p>This course follows the approved Hannah Nose-to-Tail Exam procedure: preparation and initial observation, vital signs (TPR) and weight, head and face, neck and throat, integument and coat, thoracic and abdominal examination, urogenital and musculoskeletal screening, a basic neurological quick check, tail and perineal area, and documentation and follow-up. Following the same sequence every time — and reporting significant findings to the attending Hannah DVM immediately — keeps patients safe and the medical record complete.</p>
+    <ul class="l2-obj-list">
+     <li>Follow the full 12-section head-to-tail exam sequence in order.</li>
+     <li>Correctly perform TPR technique (rectal temperature, 15-second × 4 pulse and respiration counts) and record weight/BCS.</li>
+     <li>Recognize normal findings and observable red flags across each body region.</li>
+     <li>Use low-stress handling and proper restraint throughout the exam.</li>
+     <li>Document findings in Hannahware and report significant abnormalities to the attending DVM immediately.</li>
+    </ul>
+    <p class="safety-note" style="margin-top:16px"><strong>How this course connects forward</strong><span>Nose-to-Tail Examination is a flagship course inside <strong>Level 2 (Patient Assessment)</strong> — Patient History, Body Condition Scoring, and Pain Assessment join this level next, building toward hydration assessment, neurologic and mobility screening, ophthalmic basics, and advanced dermatology case review in later levels.</span></p>
+   </section>
+   <section class="panel">
+    <span class="eyebrow">Your progress</span>
+    <h2>${pct}% complete</h2>
+    <div class="progress"><span style="width:${pct}%"></span></div>
+    <div class="list-item"><span>Modules complete</span><strong>${l2NtCompletedModuleCount()} of ${l2NtModules.length}</strong></div>
+    <div class="list-item"><span>Case studies complete</span><strong>${l2NtState.casesCompleted.length} of ${l2NtCases.length}</strong></div>
+    <div class="list-item"><span>Skills checklist</span><strong>${Object.values(l2NtState.checklist).filter(Boolean).length} of ${l2NtChecklistItems.length}</strong></div>
+    <div class="card-footer"><button class="primary l2nt-jump" data-tab="curriculum">Continue curriculum</button></div>
+   </section>
+  </div>`;
+ }
+ if(l2NtState.tab==='curriculum'){
+  host.innerHTML=`<div class="l2-module-grid">${l2NtModules.map(m=>{
+   const done=!!l2NtState.moduleProgress[m.id];
+   const score=l2NtState.moduleScores[m.id];
+   return `<article class="l2-module-card"><div class="section-head"><div class="l2-module-num">${m.id}</div><span class="badge ${done?'good':'neutral'}">${done?'Complete':'Not started'}</span></div><h3>${m.title}</h3><p>${m.minutes} min • knowledge check on completion${score!=null?` • scored ${score}%`:''}</p><button class="${done?'secondary':'primary'} l2nt-open-module" data-module="${m.id}">${done?'Review module':'Open module'}</button></article>`;
+  }).join('')}</div>`;
+ }
+ if(l2NtState.tab==='cases'){
+  host.innerHTML=`<div class="l2-case-list">${l2NtCases.map(c=>{
+   const done=l2NtState.casesCompleted.includes(c.id);
+   return `<article class="clinical-case"><span class="eyebrow">${c.species}</span><h2>${c.title}</h2><p>${c.history}</p><span class="badge ${done?'good':'neutral'}">${done?'Completed':'Not started'}</span><br><button class="${done?'secondary':'primary'} l2nt-open-case" data-case="${c.id}">${done?'Review case':'Open case'}</button></article>`;
+  }).join('')}</div>`;
+ }
+ if(l2NtState.tab==='skillslab'){
+  host.innerHTML=`<section class="panel">
+   <span class="eyebrow">Hands-on skills lab</span><h2>Five rotating stations • 90 minutes total</h2>
+   <div class="l2-station-grid">${l2NtStations.map(s=>`<article class="l2-station-card"><div class="l2-station-icon">${s.icon}</div><h3>${s.title}</h3><p>${s.desc}</p><span class="badge neutral">${s.time}</span></article>`).join('')}</div>
+  </section>
+  <section class="panel" style="margin-top:18px">
+   <div class="section-head"><div><span class="eyebrow">Skills checklist / rubric</span><h2>Facilitator sign-off — ${Object.values(l2NtState.checklist).filter(Boolean).length}/${l2NtChecklistItems.length} complete (${Math.round((Object.values(l2NtState.checklist).filter(Boolean).length/l2NtChecklistItems.length)*100)}%)</h2></div></div>
+   <div class="checklist-grid">${l2NtChecklistItems.map((item,i)=>`<label class="l2-check-row ${l2NtState.checklist[i]?'done':''}"><input type="checkbox" data-l2nt-check="${i}" ${l2NtState.checklist[i]?'checked':''}><span>${item.t} ${item.critical?'<span class=\\"badge risk\\">Critical</span>':'<span class=\\"badge neutral\\">Non-critical</span>'}</span></label>`).join('')}</div>
+   <p class="safety-note" style="margin-top:14px"><strong>Pass standard</strong><span>All critical items must be marked complete, and no safety-critical item may be missed.</span></p>
+  </section>`;
+ }
+ if(l2NtState.tab==='certification'){
+  const modAvg=Object.keys(l2NtState.moduleScores).length?Math.round(Object.values(l2NtState.moduleScores).reduce((a,b)=>a+b,0)/Object.values(l2NtState.moduleScores).length):0;
+  const criticalDone=l2NtChecklistItems.every((item,i)=>!item.critical||l2NtState.checklist[i]);
+  host.innerHTML=`<section class="panel">
+   <div class="section-head"><div><span class="eyebrow">Competency passport</span><h2>Nose-to-Tail Examination Foundation</h2><p>Certification title: "Nose-to-Tail Examination Foundation: Cleared for Supervised Nose-to-Tail Exam Support."</p></div><button class="primary" id="requestL2NtValidation">Request sign-off</button></div>
+   <div class="l2-cert-table">
+    <div class="l2-cert-head"><span>Requirement</span><span>Status</span><span>Passing criterion</span></div>
+    ${l2NtCertRows.map((r,i)=>{
+      let status='In progress';
+      if(i===1)status=modAvg>=85?'Met':`${modAvg}% avg`;
+      if(i===4)status=criticalDone?'Met':'Incomplete';
+      if(i===5)status=l2NtState.attested?'Signed':'Not signed';
+      const good=status==='Met'||status==='Signed';
+      return `<div class="l2-cert-row"><strong>${r.req}</strong><span class="badge ${good?'good':'warning'}">${status}</span><span>${r.criterion}</span></div>`;
+    }).join('')}
+   </div>
+   <label class="l2-check-row ${l2NtState.attested?'done':''}" style="margin-top:16px"><input type="checkbox" id="l2NtAttestCheck" ${l2NtState.attested?'checked':''}><span>I attest that this course follows the Hannah Nose-to-Tail Exam procedure and that I will report significant findings to the attending Hannah DVM immediately rather than diagnosing or treating independently.</span></label>
+   <p class="safety-note" style="margin-top:14px"><strong>What comes next in Patient Assessment</strong><span>Upcoming Level 2 modules add Patient History, Body Condition Scoring, and Pain Assessment. Later levels add hydration assessment, neurologic and mobility screening, ophthalmic basics, and advanced dermatology case review.</span></p>
+  </section>`;
+ }
+ wireLevel2Nt();
+}
+
+function wireLevel2Nt(){
+ document.querySelectorAll('.l2nt-jump').forEach(b=>b.onclick=()=>{l2NtState.tab=b.dataset.tab;persistL2Nt();renderLevel2Nt()});
+ document.querySelectorAll('.l2nt-open-module').forEach(b=>b.onclick=()=>openL2NtModule(+b.dataset.module));
+ document.querySelectorAll('.l2nt-open-case').forEach(b=>b.onclick=()=>openL2NtCase(+b.dataset.case));
+ document.querySelectorAll('[data-l2nt-check]').forEach(cb=>cb.onchange=()=>{l2NtState.checklist[cb.dataset.l2ntCheck]=cb.checked;persistL2Nt();renderLevel2Nt();toast(cb.checked?'Checklist item marked complete':'Checklist item unchecked')});
+ document.querySelector('#l2NtAttestCheck')?.addEventListener('change',e=>{l2NtState.attested=e.target.checked;persistL2Nt();renderLevel2Nt();toast(e.target.checked?'Attestation signed':'Attestation removed')});
+ document.querySelector('#requestL2NtValidation')?.addEventListener('click',()=>{
+  l2NtState.signoffRequested=true;persistL2Nt();
+  openModal('<span class="eyebrow">Competency validation</span><h1>Request sign-off</h1><p>Select an approved validator and shift for observed sign-off of the Nose-to-Tail Examination Foundation competencies.</p><button class="primary" onclick="document.querySelector(\'#modal\').close()">Submit request</button>');
+  toast('Sign-off requested');
+ });
+}
+
+/* ---- Nose-to-Tail module modal with knowledge check ---- */
+let l2NtActiveModule=null, l2NtQuizAnswers={};
+function openL2NtModule(id){
+ l2NtActiveModule=l2NtModules.find(m=>m.id===id);
+ l2NtQuizAnswers={};
+ renderL2NtModuleModal();
+}
+function renderL2NtModuleModal(){
+ const m=l2NtActiveModule;
+ const answeredCount=Object.keys(l2NtQuizAnswers).length;
+ openModal(`<span class="eyebrow">Module ${m.id} of ${l2NtModules.length} • ${m.minutes} min</span>
+  <h1 class="modal-title">${m.title}</h1>
+  ${m.content}
+  <div style="margin-top:22px;border-top:1px solid var(--line);padding-top:18px">
+   <div class="section-head"><div><span class="eyebrow">Knowledge check</span><h2>Answer all ${m.quiz.length} questions</h2></div><span class="l2-quiz-score" id="l2NtQuizScoreLabel">${answeredCount}/${m.quiz.length} answered</span></div>
+   <div id="l2NtQuizContainer">${m.quiz.map((q,qi)=>`
+    <div class="l2-quiz-question">
+     <h4>${qi+1}. ${q.q}</h4>
+     <div id="l2ntq-${qi}">${q.opts.map((o,oi)=>`<button class="decision-option" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('')}</div>
+     <div id="l2ntfb-${qi}"></div>
+    </div>`).join('')}
+   </div>
+   <div id="l2NtQuizResult" style="margin-top:16px"></div>
+  </div>`);
+ document.querySelectorAll('#l2NtQuizContainer .decision-option').forEach(btn=>btn.onclick=()=>l2NtAnswerQuestion(+btn.dataset.qi,+btn.dataset.oi));
+ if(answeredCount===m.quiz.length)renderL2NtQuizResult();
+}
+function l2NtAnswerQuestion(qi,oi){
+ const m=l2NtActiveModule;
+ if(l2NtQuizAnswers[qi])return;
+ const q=m.quiz[qi];
+ const isCorrect=oi===q.correct;
+ l2NtQuizAnswers[qi]={oi,correct:isCorrect};
+ const wrap=document.querySelector(`#l2ntq-${qi}`);
+ wrap.querySelectorAll('.decision-option').forEach((btn,idx)=>{
+  btn.disabled=true;
+  if(idx===q.correct)btn.classList.add('correct');
+  else if(idx===oi)btn.classList.add('wrong');
+ });
+ document.querySelector(`#l2ntfb-${qi}`).innerHTML=`<div class="feedback"><p><strong>${isCorrect?'Correct.':'Not quite.'}</strong> ${q.exp}</p></div>`;
+ const label=document.querySelector('#l2NtQuizScoreLabel');
+ if(label)label.textContent=`${Object.keys(l2NtQuizAnswers).length}/${m.quiz.length} answered`;
+ if(Object.keys(l2NtQuizAnswers).length===m.quiz.length)renderL2NtQuizResult();
+}
+function renderL2NtQuizResult(){
+ const m=l2NtActiveModule;
+ const correctCount=Object.values(l2NtQuizAnswers).filter(a=>a.correct).length;
+ const pct=Math.round((correctCount/m.quiz.length)*100);
+ const passed=pct>=75;
+ if(passed){
+  l2NtState.moduleProgress[m.id]=true;
+  l2NtState.moduleScores[m.id]=pct;
+  persistL2Nt();
+ } else {
+  l2NtState.moduleScores[m.id]=pct;
+  persistL2Nt();
+ }
+ document.querySelector('#l2NtQuizResult').innerHTML=`<div class="feedback-box"><strong>Score: ${pct}%</strong> (${correctCount} of ${m.quiz.length} correct) — ${passed?'Module marked complete.':'Retake recommended (75% needed to mark complete).'}</div>
+  <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
+   ${!passed?'<button class="secondary" id="l2NtRetakeQuiz">Retake knowledge check</button>':''}
+   <button class="primary" id="l2NtCloseModuleModal">Return to curriculum</button>
+  </div>`;
+ document.querySelector('#l2NtRetakeQuiz')?.addEventListener('click',()=>{l2NtQuizAnswers={};renderL2NtModuleModal()});
+ document.querySelector('#l2NtCloseModuleModal')?.addEventListener('click',()=>{document.querySelector('#modal').close();renderLevel2Nt()});
+ if(passed)toast(`${m.title} module complete — ${pct}%`);
+}
+
+/* ---- Nose-to-Tail case runner ---- */
+function openL2NtCase(id){
+ l2NtState.caseId=id;l2NtState.caseStep=0;persistL2Nt();
+ renderL2NtCase();
+ switchView('level2NtCaseRunner');
+}
+function renderL2NtCase(){
+ const c=l2NtCases.find(x=>x.id===l2NtState.caseId); if(!c)return;
+ document.querySelector('#l2NtCaseTitle').textContent=c.title;
+ document.querySelector('#l2NtCaseSubtitle').textContent=`${c.species} • ${c.stages[l2NtState.caseStep]}`;
+ document.querySelector('#l2NtCaseStepLabel').textContent=c.stages[l2NtState.caseStep];
+ document.querySelector('#l2NtCaseProgress').style.width=`${((l2NtState.caseStep+1)/c.stages.length)*100}%`;
+ document.querySelector('#l2NtCaseStageNav').innerHTML=c.stages.map((s,i)=>`<button class="${i===l2NtState.caseStep?'active':''}" data-l2nt-case-step="${i}">${i+1}. ${s}</button>`).join('');
+ document.querySelector('#l2NtCasePatientName').textContent=c.patient;
+ document.querySelector('#l2NtCaseSignalment').textContent=c.signalment;
+ document.querySelector('#l2NtCaseHistory').textContent=c.history;
+ document.querySelector('#l2NtCaseStepName').textContent=c.stages[l2NtState.caseStep];
+ document.querySelector('#l2NtCaseStageContent').innerHTML=c.content[l2NtState.caseStep];
+ document.querySelectorAll('[data-l2nt-case-step]').forEach(b=>b.onclick=()=>{l2NtState.caseStep=+b.dataset.l2ntCaseStep;persistL2Nt();renderL2NtCase()});
+ Object.keys(c.decisions).forEach(hostId=>{
+  const el=document.querySelector('#'+hostId);
+  if(!el)return;
+  const d=c.decisions[hostId];
+  el.innerHTML=d.opts.map((o,i)=>`<button class="case-choice" data-opt="${i}">${o}</button>`).join('')+'<div class="l2-case-feedback"></div>';
+  el.querySelectorAll('.case-choice').forEach(btn=>btn.onclick=()=>{
+   const chosen=+btn.dataset.opt;
+   el.querySelectorAll('.case-choice').forEach((b2,i2)=>{b2.disabled=true;if(i2===d.correct)b2.classList.add('selected')});
+   el.querySelector('.l2-case-feedback').innerHTML=`<div class="feedback"><p><strong>${chosen===d.correct?'Correct.':'Consider the veterinarian-approved answer:'}</strong> ${d.exp}</p></div>`;
+   toast(chosen===d.correct?'Correct decision recorded':'Feedback recorded');
+  });
+ });
+ document.querySelector(`#completeL2NtCase${c.id}`)?.addEventListener('click',()=>{
+  if(!l2NtState.casesCompleted.includes(c.id)){l2NtState.casesCompleted.push(c.id);persistL2Nt()}
+  toast(`${c.title} completed`);
+  renderLevel2Nt();
+  openLevel2Nt('cases');
+ });
+}
+document.querySelector('#openAskHannahL2Nt')?.addEventListener('click',()=>{switchView('ask');document.querySelector('#askInput').value='What is the approved Hannah Nose-to-Tail Exam procedure?'});
+document.querySelector('#openAskHannahL2NtOverview')?.addEventListener('click',()=>{switchView('ask');document.querySelector('#askInput').value='What is the approved Hannah Nose-to-Tail Exam procedure?'});
+document.querySelector('#backToAcademiesL2Nt')?.addEventListener('click',()=>openLevel2Hub());
+document.querySelector('#exitLevel2NtCase')?.addEventListener('click',()=>openLevel2Nt('cases'));
+document.querySelector('#level2NtResourcesBtn')?.addEventListener('click',()=>openModal('<span class="eyebrow">Level 2 resources</span><h1>Nose-to-Tail Examination Foundation resource library</h1><p>The approved Hannah Nose-to-Tail Exam procedure, escalation criteria, and Member-communication scripts will appear here after clinical review.</p><p class="safety-note"><strong>Prototype boundary</strong><span>This build uses only original diagrams; production content requires Hannah-approved clinical photography and CMO review.</span></p>'));
+document.querySelectorAll('[data-l2nttab]').forEach(b=>b.onclick=()=>{l2NtState.tab=b.dataset.l2nttab;persistL2Nt();renderLevel2Nt()});
+
+
+
 window.openLevel2=openLevel2;
+window.openLevel2Nt=openLevel2Nt;
 renderLevel2Hub();
 
 renderLevel2();
+renderLevel2Nt();
 })();
