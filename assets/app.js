@@ -103,14 +103,6 @@ const assignments = [
  {title:"Membership Enrollment Accuracy",audience:"Membership Coordinators",due:"Aug 10",complete:"0%",status:"Scheduled"}
 ];
 
-const contentItems = [
- {type:"Course",title:"Nose-to-Tail Exam",academy:"Medical Academy",status:"Published",updated:"Jul 21"},
- {type:"Procedure",title:"Medical Records Request Process",academy:"Operations Academy",status:"Published",updated:"Jul 16"},
- {type:"Simulation",title:"Urgent Call Triage",academy:"Member Services Academy",status:"Draft",updated:"Jul 24"},
- {type:"Course",title:"Membership Enrollment Accuracy",academy:"Member Services Academy",status:"Review",updated:"Jul 24"},
- {type:"Quiz",title:"Canine Otitis Externa",academy:"Medical Academy",status:"Published",updated:"Jul 23"}
-];
-
 const simulationSteps = {
  "urgent-triage":[
   {heading:"The call begins",text:"A Member says their dog is breathing very fast, will not lie down, and the gums look pale.",details:["Caller is at home","Pet is conscious","Symptoms worsened over 20 minutes"],options:[
@@ -192,13 +184,17 @@ const STAFF_ROLES=["facilitator","manager","administrator"];
 function currentRole(){return hlsAuth.profile?.role||"learner"}
 function isStaffRole(){return STAFF_ROLES.includes(currentRole())}
 function isAdminRole(){return currentRole()==="administrator"}
+// Mirrors the DB's is_content_manager(): only these roles may write lessons.
+function isContentManager(){const r=currentRole();return r==="manager"||r==="administrator"}
 
 function applyRoleGating(){
- const staff=isStaffRole(),admin=isAdminRole();
+ const staff=isStaffRole(),admin=isAdminRole(),contentMgr=isContentManager();
  $$(".manager-only").forEach(x=>x.style.display=staff?"":"none");
  $$(".admin-only").forEach(x=>x.style.display=admin?"":"none");
+ $$(".content-manager-only").forEach(x=>x.style.display=contentMgr?"":"none");
  const active=document.querySelector(".view.active");
- if(!staff&&active&&["manager","content","reports","admin"].includes(active.id))switchView("dashboard");
+ if(!staff&&active&&["manager","content","contentEditor","reports","admin"].includes(active.id))switchView("dashboard");
+ if(!contentMgr&&active&&["content","contentEditor"].includes(active.id))switchView("dashboard");
 }
 
 let authMode="signin";
@@ -365,7 +361,7 @@ function openResource(title){
  openModal(`<span class="eyebrow">${r.category} • ${r.type}</span><h1 class="modal-title">${r.title}</h1><p>${r.summary}</p><div class="detail-card"><strong>Current version</strong><span>${r.version} • Effective ${r.effective}</span></div><div class="detail-card"><strong>Approval status</strong><span>Approved and published</span></div><button class="primary">Launch resource</button>`);
 }
 $("#knowledgeSearch").addEventListener("input",renderResources);$("#knowledgeCategory").addEventListener("change",renderResources);
-$("#uploadResourceBtn").addEventListener("click",()=>contentForm("Add knowledge resource"));
+$("#uploadResourceBtn").addEventListener("click",()=>{openModal(`<span class="eyebrow">Knowledge Base</span><h1 class="modal-title">Add knowledge resource</h1><div class="form-grid"><label class="full">Title<input placeholder="Enter resource title"></label><label>Category<select><option>Clinical</option><option>Member Services</option><option>Operations</option><option>Leadership</option></select></label><label>Format<select><option>Document</option><option>Job aid</option><option>Video</option><option>Checklist</option></select></label><label class="full">Summary<textarea rows="3" placeholder="What will the team use this for?"></textarea></label></div><button class="primary" id="saveResource">Add resource</button>`);$("#saveResource").addEventListener("click",()=>{$("#modal").close();toast("Knowledge resource added")})});
 
 function renderDiagnostics(){
  const q=$("#diagnosticSearch").value.toLowerCase();
@@ -428,7 +424,8 @@ function renderManager(){
  } else if(state.managerTab==="assignments"){
   $("#managerContent").innerHTML=`<div class="assignment-table"><div class="assignment-head"><span>Assignment</span><span>Audience</span><span>Due</span><span>Complete</span><span>Status</span><span></span></div>${assignments.map(a=>`<div class="assignment-row"><strong>${a.title}</strong><span>${a.audience}</span><span>${a.due}</span><span>${a.complete}</span><span class="badge ${a.status==="Active"?"warning":"neutral"}">${a.status}</span><button class="secondary">Manage</button></div>`).join("")}</div>`;
  } else if(state.managerTab==="approvals"){
-  $("#managerContent").innerHTML=`<div class="approval-grid"><section class="panel"><h2>Competency validations</h2>${competencies.filter(c=>["Awaiting Sign-Off","Practicing"].includes(c.status)).map(c=>`<div class="list-item"><div><strong>${c.name}</strong><span>${c.owner}</span></div><button class="primary">Review</button></div>`).join("")}</section><section class="panel"><h2>Content approvals</h2>${contentItems.filter(c=>["Review","Draft"].includes(c.status)).map(c=>`<div class="list-item"><div><strong>${c.title}</strong><span>${c.type} • ${c.status}</span></div><button class="primary">Review</button></div>`).join("")}</section></div>`;
+  $("#managerContent").innerHTML=`<div class="approval-grid"><section class="panel"><h2>Competency validations</h2>${competencies.filter(c=>["Awaiting Sign-Off","Practicing"].includes(c.status)).map(c=>`<div class="list-item"><div><strong>${c.name}</strong><span>${c.owner}</span></div><button class="primary">Review</button></div>`).join("")}</section><section class="panel"><h2>Content approvals</h2>${csDraftLessons().map(l=>`<div class="list-item"><div><strong>${escapeHtml(l.title)}</strong><span>Lesson • Draft</span></div><button class="primary cs-review-draft" data-lesson-id="${l.id}">Review</button></div>`).join("")||'<p class="cs-empty">No lessons are awaiting review.</p>'}</section></div>`;
+  $$(".cs-review-draft").forEach(b=>b.addEventListener("click",()=>csEditLesson(b.dataset.lessonId)));
  } else {
   $("#managerContent").innerHTML=`<div class="compliance-grid"><section class="panel"><h2>Requirements</h2>${["CPR Certification","Radiation Safety","Annual OSHA Refresher","HIPAA & Records Privacy"].map((x,i)=>`<div class="list-item"><div><strong>${x}</strong><span>${[92,88,96,90][i]}% current</span></div><span class="badge ${i===2?"risk":"warning"}">${[6,3,2,4][i]} due</span></div>`).join("")}</section><section class="panel"><h2>90-day forecast</h2>${[["0–30 days",6],["31–60 days",5],["61–90 days",7]].map(x=>`<div class="list-item"><span>${x[0]}</span><strong>${x[1]}</strong></div>`).join("")}</section></div>`;
  }
@@ -438,15 +435,6 @@ function openProfile(name){const t=team.find(x=>x.name===name);openModal(`<span 
 $("#createAssignmentBtn").addEventListener("click",assignmentForm);
 function assignmentForm(){openModal(`<span class="eyebrow">Manager workflow</span><h1 class="modal-title">Create assignment</h1><div class="form-grid"><label class="full">Learning content<select><option>Nose-to-Tail Exam</option><option>Phone Answering Expectations</option><option>Membership Enrollment Accuracy</option><option>Urgent Call Triage Simulation</option></select></label><label>Assignment type<select><option>Role-based</option><option>Location-based</option><option>Individual</option><option>All team members</option></select></label><label>Audience<select><option>Service Coordinator</option><option>Membership Coordinator</option><option>Pet Nurse</option><option>DVM / Practitioner</option><option>Leadership</option></select></label><label>Start date<input type="date" value="2026-07-25"></label><label>Due date<input type="date" value="2026-08-08"></label><label class="full">Manager message<textarea rows="3" placeholder="Why is this learning being assigned?"></textarea></label></div><button class="primary" id="saveAssignment">Create assignment</button>`);$("#saveAssignment").addEventListener("click",()=>{$("#modal").close();toast("Assignment created")})}
 function assessmentForm(){openModal(`<span class="eyebrow">Competency validation</span><h1 class="modal-title">New assessment</h1><div class="form-grid"><label>Team member<select>${team.map(t=>`<option>${t.name}</option>`).join("")}</select></label><label>Competency<select>${competencies.map(c=>`<option>${c.name}</option>`).join("")}</select></label><label>Status<select><option>Practicing</option><option>Awaiting Sign-Off</option><option>Certified</option><option>Needs Practice</option></select></label><label>Evidence type<select><option>Observed practice</option><option>Simulation</option><option>Skills lab</option><option>Document upload</option></select></label><label class="full">Notes<textarea rows="4"></textarea></label></div><button class="primary" id="saveAssessment">Save assessment</button>`);$("#saveAssessment").addEventListener("click",()=>{$("#modal").close();toast("Assessment saved")})}
-
-function renderContent(){
- $("#contentStats").innerHTML=[["Published","86"],["In review","7"],["Drafts","12"],["Expiring","4"]].map(x=>`<div class="metric-small"><strong>${x[1]}</strong><span>${x[0]}</span></div>`).join("");
- const f=$("#contentTypeFilter").value,list=contentItems.filter(c=>f==="all"||c.type===f);
- $("#contentInventory").innerHTML=list.map(c=>`<div class="content-item"><div class="content-icon">${c.type[0]}</div><div><strong>${c.title}</strong><span>${c.type} • ${c.academy} • Updated ${c.updated}</span></div><span class="badge ${c.status==="Published"?"good":c.status==="Review"?"warning":"neutral"}">${c.status}</span></div>`).join("");
- $("#contentApprovalQueue").innerHTML=contentItems.filter(c=>c.status!=="Published").map(c=>`<div class="list-item"><div><strong>${c.title}</strong><span>${c.status} • ${c.type}</span></div><button class="secondary">Review</button></div>`).join("");
-}
-$("#contentTypeFilter").addEventListener("change",renderContent);$("#createContentBtn").addEventListener("click",()=>contentForm("Create learning content"));
-function contentForm(title){openModal(`<span class="eyebrow">Content Studio</span><h1 class="modal-title">${title}</h1><div class="form-grid"><label>Content type<select><option>Course</option><option>Procedure</option><option>Simulation</option><option>Quiz</option><option>Reference</option></select></label><label>Academy<select><option>Foundations Academy</option><option>Medical Academy</option><option>Member Services Academy</option><option>Leadership Academy</option><option>Operations Academy</option></select></label><label class="full">Title<input placeholder="Enter title"></label><label>Owner<select><option>Francesca Ferrucci</option><option>Dr. Joshua Horner</option><option>Dr. Kirsten Brown</option></select></label><label>Approval route<select><option>Manager review</option><option>Clinical review</option><option>Executive review</option></select></label><label class="full">Summary<textarea rows="3"></textarea></label></div><button class="primary" id="saveContent">Create draft</button>`);$("#saveContent").addEventListener("click",()=>{$("#modal").close();toast("Content draft created")})}
 
 function renderReports(){
  const reports=["Executive Learning Summary","Compliance Audit","Role Readiness","Simulation Performance","Assignment Completion","Academy Progress"];
@@ -501,6 +489,678 @@ const notifications=[
 $("#notificationList").innerHTML=notifications.map(n=>`<div class="notification-item"><strong>${n[0]}</strong><span>${n[1]}</span></div>`).join("");
 function toggleNotifications(open){$("#notificationDrawer").classList.toggle("open",open);$("#overlay").classList.toggle("open",open)}
 $("#notificationBtn").addEventListener("click",()=>toggleNotifications(true));$("#closeNotifications").addEventListener("click",()=>toggleNotifications(false));$("#overlay").addEventListener("click",()=>toggleNotifications(false));
+
+/* ===== Content Studio — Supabase-backed lesson authoring ===== */
+const csData={lessons:[],courses:[],academies:[],loaded:false,error:null};
+const csFilters={course:"all",status:"all"};
+let csEd=null,csEdTab="basic",csEdNotice=null;
+
+const CS_TABS=[["basic","Basic info"],["header","Header"],["overview","Overview"],["modules","Modules"],["cases","Case studies"],["skillslab","Skills Lab"],["certification","Certification"]];
+const CS_KNOWN_TOP=["header","overview","modules","cases","stations","skillsLab","checklistItems","certRows","certification"];
+const CS_KNOWN_MODULE=["id","icon","title","content","minutes","quiz"];
+const CS_KNOWN_CASE=["id","title","species","patient","signalment","history","stages","content","decisions"];
+const CS_KNOWN_QUIZ=["q","opts","correct","exp"];
+
+function csClone(v){return v===undefined?undefined:JSON.parse(JSON.stringify(v))}
+function csExtras(obj,known){const o={};Object.keys(obj||{}).forEach(k=>{if(!known.includes(k))o[k]=csClone(obj[k])});return o}
+function csDraftLessons(){return csData.lessons.filter(l=>l.status==="draft")}
+function csSlugify(s){return String(s||"").toLowerCase().replace(/['’]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,80)}
+function csFmtDate(iso){if(!iso)return"—";const d=new Date(iso);return isNaN(d)?"—":d.toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"})}
+function csCourseLabel(courseId){
+ const c=csData.courses.find(x=>x.id===courseId);
+ if(!c)return"Unassigned course";
+ const a=csData.academies.find(x=>x.id===c.academy_id);
+ return a?`${a.title} • ${c.title}`:c.title;
+}
+
+/* ---------- data loading ---------- */
+async function csLoadAll(){
+ const [L,C,A]=await Promise.all([
+  sb.from("lessons").select("*").order("sort_order",{ascending:true}),
+  sb.from("courses").select("id,academy_id,slug,title,sort_order").order("sort_order",{ascending:true}),
+  sb.from("academies").select("id,slug,title,sort_order").order("sort_order",{ascending:true})
+ ]);
+ csData.error=(L.error||C.error||A.error)?.message||null;
+ csData.lessons=L.data||[];csData.courses=C.data||[];csData.academies=A.data||[];
+ csData.loaded=!csData.error;
+}
+
+/* ---------- list view ---------- */
+function renderContent(){
+ const statsHost=$("#contentStats"),listHost=$("#contentInventory");
+ if(!statsHost||!listHost)return;
+ if(!csData.loaded){
+  statsHost.innerHTML="";
+  listHost.innerHTML=`<p class="cs-empty">${csData.error?escapeHtml(csData.error):"Loading lessons…"}</p>`;
+  return;
+ }
+ const all=csData.lessons;
+ const totalModules=all.reduce((n,l)=>n+((l.content&&l.content.modules)||[]).length,0);
+ statsHost.innerHTML=[
+  ["Published",all.filter(l=>l.status==="published").length],
+  ["Drafts",all.filter(l=>l.status==="draft").length],
+  ["Modules",totalModules],
+  ["Require sign-off",all.filter(l=>l.requires_signoff).length]
+ ].map(x=>`<div class="metric-small"><strong>${x[1]}</strong><span>${x[0]}</span></div>`).join("");
+
+ const sel=$("#csCourseFilter");
+ if(sel&&sel.options.length<=1){
+  sel.innerHTML=`<option value="all">All courses</option>`+csData.courses.map(c=>`<option value="${c.id}">${escapeHtml(csCourseLabel(c.id))}</option>`).join("");
+ }
+ if(sel)sel.value=csFilters.course;
+ const statusSel=$("#csStatusFilter");if(statusSel)statusSel.value=csFilters.status;
+
+ const list=all.filter(l=>(csFilters.course==="all"||l.course_id===csFilters.course)&&(csFilters.status==="all"||l.status===csFilters.status));
+ if(!list.length){listHost.innerHTML=`<p class="cs-empty">No lessons match these filters.</p>`;return}
+ listHost.innerHTML=list.map(l=>{
+  const mods=((l.content&&l.content.modules)||[]).length;
+  return `<div class="cs-lesson-row">
+   <div><strong>${escapeHtml(l.title||"Untitled lesson")}</strong>
+    <span class="cs-meta">${escapeHtml(csCourseLabel(l.course_id))} • ${mods} module${mods===1?"":"s"} • Updated ${csFmtDate(l.updated_at)}</span></div>
+   <span class="badge ${l.status==="published"?"good":"warning"}">${l.status==="published"?"Published":"Draft"}</span>
+   <div class="cs-row-actions">
+    <button data-cs-edit="${l.id}">Edit</button>
+    <button data-cs-dup="${l.id}">Duplicate</button>
+    ${l.status==="published"?`<button data-cs-preview="${escapeHtml(l.slug)}">Preview</button>`:""}
+    <button class="cs-danger" data-cs-del="${l.id}">Delete</button>
+   </div>
+  </div>`;
+ }).join("");
+ listHost.querySelectorAll("[data-cs-edit]").forEach(b=>b.addEventListener("click",()=>csEditLesson(b.dataset.csEdit)));
+ listHost.querySelectorAll("[data-cs-dup]").forEach(b=>b.addEventListener("click",()=>csDuplicateLesson(b.dataset.csDup)));
+ listHost.querySelectorAll("[data-cs-del]").forEach(b=>b.addEventListener("click",()=>csDeleteLesson(b.dataset.csDel)));
+ listHost.querySelectorAll("[data-cs-preview]").forEach(b=>b.addEventListener("click",()=>csPreview(b.dataset.csPreview)));
+}
+
+function csPreview(slug){
+ if(window.invalidateLessonCache)window.invalidateLessonCache(slug);
+ window.renderLessonPlayer(slug,"overview");
+}
+
+/* ---------- duplicate / delete ---------- */
+function csUniqueSlug(base,excludeId){
+ let s=base,n=2;
+ while(csData.lessons.some(l=>l.slug===s&&l.id!==excludeId)){s=`${base}-${n}`;n++}
+ return s;
+}
+async function csDuplicateLesson(id){
+ const src=csData.lessons.find(l=>l.id===id);if(!src)return;
+ const payload={
+  course_id:src.course_id,slug:csUniqueSlug(`${src.slug}-copy`),title:`${src.title} (Copy)`,
+  summary:src.summary,sort_order:src.sort_order,status:"draft",
+  requires_signoff:src.requires_signoff,content:csClone(src.content)||{}
+ };
+ const {error}=await sb.from("lessons").insert(payload);
+ if(error){toast(`Duplicate failed: ${error.message}`);return}
+ await csLoadAll();renderContent();renderManager();
+ toast(`Created "${payload.title}"`);
+}
+async function csDeleteLesson(id){
+ const l=csData.lessons.find(x=>x.id===id);if(!l)return;
+ if(!confirm(`Delete "${l.title}"? This cannot be undone.`))return;
+ const {error}=await sb.from("lessons").delete().eq("id",id);
+ if(error){
+  const fk=error.code==="23503"||/foreign key|violates/i.test(error.message||"");
+  toast(fk?"Can't delete — learners already have progress on this lesson. Unpublish it instead.":`Delete failed: ${error.message}`);
+  return;
+ }
+ if(window.invalidateLessonCache)window.invalidateLessonCache(l.slug);
+ await csLoadAll();renderContent();renderManager();
+ toast(`Deleted "${l.title}"`);
+}
+
+/* ---------- editor model ---------- */
+function csDefaultCertRows(){return[
+ {req:"Prework completion",criterion:"100% complete before lab"},
+ {req:"Module knowledge checks",criterion:"Average 85% across all modules"},
+ {req:"Image identification assessment",criterion:"85% correct on the assessment set"},
+ {req:"Applied skills preview",criterion:"80% correct on the preview set"},
+ {req:"Skills lab checklist",criterion:"100% of critical items signed off"},
+ {req:"Final attestation",criterion:"Learner signs scope-of-practice statement"}
+]}
+
+// Split a stored stage HTML string back into the editable pieces the form shows.
+// Stages carrying Hannahware markup are flagged locked: their HTML is round-tripped verbatim.
+function csParseStage(caseObj,i){
+ const html=(caseObj.content||[])[i]||"";
+ const grid=html.match(/<div class="choice-grid" id="([^"]+)"><\/div>/);
+ const hostId=grid?grid[1]:null;
+ const origDecision=hostId&&caseObj.decisions?csClone(caseObj.decisions[hostId]):null;
+ const eb=html.match(/<span class="eyebrow">([\s\S]*?)<\/span>/);
+ const h2=html.match(/<h2>([\s\S]*?)<\/h2>/);
+ let body=h2?html.slice(html.indexOf(h2[0])+h2[0].length):html;
+ body=body.replace(/<div class="choice-grid" id="[^"]*"><\/div>/g,"")
+          .replace(/<button class="primary" id="complete[^"]*"[^>]*>[\s\S]*?<\/button>/g,"").trim();
+ return {
+  label:(caseObj.stages||[])[i]||"",
+  eyebrow:eb?eb[1]:"",heading:h2?h2[1]:"",body,
+  raw:html,locked:/data-hwid/.test(html),hostId,dirty:false,decisionDirty:false,
+  origDecision,
+  decision:origDecision?{opts:(origDecision.opts||[]).slice(),correct:origDecision.correct,exp:origDecision.exp||""}:null
+ };
+}
+
+function csModelFromLesson(row){
+ const c=(row&&csClone(row.content))||{};
+ return {
+  id:row?row.id:null,
+  original:row?csClone(row):null,
+  basic:{
+   title:(row&&row.title)||"",slug:(row&&row.slug)||"",summary:(row&&row.summary)||"",
+   course_id:(row&&row.course_id)||"",status:(row&&row.status)||"draft",
+   requires_signoff:!!(row&&row.requires_signoff),sort_order:row?(row.sort_order||0):0
+  },
+  header:Object.assign({title:"",eyebrow:"",subtitle:"",askPrompt:"",resourcesTitle:"",resourcesBody:"",resourcesNote:""},c.header||{}),
+  overview:Object.assign({eyebrow:"",heading:"",intro:"",objectives:[],connectsForwardTitle:"",connectsForward:""},c.overview||{}),
+  modules:(c.modules||[]).map(m=>({
+   id:m.id,icon:m.icon||"",title:m.title||"",minutes:m.minutes,content:m.content||"",
+   quiz:(m.quiz||[]).map(q=>({q:q.q||"",opts:(q.opts||[]).slice(),correct:q.correct,exp:q.exp||"",extras:csExtras(q,CS_KNOWN_QUIZ)})),
+   extras:csExtras(m,CS_KNOWN_MODULE)
+  })),
+  cases:(c.cases||[]).map(cs=>({
+   id:cs.id,title:cs.title||"",species:cs.species||"",patient:cs.patient||"",
+   signalment:cs.signalment||"",history:cs.history||"",
+   stages:(cs.stages||[]).map((_,i)=>csParseStage(cs,i)),
+   extras:csExtras(cs,CS_KNOWN_CASE)
+  })),
+  stations:(c.stations||[]).map(s=>({icon:s.icon||"",time:s.time||"",title:s.title||"",desc:s.desc||""})),
+  skillsLab:Object.assign({heading:""},c.skillsLab||{}),
+  checklistItems:(c.checklistItems||[]).map(x=>({t:x.t||"",critical:!!x.critical})),
+  certRows:(c.certRows||[]).map(x=>({req:x.req||"",criterion:x.criterion||""})),
+  certification:Object.assign({passportTitle:"",certificationTitle:"",attestation:"",signoffBody:"",nextTitle:"",next:""},c.certification||{}),
+  extras:csExtras(c,CS_KNOWN_TOP)
+ };
+}
+
+function csBlankModel(){
+ const m=csModelFromLesson(null);
+ const preferred=csData.courses.find(c=>c.slug==="patient-assessment")||csData.courses[0];
+ m.basic.course_id=preferred?preferred.id:"";
+ m.basic.sort_order=csData.lessons.reduce((n,l)=>Math.max(n,l.sort_order||0),0)+1;
+ m.overview.eyebrow="Why this matters";
+ m.overview.connectsForwardTitle="How this course connects forward";
+ m.certRows=csDefaultCertRows();
+ m.skillsLab.heading="Rotating stations";
+ return m;
+}
+
+/* ---------- serialization ---------- */
+// Emit only keys the source row already had, plus any the trainer actually filled in.
+// Keeps a byte-identical round trip on untouched lessons and avoids writing empty noise on new ones.
+function csEmitObj(form,orig){
+ const out={};
+ Object.keys(form).forEach(k=>{
+  const v=form[k];
+  const had=orig&&Object.prototype.hasOwnProperty.call(orig,k);
+  const empty=v===""||v===null||v===undefined||(Array.isArray(v)&&!v.length);
+  if(had||!empty)out[k]=v;
+ });
+ if(orig)Object.keys(orig).forEach(k=>{if(!(k in form))out[k]=csClone(orig[k])});
+ return out;
+}
+
+const CS_BTN_RE=/<button class="primary" id="complete[^"]*"[^>]*>[\s\S]*?<\/button>/;
+function csStageHtml(cs,s,i,isLast){
+ let h;
+ if(s.dirty){
+  h=(s.eyebrow?`<span class="eyebrow">${s.eyebrow}</span>`:"")+(s.heading?`<h2>${s.heading}</h2>`:"")+(s.body||"");
+ }else{
+  h=s.raw||"";
+ }
+ if(s.decision){
+  if(!s.hostId)s.hostId=`l2c${cs.id}s${i}`;
+  if(h.indexOf(`id="${s.hostId}"`)===-1)h+=`<div class="choice-grid" id="${s.hostId}"></div>`;
+ }else{
+  h=h.replace(/<div class="choice-grid" id="[^"]*"><\/div>/g,"");
+ }
+ if(!isLast)h=h.replace(new RegExp(CS_BTN_RE.source,"g"),"");
+ else if(!CS_BTN_RE.test(h))h+=`<button class="primary" id="completeL2Case${cs.id}" style="margin-top:16px">Complete case</button>`;
+ return h;
+}
+
+function csBuildContent(){
+ const m=csEd,oc=(m.original&&m.original.content)||{};
+ const content={};
+ content.header=csEmitObj(m.header,oc.header);
+ content.overview=csEmitObj(m.overview,oc.overview);
+ content.modules=m.modules.map(mod=>Object.assign({
+  id:mod.id,icon:mod.icon,title:mod.title,content:mod.content,
+  minutes:Number(mod.minutes)||0,
+  quiz:mod.quiz.map(q=>Object.assign({q:q.q,opts:q.opts.slice(),correct:Number(q.correct),exp:q.exp},q.extras))
+ },mod.extras));
+ content.cases=m.cases.map(cs=>{
+  const origCase=(oc.cases||[]).find(x=>x.id===cs.id)||{};
+  const last=cs.stages.length-1;
+  const contentArr=cs.stages.map((s,i)=>csStageHtml(cs,s,i,i===last));
+  const decisions={};
+  cs.stages.forEach(s=>{
+   if(!s.decision)return;
+   decisions[s.hostId]=(!s.decisionDirty&&s.origDecision)?csClone(s.origDecision)
+    :{opts:s.decision.opts.slice(),correct:Number(s.decision.correct),exp:s.decision.exp};
+  });
+  // Safety net: keep any original decision whose host div survived in the emitted HTML.
+  const joined=contentArr.join("");
+  Object.keys(origCase.decisions||{}).forEach(k=>{
+   if(!(k in decisions)&&joined.indexOf(`id="${k}"`)!==-1)decisions[k]=csClone(origCase.decisions[k]);
+  });
+  return Object.assign({
+   id:cs.id,title:cs.title,species:cs.species,patient:cs.patient,
+   signalment:cs.signalment,history:cs.history,
+   stages:cs.stages.map(s=>s.label),content:contentArr,decisions
+  },cs.extras);
+ });
+ content.stations=m.stations.map(s=>({icon:s.icon,time:s.time,title:s.title,desc:s.desc}));
+ content.skillsLab=csEmitObj(m.skillsLab,oc.skillsLab);
+ content.checklistItems=m.checklistItems.map(x=>({t:x.t,critical:!!x.critical}));
+ content.certRows=m.certRows.map(x=>({req:x.req,criterion:x.criterion}));
+ content.certification=csEmitObj(m.certification,oc.certification);
+ return Object.assign(content,m.extras);
+}
+
+/* ---------- editor shell ---------- */
+function csEditLesson(id){
+ const row=csData.lessons.find(l=>l.id===id);if(!row)return;
+ csEd=csModelFromLesson(row);csEdTab="basic";csEdNotice=null;
+ switchView("contentEditor");csRenderEditor();
+}
+function csNewLesson(){
+ csEd=csBlankModel();csEdTab="basic";csEdNotice=null;
+ switchView("contentEditor");csRenderEditor();
+}
+
+function csRenderEditor(){
+ if(!csEd)return;
+ $("#csEditorTitle").textContent=csEd.basic.title||"New lesson";
+ $("#csEditorEyebrow").textContent=csEd.id?"Content Studio • Editing lesson":"Content Studio • New lesson";
+ $("#csEditorSubtitle").textContent=csEd.id?`${csCourseLabel(csEd.basic.course_id)} • ${csEd.basic.status==="published"?"Published":"Draft"}`:"Build a lesson learners will see in the Course Player.";
+ $("#pageLabel").textContent="Content Studio";
+ $("#csPreviewBtn").style.display=csEd.id?"":"none";
+ $("#csTabs").innerHTML=CS_TABS.map(t=>`<button class="chip ${csEdTab===t[0]?"active":""}" data-cs-tab="${t[0]}">${t[1]}</button>`).join("");
+ $$("[data-cs-tab]").forEach(b=>b.addEventListener("click",()=>{csEdTab=b.dataset.csTab;csRenderEditor()}));
+ const body=$("#csTabBody");
+ body.innerHTML=(csEdNotice||"")+csTabHtml();
+ csWireEditorBody(body);
+}
+
+function csNoticeHtml(errs,warns){
+ let h="";
+ if(errs&&errs.length)h+=`<div class="cs-errors"><strong>This lesson can't be saved yet:</strong><ul>${errs.map(e=>`<li>${escapeHtml(e)}</li>`).join("")}</ul></div>`;
+ if(warns&&warns.length)h+=`<div class="cs-warn"><strong>Worth a look:</strong><ul>${warns.map(e=>`<li>${escapeHtml(e)}</li>`).join("")}</ul></div>`;
+ return h;
+}
+
+/* ---------- shared field builders ---------- */
+function csInput(path,label,value,type){
+ return `<label class="cs-field"><span>${label}</span><input type="${type||"text"}" data-p="${path}" value="${escapeHtml(String(value==null?"":value))}"></label>`;
+}
+function csArea(path,label,value,rows){
+ return `<label class="cs-field"><span>${label}</span><textarea rows="${rows||3}" data-p="${path}">${escapeHtml(String(value==null?"":value))}</textarea></label>`;
+}
+function csRich(id,html){
+ return `<div class="cs-rt-toolbar" data-rt-tb="${id}">
+  <button type="button" data-cmd="bold" title="Bold"><b>B</b></button>
+  <button type="button" data-cmd="italic" title="Italic"><i>I</i></button>
+  <button type="button" data-cmd="formatBlock" data-val="h3" title="Heading">H</button>
+  <button type="button" data-cmd="insertUnorderedList" title="Bullet list">&bull; List</button>
+  <button type="button" data-cmd="insertOrderedList" title="Numbered list">1. List</button>
+  <button type="button" data-cmd="createLink" title="Insert link">Link</button>
+  <button type="button" data-cmd="removeFormat" title="Clear formatting">Clear</button>
+ </div><div class="cs-rt" contenteditable="true" data-rt="${id}">${html||""}</div>`;
+}
+function csTools(kind,i,len){
+ return `<div class="cs-item-tools">
+  <button type="button" data-cs-up="${kind}:${i}" ${i===0?"disabled":""} title="Move up">↑</button>
+  <button type="button" data-cs-down="${kind}:${i}" ${i===len-1?"disabled":""} title="Move down">↓</button>
+  <button type="button" class="cs-danger" data-cs-rm="${kind}:${i}" title="Remove">×</button>
+ </div>`;
+}
+
+/* ---------- tab bodies ---------- */
+function csTabHtml(){
+ const m=csEd;
+ if(csEdTab==="basic"){
+  return `<section class="panel cs-section"><h2>Basic info</h2>
+   <p class="cs-help">The slug is the lesson's address in the Course Player. It must be lowercase-kebab-case and unique.</p>
+   <div class="cs-inline">
+    ${csInput("basic.title","Lesson title",m.basic.title)}
+    ${csInput("basic.slug","Slug",m.basic.slug)}
+   </div>
+   <label class="cs-field"><span>Course</span><select data-p="basic.course_id">${csData.courses.map(c=>`<option value="${c.id}" ${c.id===m.basic.course_id?"selected":""}>${escapeHtml(csCourseLabel(c.id))}</option>`).join("")}</select></label>
+   ${csArea("basic.summary","Summary",m.basic.summary,4)}
+   <div class="cs-inline">
+    <label class="cs-field"><span>Status</span><select data-p="basic.status"><option value="draft" ${m.basic.status==="draft"?"selected":""}>Draft</option><option value="published" ${m.basic.status==="published"?"selected":""}>Published</option></select></label>
+    ${csInput("basic.sort_order","Sort order",m.basic.sort_order,"number")}
+   </div>
+   <label class="cs-field cs-opt-row"><input type="checkbox" data-p="basic.requires_signoff" ${m.basic.requires_signoff?"checked":""} style="width:auto"> <span style="margin:0">Requires facilitator sign-off</span></label>
+  </section>`;
+ }
+ if(csEdTab==="header"){
+  return `<section class="panel cs-section"><h2>Header</h2>
+   <p class="cs-help">Shown at the top of the lesson and in the Resources panel.</p>
+   <div class="cs-inline">${csInput("header.title","Title",m.header.title)}${csInput("header.eyebrow","Eyebrow",m.header.eyebrow)}</div>
+   ${csArea("header.subtitle","Subtitle",m.header.subtitle,2)}
+   ${csArea("header.askPrompt","Ask Hannah prompt",m.header.askPrompt,2)}
+   ${csInput("header.resourcesTitle","Resources title",m.header.resourcesTitle)}
+   ${csArea("header.resourcesBody","Resources body",m.header.resourcesBody,4)}
+   ${csArea("header.resourcesNote","Resources note",m.header.resourcesNote,2)}
+  </section>`;
+ }
+ if(csEdTab==="overview"){
+  return `<section class="panel cs-section"><h2>Overview tab</h2>
+   <p class="cs-help">This is the first thing a learner sees when they open the lesson.</p>
+   <div class="cs-inline">${csInput("overview.eyebrow","Eyebrow",m.overview.eyebrow)}${csInput("overview.heading","Heading",m.overview.heading)}</div>
+   ${csArea("overview.intro","Intro",m.overview.intro,4)}
+   <div class="cs-field"><span>Learning objectives</span>
+    ${m.overview.objectives.map((o,i)=>`<div class="cs-opt-row"><input type="text" data-p="overview.objectives.${i}" value="${escapeHtml(o)}"><button type="button" data-cs-rm="objective:${i}" title="Remove">×</button></div>`).join("")}
+    <button type="button" class="cs-add" data-cs-add="objective">+ Add objective</button>
+   </div>
+   ${csInput("overview.connectsForwardTitle","Connects-forward title",m.overview.connectsForwardTitle)}
+   ${csArea("overview.connectsForward","Connects-forward text",m.overview.connectsForward,3)}
+  </section>`;
+ }
+ if(csEdTab==="modules"){
+  return `<section class="panel cs-section"><h2>Modules</h2>
+   <p class="cs-help">Each module is a lesson chapter with its own knowledge check.</p>
+   ${m.modules.map((mod,i)=>`<div class="cs-item">
+    <div class="cs-item-head"><strong>Module ${i+1}</strong>${csTools("module",i,m.modules.length)}</div>
+    <div class="cs-inline">${csInput(`modules.${i}.title`,"Title",mod.title)}${csInput(`modules.${i}.icon`,"Icon",mod.icon)}</div>
+    ${csInput(`modules.${i}.minutes`,"Minutes",mod.minutes,"number")}
+    <div class="cs-field"><span>Module content</span>${csRich(`modules.${i}.content`,mod.content)}</div>
+    <div class="cs-nested">
+     <div class="cs-item-head"><strong>Knowledge check</strong></div>
+     ${mod.quiz.map((q,j)=>`<div class="cs-item">
+      <div class="cs-item-head"><strong>Question ${j+1}</strong>${csTools(`quiz:${i}`,j,mod.quiz.length)}</div>
+      ${csArea(`modules.${i}.quiz.${j}.q`,"Question",q.q,2)}
+      <div class="cs-field"><span>Answer options (select the correct one)</span>
+       ${q.opts.map((o,k)=>`<div class="cs-opt-row">
+        <input type="text" data-p="modules.${i}.quiz.${j}.opts.${k}" value="${escapeHtml(o)}">
+        <label><input type="radio" name="csq-${i}-${j}" data-correct="modules.${i}.quiz.${j}:${k}" ${Number(q.correct)===k?"checked":""}> Correct</label>
+        <button type="button" data-cs-rm="quizopt:${i}:${j}:${k}" title="Remove">×</button>
+       </div>`).join("")}
+       ${q.opts.length<6?`<button type="button" class="cs-add" data-cs-add="quizopt:${i}:${j}">+ Add option</button>`:""}
+      </div>
+      ${csArea(`modules.${i}.quiz.${j}.exp`,"Explanation",q.exp,2)}
+     </div>`).join("")}
+     <button type="button" class="cs-add" data-cs-add="quiz:${i}">+ Add question</button>
+    </div>
+   </div>`).join("")||`<p class="cs-empty">No modules yet.</p>`}
+   <button type="button" class="cs-add" data-cs-add="module">+ Add module</button>
+  </section>`;
+ }
+ if(csEdTab==="cases"){
+  return `<section class="panel cs-section"><h2>Case studies</h2>
+   <p class="cs-help">Stage IDs, decision placeholders and the Complete case button are generated automatically — you never type raw HTML IDs.</p>
+   ${m.cases.map((cs,i)=>`<div class="cs-item">
+    <div class="cs-item-head"><strong>Case ${i+1}</strong>${csTools("case",i,m.cases.length)}</div>
+    <div class="cs-inline">${csInput(`cases.${i}.title`,"Case title",cs.title)}${csInput(`cases.${i}.species`,"Species",cs.species)}</div>
+    <div class="cs-inline">${csInput(`cases.${i}.patient`,"Patient name",cs.patient)}${csInput(`cases.${i}.signalment`,"Signalment",cs.signalment)}</div>
+    ${csArea(`cases.${i}.history`,"History",cs.history,3)}
+    <div class="cs-nested">
+     <div class="cs-item-head"><strong>Stages</strong></div>
+     ${cs.stages.map((s,j)=>`<div class="cs-item">
+      <div class="cs-item-head"><strong>Stage ${j+1}${j===cs.stages.length-1?" • final":""}</strong>${csTools(`stage:${i}`,j,cs.stages.length)}</div>
+      ${csInput(`cases.${i}.stages.${j}.label`,"Stage label (navigation)",s.label)}
+      ${s.locked?`<div class="cs-locked"><strong>Advanced Hannahware stage.</strong> This stage's body contains a simulation widget, so its layout is locked and saved exactly as-is. You can still edit the stage label and the decision below.</div>`
+      :`<div class="cs-inline">${csInput(`cases.${i}.stages.${j}.eyebrow`,"Eyebrow",s.eyebrow)}${csInput(`cases.${i}.stages.${j}.heading`,"Heading",s.heading)}</div>
+        <div class="cs-field"><span>Narrative body</span>${csRich(`cases.${i}.stages.${j}.body`,s.body)}</div>`}
+      <label class="cs-field cs-opt-row"><input type="checkbox" data-cs-dec="${i}:${j}" ${s.decision?"checked":""} style="width:auto"> <span style="margin:0">This stage includes a decision point</span></label>
+      ${s.decision?`<div class="cs-nested">
+       <div class="cs-field"><span>Options (select the correct one)</span>
+        ${s.decision.opts.map((o,k)=>`<div class="cs-opt-row">
+         <input type="text" data-p="cases.${i}.stages.${j}.decision.opts.${k}" data-decdirty="${i}:${j}" value="${escapeHtml(o)}">
+         <label><input type="radio" name="csd-${i}-${j}" data-correct="cases.${i}.stages.${j}.decision:${k}" data-decdirty="${i}:${j}" ${Number(s.decision.correct)===k?"checked":""}> Correct</label>
+         <button type="button" data-cs-rm="decopt:${i}:${j}:${k}" title="Remove">×</button>
+        </div>`).join("")}
+        ${s.decision.opts.length<4?`<button type="button" class="cs-add" data-cs-add="decopt:${i}:${j}">+ Add option</button>`:""}
+       </div>
+       ${csArea(`cases.${i}.stages.${j}.decision.exp`,"Explanation",s.decision.exp,2)}
+      </div>`:""}
+     </div>`).join("")}
+     <button type="button" class="cs-add" data-cs-add="stage:${i}">+ Add stage</button>
+    </div>
+   </div>`).join("")||`<p class="cs-empty">No case studies yet.</p>`}
+   <button type="button" class="cs-add" data-cs-add="case">+ Add case study</button>
+  </section>`;
+ }
+ if(csEdTab==="skillslab"){
+  return `<section class="panel cs-section"><h2>Skills Lab</h2>
+   ${csInput("skillsLab.heading","Heading",m.skillsLab.heading)}
+   <div class="cs-item-head"><strong>Stations</strong></div>
+   ${m.stations.map((s,i)=>`<div class="cs-item">
+    <div class="cs-item-head"><strong>Station ${i+1}</strong>${csTools("station",i,m.stations.length)}</div>
+    <div class="cs-inline">${csInput(`stations.${i}.title`,"Title",s.title)}${csInput(`stations.${i}.time`,"Time",s.time)}</div>
+    ${csInput(`stations.${i}.icon`,"Icon",s.icon)}
+    ${csArea(`stations.${i}.desc`,"Description",s.desc,3)}
+   </div>`).join("")||`<p class="cs-empty">No stations yet.</p>`}
+   <button type="button" class="cs-add" data-cs-add="station">+ Add station</button>
+   <div class="cs-item-head" style="margin-top:22px"><strong>Checklist items</strong></div>
+   <p class="cs-help">Critical items must all be ticked before a learner can request sign-off.</p>
+   ${m.checklistItems.map((x,i)=>`<div class="cs-opt-row">
+    <input type="text" data-p="checklistItems.${i}.t" value="${escapeHtml(x.t)}">
+    <label><input type="checkbox" data-p="checklistItems.${i}.critical" ${x.critical?"checked":""}> Critical</label>
+    <button type="button" data-cs-rm="checklist:${i}" title="Remove">×</button>
+   </div>`).join("")}
+   <button type="button" class="cs-add" data-cs-add="checklist">+ Add checklist item</button>
+  </section>`;
+ }
+ // certification
+ return `<section class="panel cs-section"><h2>Certification</h2>
+  <div class="cs-inline">${csInput("certification.passportTitle","Passport title",m.certification.passportTitle)}${csInput("certification.certificationTitle","Certification title",m.certification.certificationTitle)}</div>
+  ${csArea("certification.attestation","Attestation statement",m.certification.attestation,4)}
+  ${csArea("certification.signoffBody","Sign-off body",m.certification.signoffBody,3)}
+  ${csInput("certification.nextTitle","What comes next — title",m.certification.nextTitle)}
+  ${csArea("certification.next","What comes next — text",m.certification.next,3)}
+  <div class="cs-item-head" style="margin-top:22px"><strong>Certification requirements</strong></div>
+  <p class="cs-help">Only three rows are tracked automatically: <em>Module knowledge checks</em> (row 2), <em>Skills lab checklist</em> (row 5) and <em>Final attestation</em> (row 6). The other rows are shown to learners as text and always read "In progress".</p>
+  ${m.certRows.map((r,i)=>`<div class="cs-item">
+   <div class="cs-item-head"><strong>Row ${i+1}${[1,4,5].includes(i)?" • tracked":" • text only"}</strong>${csTools("certrow",i,m.certRows.length)}</div>
+   <div class="cs-inline">${csInput(`certRows.${i}.req`,"Requirement",r.req)}${csInput(`certRows.${i}.criterion`,"Criterion",r.criterion)}</div>
+  </div>`).join("")}
+  <button type="button" class="cs-add" data-cs-add="certrow">+ Add requirement row</button>
+ </section>`;
+}
+
+/* ---------- editor wiring ---------- */
+function csSetPath(path,val){
+ const parts=path.split(".");let o=csEd;
+ for(let i=0;i<parts.length-1;i++)o=o[parts[i]];
+ o[parts[parts.length-1]]=val;
+}
+function csMarkStageDirty(path){
+ const mm=path.match(/^cases\.(\d+)\.stages\.(\d+)\.(eyebrow|heading|body)$/);
+ if(mm)csEd.cases[+mm[1]].stages[+mm[2]].dirty=true;
+ const dd=path.match(/^cases\.(\d+)\.stages\.(\d+)\.decision\./);
+ if(dd)csEd.cases[+dd[1]].stages[+dd[2]].decisionDirty=true;
+}
+
+function csWireEditorBody(root){
+ root.addEventListener("input",e=>{
+  const el=e.target,path=el.dataset.p;
+  if(!path)return;
+  let v;
+  if(el.type==="checkbox")v=el.checked;
+  else if(el.type==="number")v=el.value===""?0:Number(el.value);
+  else v=el.value;
+  csSetPath(path,v);
+  csMarkStageDirty(path);
+  if(el.dataset.decdirty){const[i,j]=el.dataset.decdirty.split(":").map(Number);csEd.cases[i].stages[j].decisionDirty=true}
+ });
+ root.addEventListener("change",e=>{
+  const el=e.target;
+  if(el.dataset.correct){
+   const[base,idx]=el.dataset.correct.split(":");
+   csSetPath(`${base}.correct`,Number(idx));
+   if(el.dataset.decdirty){const[i,j]=el.dataset.decdirty.split(":").map(Number);csEd.cases[i].stages[j].decisionDirty=true}
+   return;
+  }
+  if(el.dataset.csDec!==undefined&&el.type==="checkbox"){
+   const[i,j]=el.dataset.csDec.split(":").map(Number);
+   const s=csEd.cases[i].stages[j];
+   if(el.checked){
+    s.decision={opts:["",""],correct:0,exp:""};
+    if(!s.hostId)s.hostId=csNewHostId(csEd.cases[i],j);
+   }else{s.decision=null}
+   s.decisionDirty=true;
+   csRenderEditor();
+  }
+ });
+ // Auto-derive the slug from the title until the trainer types their own.
+ const titleEl=root.querySelector('[data-p="basic.title"]');
+ if(titleEl)titleEl.addEventListener("blur",()=>{
+  if(!csEd.id&&!csEd.basic.slug.trim()&&csEd.basic.title.trim()){
+   csEd.basic.slug=csUniqueSlug(csSlugify(csEd.basic.title));
+   csRenderEditor();
+  }
+ });
+ csWireRich(root);
+ root.querySelectorAll("[data-cs-add]").forEach(b=>b.addEventListener("click",()=>csAdd(b.dataset.csAdd)));
+ root.querySelectorAll("[data-cs-rm]").forEach(b=>b.addEventListener("click",()=>csRemove(b.dataset.csRm)));
+ root.querySelectorAll("[data-cs-up]").forEach(b=>b.addEventListener("click",()=>csMove(b.dataset.csUp,-1)));
+ root.querySelectorAll("[data-cs-down]").forEach(b=>b.addEventListener("click",()=>csMove(b.dataset.csDown,1)));
+}
+
+function csWireRich(root){
+ root.querySelectorAll("[data-rt-tb]").forEach(tb=>{
+  const target=root.querySelector(`[data-rt="${CSS.escape(tb.dataset.rtTb)}"]`);
+  if(!target)return;
+  tb.querySelectorAll("button").forEach(b=>b.addEventListener("click",ev=>{
+   ev.preventDefault();target.focus();
+   if(b.dataset.cmd==="createLink"){
+    const u=prompt("Link URL");if(!u)return;
+    document.execCommand("createLink",false,u);
+   }else{
+    document.execCommand(b.dataset.cmd,false,b.dataset.val||null);
+   }
+   csSetPath(target.dataset.rt,target.innerHTML);
+   csMarkStageDirty(target.dataset.rt);
+  }));
+ });
+ root.querySelectorAll("[data-rt]").forEach(el=>el.addEventListener("input",()=>{
+  csSetPath(el.dataset.rt,el.innerHTML);
+  csMarkStageDirty(el.dataset.rt);
+ }));
+}
+
+function csNewHostId(cs,stageIndex){
+ let id=`l2c${cs.id}s${stageIndex}`,n=2;
+ const taken=new Set(cs.stages.map(s=>s.hostId).filter(Boolean));
+ while(taken.has(id)){id=`l2c${cs.id}s${stageIndex}-${n}`;n++}
+ return id;
+}
+function csNextId(arr){return arr.reduce((n,x)=>Math.max(n,Number(x.id)||0),0)+1}
+
+function csAdd(spec){
+ const[kind,a,b]=spec.split(":");
+ const m=csEd;
+ if(kind==="module")m.modules.push({id:csNextId(m.modules),icon:"\u{1F4D8}",title:"",minutes:10,content:"",quiz:[],extras:{}});
+ else if(kind==="quiz")m.modules[+a].quiz.push({q:"",opts:["",""],correct:0,exp:"",extras:{}});
+ else if(kind==="quizopt")m.modules[+a].quiz[+b].opts.push("");
+ else if(kind==="objective")m.overview.objectives.push("");
+ else if(kind==="station")m.stations.push({icon:"\u{1FA7A}",time:"15 min",title:"",desc:""});
+ else if(kind==="checklist")m.checklistItems.push({t:"",critical:false});
+ else if(kind==="certrow")m.certRows.push({req:"",criterion:""});
+ else if(kind==="case")m.cases.push({id:m.cases.length,title:"",species:"",patient:"",signalment:"",history:"",stages:[csNewStage("")],extras:{}});
+ else if(kind==="stage")m.cases[+a].stages.push(csNewStage(""));
+ else if(kind==="decopt")m.cases[+a].stages[+b].decision.opts.push("");
+ if(kind==="decopt"){const[,i,j]=spec.split(":");csEd.cases[+i].stages[+j].decisionDirty=true}
+ csRenderEditor();
+}
+function csNewStage(label){
+ return {label:label||"",eyebrow:"",heading:"",body:"",raw:"",locked:false,hostId:null,dirty:true,decisionDirty:false,origDecision:null,decision:null};
+}
+function csRemove(spec){
+ const p=spec.split(":"),kind=p[0],m=csEd;
+ if(kind==="module")m.modules.splice(+p[1],1);
+ else if(kind==="quiz")m.modules[+p[1]].quiz.splice(+p[2],1);
+ else if(kind==="quizopt"){
+  const q=m.modules[+p[1]].quiz[+p[2]];q.opts.splice(+p[3],1);
+  if(Number(q.correct)>=q.opts.length)q.correct=Math.max(0,q.opts.length-1);
+ }
+ else if(kind==="objective")m.overview.objectives.splice(+p[1],1);
+ else if(kind==="station")m.stations.splice(+p[1],1);
+ else if(kind==="checklist")m.checklistItems.splice(+p[1],1);
+ else if(kind==="certrow")m.certRows.splice(+p[1],1);
+ else if(kind==="case")m.cases.splice(+p[1],1);
+ else if(kind==="stage")m.cases[+p[1]].stages.splice(+p[2],1);
+ else if(kind==="decopt"){
+  const s=m.cases[+p[1]].stages[+p[2]];s.decision.opts.splice(+p[3],1);
+  if(Number(s.decision.correct)>=s.decision.opts.length)s.decision.correct=Math.max(0,s.decision.opts.length-1);
+  s.decisionDirty=true;
+ }
+ csRenderEditor();
+}
+function csMove(spec,dir){
+ const p=spec.split(":"),kind=p[0],m=csEd;
+ const swap=(arr,i)=>{const j=i+dir;if(j<0||j>=arr.length)return;const t=arr[i];arr[i]=arr[j];arr[j]=t};
+ if(kind==="module")swap(m.modules,+p[1]);
+ else if(kind==="quiz")swap(m.modules[+p[1]].quiz,+p[2]);
+ else if(kind==="case")swap(m.cases,+p[1]);
+ else if(kind==="stage")swap(m.cases[+p[1]].stages,+p[2]);
+ else if(kind==="station")swap(m.stations,+p[1]);
+ else if(kind==="certrow")swap(m.certRows,+p[1]);
+ csRenderEditor();
+}
+
+/* ---------- validation + save ---------- */
+function csValidate(){
+ const errs=[],warns=[],m=csEd,b=m.basic;
+ if(!String(b.title).trim())errs.push("Lesson title is required.");
+ if(!String(b.slug).trim())errs.push("Slug is required.");
+ else if(!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(b.slug))errs.push('Slug must be lowercase kebab-case, e.g. "ear-examination-otoscopy".');
+ else if(csData.lessons.some(l=>l.slug===b.slug&&l.id!==m.id))errs.push(`The slug "${b.slug}" is already used by another lesson.`);
+ if(!b.course_id)errs.push("Choose a course for this lesson.");
+ if(!m.modules.length)warns.push("This lesson has no modules yet, so learners will see an empty curriculum.");
+ m.modules.forEach((mod,i)=>mod.quiz.forEach((q,j)=>{
+  const label=`Module ${i+1}, question ${j+1}`;
+  if(q.opts.filter(o=>String(o).trim()).length<2)errs.push(`${label} needs at least 2 answer options.`);
+  if(!(Number(q.correct)>=0&&Number(q.correct)<q.opts.length))errs.push(`${label} has no correct answer selected.`);
+ }));
+ m.cases.forEach((cs,i)=>cs.stages.forEach((s,j)=>{
+  if(!s.decision)return;
+  const label=`Case ${i+1}, stage ${j+1}`;
+  if(s.decision.opts.filter(o=>String(o).trim()).length<2)errs.push(`${label} decision needs at least 2 options.`);
+  if(!(Number(s.decision.correct)>=0&&Number(s.decision.correct)<s.decision.opts.length))errs.push(`${label} decision has no correct option selected.`);
+ }));
+ return{errs,warns};
+}
+
+async function csSave(){
+ if(!csEd)return;
+ const{errs,warns}=csValidate();
+ if(errs.length){csEdNotice=csNoticeHtml(errs,warns);csRenderEditor();window.scrollTo(0,0);toast("Fix the listed problems before saving");return}
+ const b=csEd.basic;
+ const payload={
+  course_id:b.course_id,slug:b.slug.trim(),title:b.title.trim(),summary:b.summary,
+  status:b.status,requires_signoff:!!b.requires_signoff,sort_order:Number(b.sort_order)||0,
+  content:csBuildContent()
+ };
+ const q=csEd.id
+  ? sb.from("lessons").update(payload).eq("id",csEd.id).select().single()
+  : sb.from("lessons").insert(payload).select().single();
+ const{data,error}=await q;
+ if(error){csEdNotice=csNoticeHtml([error.message],warns);csRenderEditor();window.scrollTo(0,0);toast("Save failed");return}
+ if(window.invalidateLessonCache){window.invalidateLessonCache(data.slug);if(csEd.original&&csEd.original.slug!==data.slug)window.invalidateLessonCache(csEd.original.slug)}
+ csEd=csModelFromLesson(data);
+ csEdNotice=csNoticeHtml([],warns);
+ await csLoadAll();renderContent();renderManager();
+ csRenderEditor();
+ toast("Lesson saved");
+}
+
+/* ---------- view wiring ---------- */
+$("#createContentBtn").addEventListener("click",csNewLesson);
+$("#csBackBtn").addEventListener("click",()=>{switchView("content");renderContent()});
+$("#csSaveBtn").addEventListener("click",csSave);
+$("#csPreviewBtn").addEventListener("click",()=>{if(csEd&&csEd.basic.slug)csPreview(csEd.basic.slug)});
+$("#csCourseFilter").addEventListener("change",e=>{csFilters.course=e.target.value;renderContent()});
+$("#csStatusFilter").addEventListener("change",e=>{csFilters.status=e.target.value;renderContent()});
+
+document.addEventListener("hls:authenticated",async()=>{
+ if(!isContentManager())return;
+ await csLoadAll();
+ renderContent();
+ renderManager();
+});
 
 renderDashboard();renderCourses();renderAcademies();renderResources();renderDiagnostics();renderCompetencies();renderSimulations();renderManager();renderContent();renderReports();renderAdmin();updateRole();
 
@@ -1061,6 +1721,11 @@ async function renderLessonPlayer(lessonSlug,tab){
  paintLesson();
 }
 window.renderLessonPlayer=renderLessonPlayer;
+// Content Studio edits a lesson out from under the player's cache; let it drop stale copies.
+window.invalidateLessonCache=slug=>{
+ if(slug){delete lessonCache[slug];delete lessonStates[slug]}
+ else{Object.keys(lessonCache).forEach(k=>delete lessonCache[k]);Object.keys(lessonStates).forEach(k=>delete lessonStates[k])}
+};
 
 function paintLessonHeader(lesson){
  const h=lesson.content.header||{};

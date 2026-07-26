@@ -51,7 +51,7 @@
       <button class="nav" data-view="competencies"><span>✓</span>Competencies</button>
       <button class="nav" data-view="simulations"><span>▶</span>Simulations</button>
       <button class="nav manager-only" data-view="manager"><span>◎</span>Manager Portal</button>
-      <button class="nav manager-only" data-view="content"><span>✎</span>Content Studio</button>
+      <button class="nav content-manager-only" data-view="content"><span>✎</span>Content Studio</button>
       <button class="nav manager-only" data-view="reports"><span>▥</span>Reports</button>
       <button class="nav admin-only" data-view="admin"><span>⚙</span>Administration</button>
     </nav>
@@ -342,23 +342,33 @@
 
     <section class="view" id="content">
       <div class="page-heading">
-        <div><span class="eyebrow">Learning governance</span><h1>Content Studio</h1><p>Create, review, approve, publish, version, and retire Hannah learning resources.</p></div>
+        <div><span class="eyebrow">Learning governance</span><h1>Content Studio</h1><p>Create, edit, publish, and retire Hannah lessons without developer involvement.</p></div>
         <button class="primary" id="createContentBtn">Create content</button>
       </div>
       <div class="content-stats" id="contentStats"></div>
-      <div class="content-layout">
-        <section class="panel">
-          <div class="section-head">
-            <h2>Content inventory</h2>
-            <select id="contentTypeFilter"><option value="all">All types</option><option>Lesson</option><option>Procedure</option><option>Simulation</option><option>Quiz</option></select>
+      <section class="panel">
+        <div class="section-head cs-head">
+          <div><span class="eyebrow">Lesson inventory</span><h2>All lessons</h2></div>
+          <div class="cs-filters">
+            <select id="csCourseFilter"><option value="all">All courses</option></select>
+            <select id="csStatusFilter"><option value="all">All statuses</option><option value="published">Published</option><option value="draft">Draft</option></select>
           </div>
-          <div id="contentInventory"></div>
-        </section>
-        <section class="panel">
-          <h2>Approval queue</h2>
-          <div id="contentApprovalQueue"></div>
-        </section>
+        </div>
+        <div id="contentInventory"></div>
+      </section>
+    </section>
+
+    <section class="view" id="contentEditor">
+      <div class="page-heading">
+        <div><span class="eyebrow" id="csEditorEyebrow">Content Studio</span><h1 id="csEditorTitle">New lesson</h1><p id="csEditorSubtitle">Build a lesson learners will see in the Course Player.</p></div>
+        <div class="cs-editor-actions">
+          <button class="ghost" id="csBackBtn">← Back to Content Studio</button>
+          <button class="secondary" id="csPreviewBtn">Preview in learner view</button>
+          <button class="primary" id="csSaveBtn">Save lesson</button>
+        </div>
       </div>
+      <div class="learning-tabs" id="csTabs"></div>
+      <div id="csTabBody"></div>
     </section>
 
     <section class="view" id="reports">
