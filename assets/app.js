@@ -447,10 +447,11 @@ const persist=()=>localStorage.setItem('hlsTrueLevel5',JSON.stringify(l5State));
 function renderMedicalAcademy(){
  const grid=document.querySelector('#medicalLevelGrid'); if(!grid)return;
  grid.innerHTML=medicalLevels.map(l=>`<article class="level-card ${l.n===10?'current':''} ${l.status==='Locked'?'locked':''}"><div class="section-head"><div class="level-number">${l.n}</div><span class="badge ${l.status==='Complete'?'good':l.status==='Current'?'warning':l.status==='Locked'?'neutral':'warning'}">${l.status}</span></div><h2>Level ${l.n} — ${l.title}</h2><p>${l.desc}</p><div class="progress"><span style="width:${l.progress}%"></span></div><div class="card-footer"><strong>${l.progress}%</strong><button class="${l.n===10?'primary':'secondary'} medical-level-open" data-level="${l.n}" ${l.status==='Locked'?'disabled':''}>${l.status==='Complete'?'Review':`Open Level ${l.n}`}</button></div></article>`).join('');
- document.querySelectorAll('.medical-level-open').forEach(b=>b.onclick=()=>{const n=+b.dataset.level;if(n===5)openLevel5();else if(n===6)openLevel6();else if(n===7||n===9)openLevel7();else if(n>=10)openUpperLevel(n);else openModal(`<span class="eyebrow">Hannah Medical Academy</span><h1 class="modal-title">Level ${n} — ${medicalLevels[n-1].title}</h1><p>${n===8?'Level 8 is complete and remains available for review.':'This level remains part of the same Medical Academy pathway inside the shared Hannah Learning System.'}</p><button class="primary" onclick="document.querySelector('#modal').close()">Return to pathway</button>`)});
+ document.querySelectorAll('.medical-level-open').forEach(b=>b.onclick=()=>{const n=+b.dataset.level;if(n===2)window.openLevel2Hub();else if(n===5)openLevel5();else if(n===6)openLevel6();else if(n===7||n===9)openLevel7();else if(n>=10)openUpperLevel(n);else openModal(`<span class="eyebrow">Hannah Medical Academy</span><h1 class="modal-title">Level ${n} — ${medicalLevels[n-1].title}</h1><p>${n===8?'Level 8 is complete and remains available for review.':'This level remains part of the same Medical Academy pathway inside the shared Hannah Learning System.'}</p><button class="primary" onclick="document.querySelector('#modal').close()">Return to pathway</button>`)});
  document.querySelector('#medicalAcademyMetrics').innerHTML=[['12','Levels available'],['31','Courses completed'],['12','Competencies validated'],['3','Certificates earned']].map(x=>`<div class="metric-card"><strong>${x[0]}</strong><span>${x[1]}</span></div>`).join('');
 }
 function openMedicalAcademy(){renderMedicalAcademy();switchView('medicalAcademy')}
+window.openMedicalAcademy=openMedicalAcademy;
 function openLevel5(tab){if(tab)l5State.tab=tab;persist();renderLevel5();switchView('level5')}
 
 function renderLevel5(){
@@ -782,4 +783,486 @@ const validation=document.querySelector('#openValidationGuide');if(validation)va
 document.querySelectorAll('.foundation-preview').forEach(b=>b.onclick=()=>{const d=foundationsCourseDetails[+b.dataset.course];openModal(`<span class="eyebrow">Foundations Academy • Course ${b.dataset.course}</span><h1 class="modal-title">${d.title}</h1>${d.items.map((x,i)=>`<div class="list-item"><span>${i+1}. ${x}</span><span class="badge ${b.dataset.course==='2'?'warning':'neutral'}">${b.dataset.course==='2'?'Curriculum ready':'Planned'}</span></div>`).join('')}`)});
 
 renderMedicalAcademy();renderLevel5();renderLevel6();renderLevel7();applyHashRoute();
+})();
+
+
+/* ===== Hannah Medical Academy — Level 2: Ear Examination Fundamentals (Patient Assessment) ===== */
+(()=>{
+const L2_SOURCES = {
+  mite:{img:'https://upload.wikimedia.org/wikipedia/commons/c/c8/Otodectes_cynotis.jpg',caption:'Otodectes cynotis (ear mite), microscopic image obtained from a cat.',credit:'Wikimedia Commons — public domain / self-published work',link:'https://commons.wikimedia.org/wiki/File:Otodectes_cynotis.jpg'},
+  otoscopy:{img:'https://upload.wikimedia.org/wikipedia/commons/1/16/Otoscopy_dog.jpg',caption:'Otoscopic examination of a dog\u2019s ear canal.',credit:'Wikimedia Commons (CC BY-SA 3.0)',link:'https://commons.wikimedia.org/wiki/File:Otoscopy_dog.jpg'},
+  otitis:{img:'https://upload.wikimedia.org/wikipedia/commons/c/c9/Otitis_externa.jpg',caption:'Otitis externa — inflammation of the external ear canal.',credit:'Klaus D. Peter, Wiehl, Germany — Wikimedia Commons (CC BY 3.0 DE)',link:'https://commons.wikimedia.org/wiki/File:Otitis_externa.jpg'},
+  catears:{img:'https://upload.wikimedia.org/wikipedia/commons/0/04/EarsOfCat.jpg',caption:'Normal feline pinnae for baseline comparison.',credit:'Wikimedia Commons (CC BY 4.0)',link:'https://commons.wikimedia.org/wiki/File:EarsOfCat.jpg'}
+};
+function sourceFigureL2(key){
+  const s=L2_SOURCES[key];
+  return `<figure class="l2-source-figure"><img src="${s.img}" alt="${s.caption}" loading="lazy"><figcaption><strong>${s.caption}</strong></figcaption></figure>`;
+}
+function l2LegendBadge(x,y,n){
+  return `<circle cx="${x}" cy="${y}" r="10" fill="#063f63"/><text x="${x}" y="${y+4}" font-size="11" font-weight="700" fill="#fff" text-anchor="middle">${n}</text>`;
+}
+function l2LegendRow(x,y,n,label){
+  return `${l2LegendBadge(x,y,n)}<text x="${x+18}" y="${y+4}" font-size="13" font-weight="600" fill="#0b2338">${label}</text>`;
+}
+function canineEarSVGL2(){
+  return `<svg viewBox="0 0 700 260" role="img" aria-label="Diagram of canine ear cross-section showing pinna, L-shaped ear canal, tympanic membrane, middle ear, and inner ear">
+  <rect x="0" y="0" width="700" height="260" fill="none"/>
+  <path d="M40 60 C10 90 10 150 45 175 C65 190 90 175 95 150 L100 95 C100 70 70 45 40 60 Z" fill="#f3a43b" stroke="#063f63" stroke-width="3"/>
+  <path d="M100 100 C150 105 170 120 172 150 C174 175 190 178 210 178" fill="none" stroke="#129bd2" stroke-width="16" stroke-linecap="round"/>
+  <line x1="210" y1="178" x2="238" y2="178" stroke="#0b6696" stroke-width="16" stroke-linecap="round"/>
+  <rect x="236" y="163" width="6" height="30" fill="#063f63"/>
+  <circle cx="270" cy="178" r="22" fill="#8557b5" opacity=".85"/>
+  <circle cx="270" cy="178" r="8" fill="#fff"/>
+  <path d="M292 178 C320 178 320 150 350 150 C375 150 375 178 400 178" fill="none" stroke="#13a283" stroke-width="14" stroke-linecap="round"/>
+  <circle cx="400" cy="178" r="16" fill="#13a283"/>
+  ${l2LegendBadge(52,48,1)}
+  ${l2LegendBadge(140,92,2)}
+  ${l2LegendBadge(215,205,3)}
+  ${l2LegendBadge(239,138,4)}
+  ${l2LegendBadge(270,215,5)}
+  ${l2LegendBadge(400,215,6)}
+  <line x1="430" y1="15" x2="430" y2="245" stroke="#d8e2ea" stroke-width="2"/>
+  ${l2LegendRow(452,42,1,'Pinna')}
+  ${l2LegendRow(452,76,2,'Vertical canal')}
+  ${l2LegendRow(452,110,3,'Horizontal canal')}
+  ${l2LegendRow(452,144,4,'Tympanic membrane')}
+  ${l2LegendRow(452,178,5,'Middle ear (ossicles, bulla)')}
+  ${l2LegendRow(452,212,6,'Inner ear (cochlea, vestibular)')}
+  </svg>`;
+}
+function felineEarSVGL2(){
+  return `<svg viewBox="0 0 700 260" role="img" aria-label="Diagram of feline ear cross-section showing pinna, ear canal, tympanic membrane, middle ear, and inner ear">
+  <path d="M35 40 L100 100 C102 130 90 165 55 178 C25 188 8 160 12 130 C16 95 20 60 35 40 Z" fill="#f3a43b" stroke="#063f63" stroke-width="3"/>
+  <path d="M100 105 C145 112 165 130 168 155 C170 172 185 178 205 178" fill="none" stroke="#129bd2" stroke-width="15" stroke-linecap="round"/>
+  <line x1="205" y1="178" x2="235" y2="178" stroke="#0b6696" stroke-width="15" stroke-linecap="round"/>
+  <rect x="233" y="164" width="6" height="28" fill="#063f63"/>
+  <circle cx="266" cy="178" r="20" fill="#8557b5" opacity=".85"/>
+  <circle cx="266" cy="178" r="7" fill="#fff"/>
+  <path d="M286 178 C312 178 312 152 340 152 C365 152 365 178 392 178" fill="none" stroke="#13a283" stroke-width="13" stroke-linecap="round"/>
+  <circle cx="392" cy="178" r="15" fill="#13a283"/>
+  ${l2LegendBadge(40,42,1)}
+  ${l2LegendBadge(130,95,2)}
+  ${l2LegendBadge(220,200,3)}
+  ${l2LegendBadge(266,148,4)}
+  ${l2LegendBadge(392,205,5)}
+  <line x1="430" y1="15" x2="430" y2="245" stroke="#d8e2ea" stroke-width="2"/>
+  ${l2LegendRow(452,50,1,'Pinna')}
+  ${l2LegendRow(452,92,2,'Ear canal')}
+  ${l2LegendRow(452,134,3,'Tympanic membrane')}
+  ${l2LegendRow(452,176,4,'Middle ear')}
+  ${l2LegendRow(452,218,5,'Inner ear')}
+  </svg>`;
+}
+
+const l2Modules=[
+ {id:1,title:'Ear Anatomy',minutes:12,icon:'\u{1F9E9}',
+  content:`<p>The external ear includes the <strong>pinna</strong>, the vertical and horizontal portions of the external ear canal, and the <strong>tympanic membrane</strong>; the tympanic membrane separates the external and middle ear.</p>
+   <p>The middle ear includes the tympanic bulla, auditory tube opening, and ossicles, while the inner ear includes cochlear and vestibular structures relevant to hearing and balance.</p>
+   <p>Dogs have an <strong>L-shaped ear canal</strong>, which affects drainage and makes technique important during otoscopic examination.</p>
+   <div class="l2-module-grid" style="margin-top:16px">
+     <figure class="l2-anatomy-figure">${canineEarSVGL2()}<figcaption><strong>Original instructional diagram — canine ear cross-section.</strong> Not a photograph; illustrates pinna, L-shaped vertical/horizontal canal, tympanic membrane, middle ear, and inner ear.</figcaption></figure>
+     <figure class="l2-anatomy-figure">${felineEarSVGL2()}<figcaption><strong>Original instructional diagram — feline ear cross-section.</strong> Illustrates pinna, ear canal, tympanic membrane, middle ear, and inner ear.</figcaption></figure>
+   </div>`,
+  quiz:[
+   {q:'Which structure separates the external ear canal from the middle ear?',opts:['Pinna','Tympanic membrane','Cochlea','Auditory tube'],correct:1,exp:'The tympanic membrane separates the external and middle ear.'},
+   {q:'True or False: The canine ear canal is straight, so fluid drains easily from the deepest part of the canal.',opts:['True','False'],correct:1,exp:'False. Dogs have an L-shaped canal, which affects drainage and examination technique.'},
+   {q:'Which structure is part of the inner ear?',opts:['Pinna','Horizontal canal','Cochlea','Ceruminous gland'],correct:2,exp:'The inner ear includes cochlear and vestibular structures.'},
+   {q:'Which phrase is most accurate?',opts:['The pinna is the eardrum.','The pinna helps collect sound toward the ear canal.','The middle ear is the same as the vertical canal.','The tympanic membrane is outside the pinna.'],correct:1,exp:'The pinna collects and transmits sound waves toward the tympanic membrane.'}
+  ]},
+ {id:2,title:'Normal Otoscopic Technique & Handling',minutes:15,icon:'\u{1FA7A}',
+  content:`<p>A safe exam begins with observation and pinna/preauricular skin assessment, followed by otoscopic examination and tympanic membrane assessment where tolerated.</p>
+   <p>Check the otoscope head, handle, speculum, and light before use, and choose a clean, dry speculum appropriate for the patient.</p>
+   <p>Examine the <strong>least affected ear first</strong>, handle the pinna gently since ear disease may be painful, and remember that painful or resistant patients may require sedation or veterinarian reassessment rather than forced examination.</p>
+   ${sourceFigureL2('otoscopy')}`,
+  quiz:[
+   {q:'Before placing a cone in the ear, what should staff do first?',opts:['Clean the ear deeply','Check equipment, choose a clean appropriate cone, and observe/palpate as directed','Add medication','Skip the less affected ear'],correct:1,exp:'Assembly, clean cone selection, light check, and careful handling come first.'},
+   {q:'True or False: It is acceptable to force the otoscope cone past resistance if visualization is poor.',opts:['True','False'],correct:1,exp:'False. Painful or resistant ears may require veterinarian reassessment or sedation rather than forced examination.'},
+   {q:'Which ear should usually be examined first when one ear appears less affected?',opts:['The most painful ear','The less affected ear','The right ear always','The ear the Member points to first'],correct:1,exp:'Begin with the less affected or less irritated ear when possible.'},
+   {q:'Which behavior is a stop-and-escalate sign?',opts:['Patient calmly standing','Severe pain response when the pinna is touched','Clean cone selected','Normal canal view'],correct:1,exp:'Pain may make otoscopy unsafe or require sedation/an alternate plan.'}
+  ]},
+ {id:3,title:'Recognizing Normal vs. Abnormal',minutes:15,icon:'\u{1F441}\uFE0F',
+  content:`<p>Normal ear canals are generally smooth and pale pink, and normal tympanic membranes are semitransparent/concave with a recognizable pars flaccida and pars tensa.</p>
+   <p>Abnormal findings that support staff should recognize and document include erythema, exudate amount/character, erosion, ulceration, edema, stenosis, glandular hyperplasia, masses, foreign material, parasites, and inability to visualize the tympanic membrane.</p>
+   ${sourceFigureL2('otitis')}`,
+  quiz:[
+   {q:'Which finding should be documented as abnormal?',opts:['Pale pink canal with no discharge','Dark exudate with head shaking','Comfortable exam','Normal-looking pinna'],correct:1,exp:'Exudate and head shaking are consistent with abnormal ear findings that warrant veterinary evaluation.'},
+   {q:'True or False: Support staff should describe what they see before assigning a diagnosis.',opts:['True','False'],correct:0,exp:'True. Otitis diagnosis depends on history, otoscopy, and cytologic evaluation, so observable documentation is appropriate at this stage.'},
+   {q:'Which image label is most objective?',opts:['Bad yeast infection','Gross ear','Brown waxy debris and mild redness','Needs antibiotics'],correct:2,exp:'Objective descriptors support veterinarian assessment without overdiagnosis.'},
+   {q:'Which abnormality is listed among otoscopic findings to evaluate?',opts:['Stenosis','Tail length','Tooth calculus','Paw pad color'],correct:0,exp:'Stenosis is among the ear-canal findings to evaluate during otoscopy.'}
+  ]},
+ {id:4,title:'Intro to Common Ear Conditions',minutes:12,icon:'\u{1FA7B}',
+  content:`<p><strong>Otitis externa</strong> is inflammation of the external ear canal and may be acute/chronic, unilateral/bilateral, infectious/noninfectious, and multifactorial.</p>
+   <p><strong>Allergic disease</strong> can cause erythema and pruritus of the pinnae and external ear canals and can predispose to secondary bacterial or yeast otitis externa.</p>
+   <p><strong>Ear mites</strong>, especially in puppies and kittens, can cause intense itching and dark brown/granular discharge.</p>
+   ${sourceFigureL2('mite')}`,
+  quiz:[
+   {q:'Otitis externa is best defined as:',opts:['Inflammation of the external ear canal','A specific yeast diagnosis','A medication name','A middle-ear tumor only'],correct:0,exp:'Otitis externa is inflammation of the external ear canal.'},
+   {q:'True or False: Allergic disease can predispose dogs and cats to secondary bacterial or yeast otitis externa.',opts:['True','False'],correct:0,exp:'True. Allergic conditions can predispose to secondary bacterial or yeast otitis externa.'},
+   {q:'Ear mites are especially important to consider in which foundational case?',opts:['Newly adopted kitten with dark granular debris and scratching','Adult dog with normal ears','Dog with a broken toenail','Cat with no ear signs'],correct:0,exp:'Ear mites are often identified in young cats and can present with dark granular otic discharge.'},
+   {q:'Which statement is scope-appropriate for this stage?',opts:['This chronic ear case is caused only by bacteria.','The ear is red and has discharge; the veterinarian may recommend cytology.','No exam is needed.','Use leftover medication at home.'],correct:1,exp:'Diagnosis is based on history, otoscopy, and cytology rather than assumptions.'}
+  ]},
+ {id:5,title:'Ear Cytology Preview',minutes:15,icon:'\u{1F52C}',
+  content:`<p>Ear cytology is a rapid, inexpensive in-house procedure used to identify microbial or parasitic contributors in pruritic or abnormal ears.</p>
+   <p><em>Malassezia</em> yeast is commonly described as peanut-, snowman-, or shoeprint-shaped; cocci are commonly associated with <em>Staphylococcus</em> or <em>Streptococcus</em>; rods commonly include organisms such as <em>Pseudomonas</em> or <em>Proteus</em>.</p>
+   <p>At this stage, learners only need visual recognition and appropriate documentation/hand-off — collection, slide preparation, grading, and interpretation build on this foundation later in the Patient Assessment and Diagnostics pathway.</p>
+   ${sourceFigureL2('mite')}`,
+  quiz:[
+   {q:'Which cytology finding has a peanut, snowman, or shoeprint appearance?',opts:['Malassezia yeast','Tympanic membrane','Foreign body','Pinna'],correct:0,exp:'Malassezia is described as peanut-, snowman-, or shoeprint-shaped.'},
+   {q:'Which organisms are often described as rods in otic cytology contexts?',opts:['Pseudomonas or Proteus','Fleas only','Heartworms','Roundworms'],correct:0,exp:'Rod bacteria in otitis contexts commonly include Pseudomonas and Proteus.'},
+   {q:'True or False: At this stage, participants are expected to prescribe treatment based on cytology images.',opts:['True','False'],correct:1,exp:'False. This module is recognition and handoff; treatment decisions remain veterinarian-directed.'},
+   {q:'Ear mites are typically sought under which preparation style?',opts:['Mineral oil at low magnification','Urinalysis strip only','Blood smear only','Dental radiograph'],correct:0,exp:'Ectoparasites are evaluated by placing suspicious material in mineral oil and examining at low magnification.'}
+  ]},
+ {id:6,title:'Member Communication Basics',minutes:12,icon:'\u{1F4AC}',
+  content:`<p>Explain observable findings in plain language, avoid saying "it is definitely yeast/bacteria/allergies" before diagnostics, and reinforce that the veterinarian uses history, otoscopy, and cytology to determine next steps.</p>
+   <p>Gather useful history such as duration, prior treatment, seasonality, swimming/moisture, other skin signs, other pets, and medication/cleaner use.</p>
+   ${sourceFigureL2('catears')}`,
+  quiz:[
+   {q:'Which Member statement is best?',opts:['Your pet definitely has yeast.','The ear looks red with debris, and the doctor may recommend a sample to identify what is present.','Use vinegar tonight.','No recheck will be needed.'],correct:1,exp:'Diagnosis and treatment planning depend on history, otoscopy, and cytology.'},
+   {q:'True or False: Staff should ask about seasonality, swimming, prior medications, and other skin signs when collecting an ear history.',opts:['True','False'],correct:0,exp:'True. Otitis workups benefit from detailed history and dermatologic context.'},
+   {q:'A Member asks, "Why can\u2019t we just refill the old ear drops?" The best response is:',opts:['Sure, old drops always work.','The doctor needs to assess the ear because different causes can look similar, and cytology may be needed.','Ear drops are never used.','It is definitely mites.'],correct:1,exp:'Treating otitis successfully requires identifying the inciting cause and current findings.'},
+   {q:'Which phrase avoids overdiagnosis?',opts:['Looks consistent with debris and redness.','Guaranteed bacterial infection.','Definitely allergies.','No diagnostics are needed.'],correct:0,exp:'Observable language supports accurate handoff.'}
+  ]}
+];
+
+const l2Cases=[
+ {id:0,title:'Bella — Wellness Ear Check',patient:'Bella',species:'Feline',signalment:'3-year-old neutered male domestic shorthair cat, indoor only',history:'Presented for wellness exam; owner reports no scratching, head shaking, odor, or discharge.',
+  stages:['Exam Findings','Documentation','Member Communication','Diagnostics Decision','Escalation Triggers'],
+  content:[
+   `<span class="eyebrow">Exam findings</span><h2>Review the otoscopic view</h2><p>Clean pinnae, pale pink canal entrance, minimal cerumen, no erythema, no discharge, no pain response, and an otoscopic view adequate to identify a normal-looking canal and tympanic membrane.</p>${sourceFigureL2('catears')}`,
+   `<span class="eyebrow">Documentation</span><h2>Which findings should be documented?</h2><div class="choice-grid" id="l2c0s1"></div>`,
+   `<span class="eyebrow">Member communication</span><h2>What should the team say to the Member?</h2><div class="choice-grid" id="l2c0s2"></div>`,
+   `<span class="eyebrow">Diagnostics decision</span><h2>Does this patient need cytology based on the information gathered?</h2><div class="choice-grid" id="l2c0s3"></div>`,
+   `<span class="eyebrow">Escalation triggers</span><h2>What would make the team stop and get the veterinarian sooner?</h2><div class="choice-grid" id="l2c0s4"></div><button class="primary" id="completeL2Case0" style="margin-top:16px">Complete case</button>`
+  ],
+  decisions:{
+   l2c0s1:{opts:['"Both pinnae clean; canals appear pale pink; minimal cerumen; no discharge noted; patient tolerated exam."','"Ears look totally fine, nothing to say."','"Cat has healthy ears, no need to check again for years."'],correct:0,exp:'Objective, specific documentation supports the medical record and future comparison.'},
+   l2c0s2:{opts:['"Your cat has perfect ears forever."','"The doctor did not see concerning ear findings today; if you notice head shaking, odor, discharge, or scratching, please call us."','"No further ear care is ever needed."'],correct:1,exp:'This response is accurate, non-diagnostic, and gives the Member clear next steps.'},
+   l2c0s3:{opts:['Yes, cytology is required today.','Not based on the presented normal wellness findings, but the veterinarian makes final diagnostic decisions.','Cytology is never needed for cats.'],correct:1,exp:'Normal wellness findings do not indicate cytology, but the DVM always makes the final call.'},
+   l2c0s4:{opts:['Pain, sudden resistance, discharge, foreign material, bleeding, severe redness, suspected mass, or inability to safely visualize.','A slightly dusty exam room.','The owner being in a hurry.'],correct:0,exp:'These are the recognized stop-and-escalate signs for staff at this level.'}
+  }},
+ {id:1,title:'Cooper — Mild Otitis Externa',patient:'Cooper',species:'Canine',signalment:'5-year-old spayed female Cocker spaniel mix',history:'Two weeks of intermittent head shaking and ear rubbing; owner reports "a musty smell" and occasional brown debris; dog swims weekly.',
+  stages:['Exam Findings','Documentation','Handoff','Scope Check','Next Steps'],
+  content:[
+   `<span class="eyebrow">Exam findings</span><h2>Review the otoscopic view</h2><p>Right ear with mild erythema and brown waxy debris; left ear mildly pink with less debris; dog tolerates gentle pinna handling but withdraws when the cone is advanced too quickly.</p>${sourceFigureL2('otitis')}`,
+   `<span class="eyebrow">Documentation</span><h2>What observable findings should be documented without diagnosing?</h2><div class="choice-grid" id="l2c1s1"></div>`,
+   `<span class="eyebrow">Handoff</span><h2>What is the correct next-step handoff to the veterinarian?</h2><div class="choice-grid" id="l2c1s2"></div>`,
+   `<span class="eyebrow">Scope check</span><h2>Which statement is not appropriate for support staff at this level?</h2><div class="choice-grid" id="l2c1s3"></div>`,
+   `<span class="eyebrow">Next steps</span><h2>Which upcoming topic will build on this case?</h2><div class="choice-grid" id="l2c1s4"></div><button class="primary" id="completeL2Case1" style="margin-top:16px">Complete case</button>`
+  ],
+  decisions:{
+   l2c1s1:{opts:['"Right ear: mild redness and brown waxy debris; odor reported by Member; patient mildly sensitive during otoscope attempt. Left ear: mild pinkness and less debris."','"Dog has a bad ear infection."','"Nothing unusual, just needs a bath."'],correct:0,exp:'Objective, side-specific documentation supports accurate veterinary review.'},
+   l2c1s2:{opts:['"Tell the veterinarian the dog has head shaking, swimming history, odor, debris, erythema, and sensitivity; ask whether cytology is indicated before cleaning or medication."','"Just start ear drops now."','"No handoff is needed, it is minor."'],correct:0,exp:'A complete, objective handoff lets the DVM decide on cytology and next steps.'},
+   l2c1s3:{opts:['"I will document what I observed for the doctor to review."','"This is definitely yeast, and the doctor will prescribe antifungal drops."','"I will ask the doctor whether cytology is indicated."'],correct:1,exp:'Diagnosing yeast before cytology overstates scope at this level.'},
+   l2c1s4:{opts:['Cytology collection, preparation, organism identification, and diagnostic decision-making.','Surgical suturing technique.','Radiograph positioning for the thorax.'],correct:0,exp:'The Patient Assessment and Diagnostics pathway builds directly on this case with hands-on cytology skills.'}
+  }},
+ {id:2,title:'Milo — Suspected Ear Mites',patient:'Milo',species:'Feline (kitten)',signalment:'14-week-old intact male domestic medium hair kitten, recently adopted from a multi-cat environment',history:'Owner reports intense scratching, head shaking, and dark crumbly material in both ears.',
+  stages:['Exam Findings','Documentation','Member Communication','Household Risk','Image ID'],
+  content:[
+   `<span class="eyebrow">Exam findings</span><h2>Review the otoscopic and microscope preview</h2><p>Bilateral dark granular "coffee-ground" debris, erythematous canal entrance, excoriations around the pinnae, and a microscope preview image showing an <em>Otodectes cynotis</em> adult mite in mineral oil.</p>${sourceFigureL2('mite')}`,
+   `<span class="eyebrow">Documentation</span><h2>What observable findings should be documented?</h2><div class="choice-grid" id="l2c2s1"></div>`,
+   `<span class="eyebrow">Member communication</span><h2>What should the team say to the Member before the veterinarian confirms diagnosis?</h2><div class="choice-grid" id="l2c2s2"></div>`,
+   `<span class="eyebrow">Household risk</span><h2>Why should other pets in the home be mentioned to the veterinarian?</h2><div class="choice-grid" id="l2c2s3"></div>`,
+   `<span class="eyebrow">Image ID</span><h2>Which image should learners identify in this case?</h2><div class="choice-grid" id="l2c2s4"></div><button class="primary" id="completeL2Case2" style="margin-top:16px">Complete case</button>`
+  ],
+  decisions:{
+   l2c2s1:{opts:['"Bilateral dark granular debris; scratching/head shaking reported; redness at canal entrance; excoriations around pinnae."','"Kitten definitely has ear mites, no need to check."','"Ears look a little dirty."'],correct:0,exp:'This documentation is observable and specific without assuming the final diagnosis.'},
+   l2c2s2:{opts:['"This type of debris can be seen with parasites such as ear mites, but the veterinarian will confirm the cause and recommend the safest plan."','"Your kitten definitely has ear mites, here is medication."','"This is nothing to worry about."'],correct:0,exp:'This communicates a reasonable possibility without overdiagnosing or overpromising.'},
+   l2c2s3:{opts:['Ear mite infestation follows direct contact and commonly occurs in close-contact animals, so household exposure may matter.','It is just polite small talk.','Other pets are never relevant to ear cases.'],correct:0,exp:'Contagion risk to other household pets is clinically relevant and should be shared with the DVM.'},
+   l2c2s4:{opts:['Low-power mineral-oil image of an ear mite or mite eggs.','A chest radiograph.','A blood smear for anemia.'],correct:0,exp:'Ear mites are identified via low-power mineral-oil preparation.'}
+  }}
+];
+
+const l2Stations=[
+ {icon:'\u{1FA7A}',title:'Station 1: Normal Ear Exam',time:'18 min',desc:'Observe pinnae, describe normal findings, demonstrate gentle positioning, and identify stop points on an approved calm patient or teaching model.'},
+ {icon:'\u{1F50E}',title:'Station 2: Otoscope & Model Practice',time:'18 min',desc:'Assemble the otoscope, choose cone size, verify light, and navigate a model from entrance to horizontal canal while maintaining visualization.'},
+ {icon:'\u{1F5BC}\uFE0F',title:'Station 3: Image ID Gallery',time:'18 min',desc:'Sort images into normal, abnormal, stop/escalate, and insufficient-view categories using observable language.'},
+ {icon:'\u{1F52C}',title:'Station 4: Cytology Preview Gallery',time:'18 min',desc:'Match microscope images to yeast, cocci, rods, inflammatory cells, and mite/egg categories, and identify what to hand off.'},
+ {icon:'\u{1F5E3}\uFE0F',title:'Station 5: Member Roleplay',time:'18 min',desc:'Explain normal exam, mild abnormal findings, and suspected mites to a "Member" using non-diagnostic, empathetic language.'}
+];
+
+const l2ChecklistItems=[
+ {t:'Washes/sanitizes hands and prepares clean equipment.',critical:true},
+ {t:'Confirms otoscope head is secure, light works, and cone is clean/appropriate.',critical:true},
+ {t:'Observes patient body language before touching ears.',critical:true},
+ {t:'Handles pinna gently and avoids painful manipulation.',critical:true},
+ {t:'Starts with less affected ear when applicable.',critical:false},
+ {t:'Maintains visualization while advancing the cone on model.',critical:true},
+ {t:'Does not force cone past resistance or pain.',critical:true},
+ {t:'Describes findings objectively: color, debris, discharge, odor reported, swelling, visible lesion, patient response.',critical:true},
+ {t:'Correctly identifies normal vs. abnormal image findings.',critical:true},
+ {t:'Recognizes yeast/cocci/rods/mite examples at a foundational level.',critical:false},
+ {t:'Uses role-appropriate language and avoids diagnosis/treatment promises.',critical:true},
+ {t:'Provides a concise veterinarian handoff using history + observed findings.',critical:true}
+];
+
+const l2CertRows=[
+ {req:'Prework completion',criterion:'100% complete before lab'},
+ {req:'Module knowledge checks',criterion:'Average 85% across all six modules'},
+ {req:'Image identification assessment',criterion:'85% correct on normal/abnormal/escalate set'},
+ {req:'Cytology preview assessment',criterion:'80% correct on organism/artifact set'},
+ {req:'Skills lab checklist',criterion:'100% of critical items signed off'},
+ {req:'Final attestation',criterion:'Learner signs scope-of-practice statement'}
+];
+
+let l2State=JSON.parse(localStorage.getItem('hlsTrueLevel2')||JSON.stringify({tab:'overview',moduleProgress:{},moduleScores:{},caseId:null,caseStep:0,casesCompleted:[],checklist:{},attested:false,signoffRequested:false}));
+function persistL2(){localStorage.setItem('hlsTrueLevel2',JSON.stringify(l2State))}
+
+function l2CompletedModuleCount(){return Object.values(l2State.moduleProgress).filter(Boolean).length}
+function l2OverallPercent(){
+ const modulePct=(l2CompletedModuleCount()/l2Modules.length)*100;
+ const checklistPct=(Object.values(l2State.checklist).filter(Boolean).length/l2ChecklistItems.length)*100;
+ const casePct=(l2State.casesCompleted.length/l2Cases.length)*100;
+ return Math.round((modulePct+checklistPct+casePct)/3);
+}
+
+const level2Lessons=[
+ {id:'nose-to-tail',title:'Nose-to-Tail Examination',desc:'Systematic head-to-tail physical exam sequence and normal-finding documentation.',status:'planned'},
+ {id:'history',title:'Patient History',desc:'Structured history-taking, owner interview technique, and chart documentation.',status:'planned'},
+ {id:'tpr',title:'TPR',desc:'Temperature, pulse, and respiration: technique, normal ranges, and red flags.',status:'planned'},
+ {id:'bcs',title:'Body Condition Scoring',desc:'9-point body condition and muscle condition scoring with Member communication.',status:'planned'},
+ {id:'pain',title:'Pain Assessment',desc:'Species-specific pain scales, behavioral cues, and escalation criteria.',status:'planned'},
+ {id:'hydration',title:'Hydration Assessment',desc:'Skin turgor, mucous membranes, and dehydration percentage estimation.',status:'planned'},
+ {id:'neuro',title:'Neurologic Screening',desc:'Cranial nerve checks, gait, proprioception, and reflex screening basics.',status:'planned'},
+ {id:'mobility',title:'Mobility Evaluation',desc:'Gait analysis, orthopedic screening, and lameness grading fundamentals.',status:'planned'},
+ {id:'ophthalmic',title:'Ophthalmic Basics',desc:'External eye exam, pupillary light reflex, and common abnormality recognition.',status:'planned'},
+ {id:'otic',title:'Otic Examination',desc:'Ear anatomy, safe otoscopic technique, normal vs. abnormal recognition, common condition awareness, cytology preview, and Member communication.',status:'live'},
+ {id:'derm',title:'Dermatologic Examination',desc:'Skin and coat exam technique, lesion recognition, and cytology preview.',status:'planned'}
+];
+
+function openLevel2Hub(){renderLevel2Hub();switchView('level2Hub')}
+
+function renderLevel2Hub(){
+ const oticPct=l2OverallPercent();
+ const completeCount=level2Lessons.filter(l=>l.status==='live').length;
+ const hubPct=Math.round((oticPct*completeCount)/level2Lessons.length);
+ const ring=document.querySelector('#level2HubProgressRing'); if(ring)ring.innerHTML=`<strong>${hubPct}%</strong><span>Level complete</span>`;
+ const grid=document.querySelector('#level2LessonGrid'); if(!grid)return;
+ grid.innerHTML=level2Lessons.map((l,i)=>{
+  const n=i+1;
+  const isLive=l.status==='live';
+  const pct=isLive?oticPct:0;
+  const badge=isLive?(pct>=100?'good':'warning'):'neutral';
+  const badgeLabel=isLive?(pct>=100?'Complete':pct>0?'In progress':'Start here'):'Coming soon';
+  const cta=isLive?(pct>0?'Continue lesson':'Start lesson'):'Coming soon';
+  return `<article class="level-card ${isLive?'':'locked'}" data-lesson="${l.id}"><div class="section-head"><div class="level-number">${n}</div><span class="badge ${badge}">${badgeLabel}</span></div><h2>${l.title}</h2><p>${l.desc}</p><div class="progress"><span style="width:${pct}%"></span></div><div class="card-footer"><strong>${pct}%</strong><button class="${isLive?'primary':'secondary'} l2-lesson-open" data-lesson="${l.id}" ${isLive?'':'disabled'}>${cta}</button></div></article>`;
+ }).join('');
+ document.querySelectorAll('.l2-lesson-open').forEach(b=>b.onclick=()=>{
+  const lesson=level2Lessons.find(x=>x.id===b.dataset.lesson);
+  if(lesson&&lesson.status==='live')openLevel2();
+  else openModal(`<span class="eyebrow">Patient Assessment • Coming soon</span><h1 class="modal-title">${lesson.title}</h1><p>${lesson.desc}</p><p class="safety-note"><strong>In development</strong><span>This lesson is planned for Level 2 — Patient Assessment and will appear here once built and clinically reviewed.</span></p><button class="primary" onclick="document.querySelector('#modal').close()">Close</button>`);
+ });
+}
+window.openLevel2Hub=openLevel2Hub;
+
+function openLevel2(tab){if(tab)l2State.tab=tab;persistL2();renderLevel2();switchView('level2')}
+
+function renderLevel2(){
+ document.querySelectorAll('[data-l2tab]').forEach(b=>b.classList.toggle('active',b.dataset.l2tab===l2State.tab));
+ const host=document.querySelector('#level2Content'); if(!host)return;
+ const pct=l2OverallPercent();
+ const ring=document.querySelector('#l2ProgressRing'); if(ring)ring.innerHTML=`<strong>${pct}%</strong><span>Complete</span>`;
+
+ if(l2State.tab==='overview'){
+  host.innerHTML=`<div class="l5-dashboard-grid">
+   <section class="panel span-2">
+    <span class="eyebrow">Why this matters</span>
+    <h2>Ear exams are one of the most common reasons pets visit Hannah</h2>
+    <p>Otitis externa is common in dogs and cats, and diagnosis is built from history, otoscopic examination, and cytologic evaluation. This course intentionally stops at recognition, documentation, safe handling, and escalation rather than independent diagnosis or treatment selection.</p>
+    <ul class="l2-obj-list">
+     <li>Identify pinna, ear canal, tympanic membrane, middle ear, and inner ear structures.</li>
+     <li>Demonstrate a safe, gentle otoscopic exam workflow and know when to stop.</li>
+     <li>Classify findings as normal, mildly abnormal, or urgent/escalate.</li>
+     <li>Recognize foundational cytology organisms and ear mites at a visual level.</li>
+     <li>Use plain, non-diagnostic Member communication.</li>
+    </ul>
+    <p class="safety-note" style="margin-top:16px"><strong>How this course connects forward</strong><span>Ear Examination Fundamentals is the flagship course inside <strong>Level 2 (Patient Assessment)</strong> — vitals, history-taking, and full physical assessment modules join this level next, then hand off into cytology collection and interpretation, treatment-plan implementation under DVM direction, and advanced dermatology case review in later levels.</span></p>
+   </section>
+   <section class="panel">
+    <span class="eyebrow">Your progress</span>
+    <h2>${pct}% complete</h2>
+    <div class="progress"><span style="width:${pct}%"></span></div>
+    <div class="list-item"><span>Modules complete</span><strong>${l2CompletedModuleCount()} of ${l2Modules.length}</strong></div>
+    <div class="list-item"><span>Case studies complete</span><strong>${l2State.casesCompleted.length} of ${l2Cases.length}</strong></div>
+    <div class="list-item"><span>Skills checklist</span><strong>${Object.values(l2State.checklist).filter(Boolean).length} of ${l2ChecklistItems.length}</strong></div>
+    <div class="card-footer"><button class="primary l2-jump" data-tab="curriculum">Continue curriculum</button></div>
+   </section>
+  </div>`;
+ }
+ if(l2State.tab==='curriculum'){
+  host.innerHTML=`<div class="l2-module-grid">${l2Modules.map(m=>{
+   const done=!!l2State.moduleProgress[m.id];
+   const score=l2State.moduleScores[m.id];
+   return `<article class="l2-module-card"><div class="section-head"><div class="l2-module-num">${m.id}</div><span class="badge ${done?'good':'neutral'}">${done?'Complete':'Not started'}</span></div><h3>${m.title}</h3><p>${m.minutes} min \u2022 knowledge check on completion${score!=null?` \u2022 scored ${score}%`:''}</p><button class="${done?'secondary':'primary'} l2-open-module" data-module="${m.id}">${done?'Review module':'Open module'}</button></article>`;
+  }).join('')}</div>`;
+ }
+ if(l2State.tab==='cases'){
+  host.innerHTML=`<div class="l2-case-list">${l2Cases.map(c=>{
+   const done=l2State.casesCompleted.includes(c.id);
+   return `<article class="clinical-case"><span class="eyebrow">${c.species}</span><h2>${c.title}</h2><p>${c.history}</p><span class="badge ${done?'good':'neutral'}">${done?'Completed':'Not started'}</span><br><button class="${done?'secondary':'primary'} l2-open-case" data-case="${c.id}">${done?'Review case':'Open case'}</button></article>`;
+  }).join('')}</div>`;
+ }
+ if(l2State.tab==='skillslab'){
+  host.innerHTML=`<section class="panel">
+   <span class="eyebrow">Hands-on skills lab</span><h2>Five rotating stations \u2022 90 minutes total</h2>
+   <div class="l2-station-grid">${l2Stations.map(s=>`<article class="l2-station-card"><div class="l2-station-icon">${s.icon}</div><h3>${s.title}</h3><p>${s.desc}</p><span class="badge neutral">${s.time}</span></article>`).join('')}</div>
+  </section>
+  <section class="panel" style="margin-top:18px">
+   <div class="section-head"><div><span class="eyebrow">Skills checklist / rubric</span><h2>Facilitator sign-off — ${Object.values(l2State.checklist).filter(Boolean).length}/${l2ChecklistItems.length} complete (${Math.round((Object.values(l2State.checklist).filter(Boolean).length/l2ChecklistItems.length)*100)}%)</h2></div></div>
+   <div class="checklist-grid">${l2ChecklistItems.map((item,i)=>`<label class="l2-check-row ${l2State.checklist[i]?'done':''}"><input type="checkbox" data-l2-check="${i}" ${l2State.checklist[i]?'checked':''}><span>${item.t} ${item.critical?'<span class=\\"badge risk\\">Critical</span>':'<span class=\\"badge neutral\\">Non-critical</span>'}</span></label>`).join('')}</div>
+   <p class="safety-note" style="margin-top:14px"><strong>Pass standard</strong><span>All critical items must be marked complete, and no safety-critical item may be missed.</span></p>
+  </section>`;
+ }
+ if(l2State.tab==='certification'){
+  const modAvg=Object.keys(l2State.moduleScores).length?Math.round(Object.values(l2State.moduleScores).reduce((a,b)=>a+b,0)/Object.values(l2State.moduleScores).length):0;
+  const criticalDone=l2ChecklistItems.every((item,i)=>!item.critical||l2State.checklist[i]);
+  host.innerHTML=`<section class="panel">
+   <div class="section-head"><div><span class="eyebrow">Competency passport</span><h2>Ear Examination Foundation</h2><p>Certification title: "Ear Examination Foundation: Cleared for Supervised Ear Exam Support."</p></div><button class="primary" id="requestL2Validation">Request sign-off</button></div>
+   <div class="l2-cert-table">
+    <div class="l2-cert-head"><span>Requirement</span><span>Status</span><span>Passing criterion</span></div>
+    ${l2CertRows.map((r,i)=>{
+      let status='In progress';
+      if(i===1)status=modAvg>=85?'Met':`${modAvg}% avg`;
+      if(i===4)status=criticalDone?'Met':'Incomplete';
+      if(i===5)status=l2State.attested?'Signed':'Not signed';
+      const good=status==='Met'||status==='Signed';
+      return `<div class="l2-cert-row"><strong>${r.req}</strong><span class="badge ${good?'good':'warning'}">${status}</span><span>${r.criterion}</span></div>`;
+    }).join('')}
+   </div>
+   <label class="l2-check-row ${l2State.attested?'done':''}" style="margin-top:16px"><input type="checkbox" id="l2AttestCheck" ${l2State.attested?'checked':''}><span>I attest that this course does not authorize independent diagnosis, cytology interpretation for treatment, ear cleaning decisions, or medication recommendations.</span></label>
+   <p class="safety-note" style="margin-top:14px"><strong>What comes next in Patient Assessment</strong><span>Upcoming Level 2 modules add vitals, history-taking, and full physical assessment. Later levels add cytology collection and slide prep, treatment-plan implementation and medication administration technique under DVM direction, and advanced dermatology case review.</span></p>
+  </section>`;
+ }
+ wireLevel2();
+}
+
+function wireLevel2(){
+ document.querySelectorAll('.l2-jump').forEach(b=>b.onclick=()=>{l2State.tab=b.dataset.tab;persistL2();renderLevel2()});
+ document.querySelectorAll('.l2-open-module').forEach(b=>b.onclick=()=>openL2Module(+b.dataset.module));
+ document.querySelectorAll('.l2-open-case').forEach(b=>b.onclick=()=>openL2Case(+b.dataset.case));
+ document.querySelectorAll('[data-l2-check]').forEach(cb=>cb.onchange=()=>{l2State.checklist[cb.dataset.l2Check]=cb.checked;persistL2();renderLevel2();toast(cb.checked?'Checklist item marked complete':'Checklist item unchecked')});
+ document.querySelector('#l2AttestCheck')?.addEventListener('change',e=>{l2State.attested=e.target.checked;persistL2();renderLevel2();toast(e.target.checked?'Attestation signed':'Attestation removed')});
+ document.querySelector('#requestL2Validation')?.addEventListener('click',()=>{
+  l2State.signoffRequested=true;persistL2();
+  openModal('<span class="eyebrow">Competency validation</span><h1>Request sign-off</h1><p>Select an approved validator and shift for observed sign-off of the Ear Examination Foundation competencies.</p><button class="primary" onclick="document.querySelector(\'#modal\').close()">Submit request</button>');
+  toast('Sign-off requested');
+ });
+}
+
+/* ---- Module modal with knowledge check ---- */
+let l2ActiveModule=null, l2QuizAnswers={};
+function openL2Module(id){
+ l2ActiveModule=l2Modules.find(m=>m.id===id);
+ l2QuizAnswers={};
+ renderL2ModuleModal();
+}
+function renderL2ModuleModal(){
+ const m=l2ActiveModule;
+ const answeredCount=Object.keys(l2QuizAnswers).length;
+ openModal(`<span class="eyebrow">Module ${m.id} of ${l2Modules.length} \u2022 ${m.minutes} min</span>
+  <h1 class="modal-title">${m.title}</h1>
+  ${m.content}
+  <div style="margin-top:22px;border-top:1px solid var(--line);padding-top:18px">
+   <div class="section-head"><div><span class="eyebrow">Knowledge check</span><h2>Answer all ${m.quiz.length} questions</h2></div><span class="l2-quiz-score" id="l2QuizScoreLabel">${answeredCount}/${m.quiz.length} answered</span></div>
+   <div id="l2QuizContainer">${m.quiz.map((q,qi)=>`
+    <div class="l2-quiz-question">
+     <h4>${qi+1}. ${q.q}</h4>
+     <div id="l2q-${qi}">${q.opts.map((o,oi)=>`<button class="decision-option" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('')}</div>
+     <div id="l2fb-${qi}"></div>
+    </div>`).join('')}
+   </div>
+   <div id="l2QuizResult" style="margin-top:16px"></div>
+  </div>`);
+ document.querySelectorAll('#l2QuizContainer .decision-option').forEach(btn=>btn.onclick=()=>l2AnswerQuestion(+btn.dataset.qi,+btn.dataset.oi));
+ if(answeredCount===m.quiz.length)renderL2QuizResult();
+}
+function l2AnswerQuestion(qi,oi){
+ const m=l2ActiveModule;
+ if(l2QuizAnswers[qi])return;
+ const q=m.quiz[qi];
+ const isCorrect=oi===q.correct;
+ l2QuizAnswers[qi]={oi,correct:isCorrect};
+ const wrap=document.querySelector(`#l2q-${qi}`);
+ wrap.querySelectorAll('.decision-option').forEach((btn,idx)=>{
+  btn.disabled=true;
+  if(idx===q.correct)btn.classList.add('correct');
+  else if(idx===oi)btn.classList.add('wrong');
+ });
+ document.querySelector(`#l2fb-${qi}`).innerHTML=`<div class="feedback"><p><strong>${isCorrect?'Correct.':'Not quite.'}</strong> ${q.exp}</p></div>`;
+ const label=document.querySelector('#l2QuizScoreLabel');
+ if(label)label.textContent=`${Object.keys(l2QuizAnswers).length}/${m.quiz.length} answered`;
+ if(Object.keys(l2QuizAnswers).length===m.quiz.length)renderL2QuizResult();
+}
+function renderL2QuizResult(){
+ const m=l2ActiveModule;
+ const correctCount=Object.values(l2QuizAnswers).filter(a=>a.correct).length;
+ const pct=Math.round((correctCount/m.quiz.length)*100);
+ const passed=pct>=75;
+ if(passed){
+  l2State.moduleProgress[m.id]=true;
+  l2State.moduleScores[m.id]=pct;
+  persistL2();
+ } else {
+  l2State.moduleScores[m.id]=pct;
+  persistL2();
+ }
+ document.querySelector('#l2QuizResult').innerHTML=`<div class="feedback-box"><strong>Score: ${pct}%</strong> (${correctCount} of ${m.quiz.length} correct) \u2014 ${passed?'Module marked complete.':'Retake recommended (75% needed to mark complete).'}</div>
+  <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
+   ${!passed?'<button class="secondary" id="l2RetakeQuiz">Retake knowledge check</button>':''}
+   <button class="primary" id="l2CloseModuleModal">Return to curriculum</button>
+  </div>`;
+ document.querySelector('#l2RetakeQuiz')?.addEventListener('click',()=>{l2QuizAnswers={};renderL2ModuleModal()});
+ document.querySelector('#l2CloseModuleModal')?.addEventListener('click',()=>{document.querySelector('#modal').close();renderLevel2()});
+ if(passed)toast(`${m.title} module complete — ${pct}%`);
+}
+
+/* ---- Case runner ---- */
+function openL2Case(id){
+ l2State.caseId=id;l2State.caseStep=0;persistL2();
+ renderL2Case();
+ switchView('level2CaseRunner');
+}
+function renderL2Case(){
+ const c=l2Cases.find(x=>x.id===l2State.caseId); if(!c)return;
+ document.querySelector('#l2CaseTitle').textContent=c.title;
+ document.querySelector('#l2CaseSubtitle').textContent=`${c.species} \u2022 ${c.stages[l2State.caseStep]}`;
+ document.querySelector('#l2CaseStepLabel').textContent=c.stages[l2State.caseStep];
+ document.querySelector('#l2CaseProgress').style.width=`${((l2State.caseStep+1)/c.stages.length)*100}%`;
+ document.querySelector('#l2CaseStageNav').innerHTML=c.stages.map((s,i)=>`<button class="${i===l2State.caseStep?'active':''}" data-l2-case-step="${i}">${i+1}. ${s}</button>`).join('');
+ document.querySelector('#l2CasePatientName').textContent=c.patient;
+ document.querySelector('#l2CaseSignalment').textContent=c.signalment;
+ document.querySelector('#l2CaseHistory').textContent=c.history;
+ document.querySelector('#l2CaseStepName').textContent=c.stages[l2State.caseStep];
+ document.querySelector('#l2CaseStageContent').innerHTML=c.content[l2State.caseStep];
+ document.querySelectorAll('[data-l2-case-step]').forEach(b=>b.onclick=()=>{l2State.caseStep=+b.dataset.l2CaseStep;persistL2();renderL2Case()});
+ Object.keys(c.decisions).forEach(hostId=>{
+  const el=document.querySelector('#'+hostId);
+  if(!el)return;
+  const d=c.decisions[hostId];
+  el.innerHTML=d.opts.map((o,i)=>`<button class="case-choice" data-opt="${i}">${o}</button>`).join('')+'<div class="l2-case-feedback"></div>';
+  el.querySelectorAll('.case-choice').forEach(btn=>btn.onclick=()=>{
+   const chosen=+btn.dataset.opt;
+   el.querySelectorAll('.case-choice').forEach((b2,i2)=>{b2.disabled=true;if(i2===d.correct)b2.classList.add('selected')});
+   el.querySelector('.l2-case-feedback').innerHTML=`<div class="feedback"><p><strong>${chosen===d.correct?'Correct.':'Consider the veterinarian-approved answer:'}</strong> ${d.exp}</p></div>`;
+   toast(chosen===d.correct?'Correct decision recorded':'Feedback recorded');
+  });
+ });
+ document.querySelector(`#completeL2Case${c.id}`)?.addEventListener('click',()=>{
+  if(!l2State.casesCompleted.includes(c.id)){l2State.casesCompleted.push(c.id);persistL2()}
+  toast(`${c.title} completed`);
+  renderLevel2();
+  openLevel2('cases');
+ });
+}
+document.querySelector('#openAskHannahL2')?.addEventListener('click',()=>{switchView('ask');document.querySelector('#askInput').value='What is the approved Hannah ear examination and otoscopy workflow?'});
+document.querySelector('#openAskHannahL2Overview')?.addEventListener('click',()=>{switchView('ask');document.querySelector('#askInput').value='What is the approved Hannah ear examination and otoscopy workflow?'});
+document.querySelector('#backToAcademiesL2')?.addEventListener('click',()=>openLevel2Hub());
+document.querySelector('#backToMedicalAcademyFromL2Hub')?.addEventListener('click',()=>window.openMedicalAcademy());
+document.querySelector('#exitLevel2Case')?.addEventListener('click',()=>openLevel2('cases'));
+document.querySelector('#level2ResourcesBtn')?.addEventListener('click',()=>openModal('<span class="eyebrow">Level 2 resources</span><h1>Ear Examination Foundation resource library</h1><p>Approved Hannah otoscopic technique guides, escalation criteria, and Member-communication scripts will appear here after clinical review.</p><p class="safety-note"><strong>Prototype boundary</strong><span>This build uses openly licensed reference images and original diagrams; production content requires Hannah-approved clinical photography and CMO review.</span></p>'));
+document.querySelectorAll('[data-l2tab]').forEach(b=>b.onclick=()=>{l2State.tab=b.dataset.l2tab;persistL2();renderLevel2()});
+
+window.openLevel2=openLevel2;
+renderLevel2Hub();
+
+renderLevel2();
 })();

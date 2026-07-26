@@ -371,6 +371,53 @@
       </section>
     </section>
 
+    <section class="view" id="level2Hub">
+      <div class="page-heading">
+        <div><span class="eyebrow">Hannah Medical Academy • Level 2</span><h1>Patient Assessment</h1><p>Eleven core assessment skills every clinical team member builds before advancing to diagnostics.</p></div>
+        <button class="secondary" id="backToMedicalAcademyFromL2Hub">← Medical Academy</button>
+      </div>
+      <div class="academy-hero medical-hero">
+        <div><span class="eyebrow light">Level 2 progress</span><h2>Otic Examination is live now.</h2><p>The remaining ten Patient Assessment lessons join this level as they're built and clinically reviewed.</p></div>
+        <div class="academy-progress-ring" id="level2HubProgressRing"><strong>0%</strong><span>Level complete</span></div>
+      </div>
+      <div class="level-grid" id="level2LessonGrid"></div>
+    </section>
+
+    <section class="view" id="level2">
+      <button class="back-link" id="backToAcademiesL2">← Patient Assessment</button>
+      <div class="page-heading">
+        <div><span class="eyebrow">Hannah Medical Academy • Level 2 — Patient Assessment</span><h1>Otic Examination</h1><p>Ear Examination Fundamentals: anatomy, safe otoscopic technique, normal vs. abnormal recognition, common condition awareness, cytology preview, and Member communication.</p></div>
+        <div class="page-actions"><button class="secondary" id="level2ResourcesBtn">Resources</button><button class="primary" id="openAskHannahL2Overview">Ask Hannah</button></div>
+      </div>
+      <div class="level5-tabs" id="level2Tabs">
+        <button class="chip active" data-l2tab="overview">Overview</button>
+        <button class="chip" data-l2tab="curriculum">Curriculum</button>
+        <button class="chip" data-l2tab="cases">Case Studies</button>
+        <button class="chip" data-l2tab="skillslab">Skills Lab</button>
+        <button class="chip" data-l2tab="certification">Certification</button>
+      </div>
+      <div id="level2Content"></div>
+    </section>
+
+    <section class="view level5-case-runner" id="level2CaseRunner">
+      <button class="back-link" id="exitLevel2Case">← Return to Level 2</button>
+      <div class="case-workspace">
+        <header class="case-workspace-head">
+          <div><span class="eyebrow light">Level 2 case simulation</span><h1 id="l2CaseTitle">Case</h1><p id="l2CaseSubtitle"></p></div>
+          <div class="case-progress-box"><span id="l2CaseStepLabel">Signalment</span><div class="progress"><span id="l2CaseProgress"></span></div></div>
+        </header>
+        <div class="case-stage-nav" id="l2CaseStageNav"></div>
+        <div class="case-workspace-body">
+          <aside class="patient-snapshot">
+            <span class="case-pill">Patient snapshot</span><h2 id="l2CasePatientName">Patient</h2>
+            <dl><dt>Signalment</dt><dd id="l2CaseSignalment">—</dd><dt>History</dt><dd id="l2CaseHistory">—</dd><dt>Current step</dt><dd id="l2CaseStepName">—</dd></dl>
+            <button class="secondary full" id="openAskHannahL2">Ask Hannah</button>
+          </aside>
+          <section class="case-stage-content" id="l2CaseStageContent"></section>
+        </div>
+      </div>
+    </section>
+
     <section class="view" id="level5">
       <button class="back-link" id="backToMedicalAcademy">← Medical Academy</button>
       <div class="page-heading">
