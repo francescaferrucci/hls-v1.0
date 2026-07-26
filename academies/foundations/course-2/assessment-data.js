@@ -14,7 +14,7 @@ const ASSESSMENT_QUESTIONS = [
       "To reduce appointment availability"
     ],
     answer: "To focus on prevention and lifelong care",
-    explanation: "Hannah exists to prevent disease whenever possible and to stay involved across a pet's whole life, rather than only treating illness after it appears."
+    explanation: "Hannah exists to prevent disease whenever possible and to stay involved across a Pet's whole life, rather than only treating illness after it appears."
   },
   {
     id: "q02",
@@ -22,7 +22,7 @@ const ASSESSMENT_QUESTIONS = [
     type: "truefalse",
     prompt: "Most traditional veterinary hospitals are built around treating illness after it happens.",
     answer: "True",
-    explanation: "That reactive pattern — pet gets sick, then care begins — is exactly the cycle Hannah was created to change."
+    explanation: "That reactive pattern — Pet gets sick, then care begins — is exactly the cycle Hannah was created to change."
   },
   {
     id: "q03",
@@ -36,7 +36,7 @@ const ASSESSMENT_QUESTIONS = [
       "Building lifelong relationships"
     ],
     answer: "Maximising the number of billable sick visits",
-    explanation: "Hannah's purpose is healthier pets, earlier detection, fewer financial barriers and lifelong relationships — not more sick visits."
+    explanation: "Hannah's purpose is healthier Pets, earlier detection, fewer financial barriers and lifelong relationships — not more sick visits."
   },
   {
     id: "q04",
@@ -44,7 +44,7 @@ const ASSESSMENT_QUESTIONS = [
     type: "ordering",
     prompt: "Put the traditional veterinary care cycle in order.",
     sequence: ["Pet gets sick", "Member schedules appointment", "Diagnosis", "Estimate", "Treatment"],
-    explanation: "The traditional cycle only starts once a pet is already unwell: illness, appointment, diagnosis, estimate, treatment — and then it repeats."
+    explanation: "The traditional cycle only starts once a Pet is already unwell: illness, appointment, diagnosis, estimate, treatment — and then it repeats."
   },
   {
     id: "q05",
@@ -80,7 +80,7 @@ const ASSESSMENT_QUESTIONS = [
       "Exams are billed individually"
     ],
     answer: "Unlimited exams",
-    explanation: "Unlimited exams are a core Membership benefit — Members never have to weigh the cost of an exam against bringing their pet in."
+    explanation: "Unlimited exams are a core Membership benefit — Members never have to weigh the cost of an exam against bringing their Pet in."
   },
   {
     id: "q08",
@@ -88,9 +88,9 @@ const ASSESSMENT_QUESTIONS = [
     type: "matching",
     prompt: "Match each Membership benefit to what it means for the Member.",
     pairs: [
-      { term: "Unlimited exams", definition: "Bring your pet in any time something seems off, with no exam fee to weigh up" },
+      { term: "Unlimited exams", definition: "Bring your Pet in any time something seems off, with no exam fee to weigh up" },
       { term: "Preventive care", definition: "Routine wellness care scheduled to keep problems from starting" },
-      { term: "Diagnostics", definition: "Testing that confirms what is happening inside the pet" },
+      { term: "Diagnostics", definition: "Testing that confirms what is happening inside the Pet" },
       { term: "Care coordination", definition: "One team keeping the whole health record and plan connected over time" }
     ],
     explanation: "The Membership bundles access (unlimited exams), prevention, diagnostics and coordination so the Member is never choosing between cost and care."
@@ -102,12 +102,12 @@ const ASSESSMENT_QUESTIONS = [
     prompt: "A Member says, \"I'll just wait until next month.\" How does the Hannah Membership help in this moment?",
     options: [
       "The visit is already covered by the Membership, so there is no cost reason to delay care",
-      "Waiting a month is usually the safest option for a stable pet",
+      "Waiting a month is usually the safest option for a stable Pet",
       "The Member should be told the visit will cost more next month",
       "Nothing can be done until the Member changes their mind"
     ],
     answer: "The visit is already covered by the Membership, so there is no cost reason to delay care",
-    explanation: "Cost is the most common reason care gets postponed. Because the Membership already covers the exam, you can gently remove that barrier and get the pet seen now."
+    explanation: "Cost is the most common reason care gets postponed. Because the Membership already covers the exam, you can gently remove that barrier and get the Pet seen now."
   },
   {
     id: "q10",
@@ -115,7 +115,7 @@ const ASSESSMENT_QUESTIONS = [
     type: "truefalse",
     prompt: "The Hannah Membership is designed as a lifetime relationship rather than a one-time transaction.",
     answer: "True",
-    explanation: "Membership creates an ongoing relationship — the team follows the pet across their whole life, not just a single visit."
+    explanation: "Membership creates an ongoing relationship — the team follows the Pet across their whole life, not just a single visit."
   },
   {
     id: "q11",
@@ -140,10 +140,10 @@ const ASSESSMENT_QUESTIONS = [
       "Traditional hospitals treat visits; Hannah manages health",
       "Traditional hospitals manage health; Hannah treats visits",
       "Both approaches are identical in practice",
-      "Hannah only becomes involved once a pet is seriously ill"
+      "Hannah only becomes involved once a Pet is seriously ill"
     ],
     answer: "Traditional hospitals treat visits; Hannah manages health",
-    explanation: "A traditional practice is organised around discrete appointments. Hannah is organised around managing a pet's health continuously."
+    explanation: "A traditional practice is organised around discrete appointments. Hannah is organised around managing a Pet's health continuously."
   },
   {
     id: "q13",
@@ -192,13 +192,13 @@ const ASSESSMENT_QUESTIONS = [
     type: "mc",
     prompt: "What does Total Lifetime Care® mean in practice?",
     options: [
-      "Every recommendation considers the pet's entire lifetime, not just today's visit",
-      "Care is only provided during a pet's senior years",
+      "Every recommendation considers the Pet's entire lifetime, not just today's visit",
+      "Care is only provided during a Pet's senior years",
       "Members receive one comprehensive visit per lifetime",
       "Recommendations are limited to what is cheapest today"
     ],
-    answer: "Every recommendation considers the pet's entire lifetime, not just today's visit",
-    explanation: "Total Lifetime Care® means today's decision is weighed against its effect on the pet's whole life."
+    answer: "Every recommendation considers the Pet's entire lifetime, not just today's visit",
+    explanation: "Total Lifetime Care® means today's decision is weighed against its effect on the Pet's whole life."
   },
   {
     id: "q18",
@@ -330,7 +330,7 @@ const ASSESSMENT_QUESTIONS = [
     id: "q29",
     module: 6,
     type: "scenario",
-    prompt: "A pet has not improved, and it emerges that the medications were not given at home. How should the team frame this?",
+    prompt: "A Pet has not improved, and it emerges that the medications were not given at home. How should the team frame this?",
     options: [
       "As shared responsibility — revisit understanding of the plan, remove any barriers, and adjust together",
       "As the Member's failure, and note it in the record as non-compliance",
@@ -360,7 +360,7 @@ const ASSESSMENT_QUESTIONS = [
       "Because Members are expected to make the medical decisions"
     ],
     answer: "Because good outcomes require both the team's care and the Member's follow-through at home",
-    explanation: "Most of a pet's life happens at home. Shared responsibility is a description of how outcomes actually work, not a way to allocate fault."
+    explanation: "Most of a Pet's life happens at home. Shared responsibility is a description of how outcomes actually work, not a way to allocate fault."
   },
   {
     id: "q32",
@@ -392,7 +392,7 @@ const ASSESSMENT_QUESTIONS = [
     id: "q34",
     module: 7,
     type: "scenario",
-    prompt: "A Member asks a PetNurse whether their pet's medication dose should be doubled because symptoms have returned. What is the right move?",
+    prompt: "A Member asks a PetNurse whether their Pet's medication dose should be doubled because symptoms have returned. What is the right move?",
     options: [
       "Refer — a dosing change is a medical decision for the DVM",
       "Explain — give the Member your best estimate of a safe dose",
@@ -408,7 +408,7 @@ const ASSESSMENT_QUESTIONS = [
     type: "truefalse",
     prompt: "Referring a question to another team member is a sign that you have failed to do your job.",
     answer: "False",
-    explanation: "Knowing when someone else should help is part of the standard. Referring accurately protects the Member and the pet."
+    explanation: "Knowing when someone else should help is part of the standard. Referring accurately protects the Member and the Pet."
   },
   {
     id: "q36",
@@ -459,7 +459,7 @@ const ASSESSMENT_QUESTIONS = [
     prompt: "At Cooper's annual wellness visit as a healthy adult, his Member asks why bloodwork is worth doing when nothing seems wrong.",
     options: [
       "Baseline results while he is healthy make future changes far easier to spot early",
-      "Bloodwork is only useful once a pet shows symptoms",
+      "Bloodwork is only useful once a Pet shows symptoms",
       "It is mainly a formality and can be skipped",
       "It replaces the need for a physical exam"
     ],
@@ -475,7 +475,7 @@ const ASSESSMENT_QUESTIONS = [
       "Bring Cooper in — the exam is covered, and treating the wrong cause can make an ear worse",
       "Approve using the leftover medication to save the Member a trip",
       "Suggest waiting two weeks to see whether it clears on its own",
-      "Refer the Member to a pet shop for an over-the-counter product"
+      "Refer the Member to a Pet shop for an over-the-counter product"
     ],
     answer: "Bring Cooper in — the exam is covered, and treating the wrong cause can make an ear worse",
     explanation: "Unlimited exams exist for exactly this. Ear disease has several causes, and the right treatment depends on identifying which one it is."
@@ -486,12 +486,12 @@ const ASSESSMENT_QUESTIONS = [
     type: "mc",
     prompt: "What is the point of Cooper's story?",
     options: [
-      "Consistent preventive choices across a pet's life compound into better outcomes",
-      "A single excellent visit determines a pet's lifespan",
-      "Senior pets need less medical attention than puppies",
+      "Consistent preventive choices across a Pet's life compound into better outcomes",
+      "A single excellent visit determines a Pet's lifespan",
+      "Senior Pets need less medical attention than puppies",
       "Preventive care matters only in the first year"
     ],
-    answer: "Consistent preventive choices across a pet's life compound into better outcomes",
+    answer: "Consistent preventive choices across a Pet's life compound into better outcomes",
     explanation: "No one decision in Cooper's journey is dramatic. It is the accumulation of preventive choices that shapes his senior years."
   },
   {
@@ -500,7 +500,7 @@ const ASSESSMENT_QUESTIONS = [
     type: "truefalse",
     prompt: "Senior screening is recommended more frequently than adult wellness screening because disease becomes more likely with age.",
     answer: "True",
-    explanation: "Increasing screening frequency as a pet ages is how Hannah keeps catching disease before it becomes symptomatic."
+    explanation: "Increasing screening frequency as a Pet ages is how Hannah keeps catching disease before it becomes symptomatic."
   },
   {
     id: "q43",
