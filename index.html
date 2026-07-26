@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#063f63">
+  <title>Hannah Learning System™</title>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <img class="brand-logo" src="assets/hannah-logo-white.png" alt="Hannah Pet Hospital logo">
+      <div><strong>HANNAH</strong><span>Learning System™</span></div>
+    </div>
+
+    <nav id="mainNav">
+      <button class="nav active" data-view="dashboard"><span>⌂</span>Dashboard</button>
+      <button class="nav" data-view="learning"><span>▤</span>Learning Center</button>
+      <button class="nav" data-view="academies"><span>◫</span>Academies</button>
+      <button class="nav" data-view="ask"><span>✦</span>Ask Hannah</button>
+      <button class="nav" data-view="knowledge"><span>⌕</span>Knowledge Base</button>
+      <button class="nav" data-view="diagnostics"><span>＋</span>Diagnostic Hub</button>
+      <button class="nav" data-view="competencies"><span>✓</span>Competencies</button>
+      <button class="nav" data-view="simulations"><span>▶</span>Simulations</button>
+      <button class="nav manager-only" data-view="manager"><span>◎</span>Manager Portal</button>
+      <button class="nav manager-only" data-view="content"><span>✎</span>Content Studio</button>
+      <button class="nav manager-only" data-view="reports"><span>▥</span>Reports</button>
+      <button class="nav admin-only" data-view="admin"><span>⚙</span>Administration</button>
+    </nav>
+
+    <div class="user-context">
+      <label>Experience as
+        <select id="roleSwitch">
+          <option value="General Manager">General Manager</option>
+          <option value="Pet Nurse">Pet Nurse</option>
+          <option value="DVM / Practitioner">DVM / Practitioner</option>
+          <option value="Service Coordinator">Service Coordinator</option>
+          <option value="Membership Coordinator">Membership Coordinator</option>
+          <option value="Member Advocate">Member Advocate</option>
+        </select>
+      </label>
+      <label>Location
+        <select id="locationSwitch">
+          <option>Portland Market</option>
+          <option>HE1 Portland</option>
+          <option>HE2 Tigard</option>
+          <option>HE2 ER</option>
+        </select>
+      </label>
+    </div>
+  </aside>
+
+  <main>
+    <header class="topbar">
+      <button class="menu-btn" id="menuBtn" aria-label="Open navigation">☰</button>
+      <div class="breadcrumb">
+        <span>Hannah Learning System™</span>
+        <strong id="pageLabel">Dashboard</strong>
+      </div>
+      <div class="top-actions">
+        <div class="global-search-wrap">
+          <input id="globalSearch" type="search" placeholder="Search Hannah">
+          <div class="search-results" id="globalResults"></div>
+        </div>
+        <button class="icon-btn" id="notificationBtn" title="Notifications">●<span class="notification-count">4</span></button>
+        <button class="icon-btn" id="themeBtn" title="Toggle theme">☾</button>
+        <button class="avatar" id="profileBtn">FF</button>
+      </div>
+    </header>
+
+    <section class="view active" id="dashboard">
+      <div class="hero">
+        <div>
+          <span class="eyebrow light" id="greeting">Good afternoon, Francesca</span>
+          <h1>Everything Hannah teams need to learn, decide, and perform.</h1>
+          <p>Continue learning, ask Hannah, review readiness, and take action from one unified workspace.</p>
+          <div class="button-row">
+            <button class="primary" data-jump="ask">Ask Hannah</button>
+            <button class="ghost" data-jump="learning">Continue learning</button>
+          </div>
+        </div>
+        <div class="readiness-ring"><strong id="readinessScore">84%</strong><span>Market readiness</span></div>
+      </div>
+
+      <div class="metric-grid" id="dashboardMetrics"></div>
+
+      <div class="dashboard-layout">
+        <section class="panel span-2">
+          <div class="section-head">
+            <div><span class="eyebrow">Continue learning</span><h2>Current pathway</h2></div>
+            <button class="secondary" data-jump="learning">Open learning center</button>
+          </div>
+          <div class="continue-course">
+            <div class="course-art">＋</div>
+            <div class="grow">
+              <strong id="continueTitle">Medical Academy: Patient Assessment</strong>
+              <span id="continueMeta">Lesson 4 of 7 • 58% complete</span>
+              <div class="progress"><span id="continueProgress" style="width:58%"></span></div>
+            </div>
+            <button class="primary" id="resumeCourseBtn">Resume</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <span class="eyebrow">Needs attention</span>
+          <h2>Action queue</h2>
+          <div id="actionQueue"></div>
+        </section>
+
+        <section class="panel">
+          <span class="eyebrow">Ask Hannah</span>
+          <h2>Popular questions</h2>
+          <div id="popularQuestions"></div>
+        </section>
+
+        <section class="panel span-2">
+          <div class="section-head">
+            <div><span class="eyebrow">Academies</span><h2>Role-based pathways</h2></div>
+            <button class="secondary" data-jump="academies">View all academies</button>
+          </div>
+          <div class="mini-academy-grid" id="dashboardAcademies"></div>
+        </section>
+      </div>
+    </section>
+
+    <section class="view" id="learning">
+      <div class="page-heading">
+        <div><span class="eyebrow">Personal development</span><h1>Learning Center</h1><p>Your assignments, courses, certificates, and learning history.</p></div>
+        <div class="page-actions"><button class="secondary" id="certificateBtn">Certificates</button><button class="primary" data-jump="academies">Browse courses</button></div>
+      </div>
+      <div class="learning-tabs" id="learningTabs">
+        <button class="chip active" data-tab="assigned">Assigned</button>
+        <button class="chip" data-tab="progress">In progress</button>
+        <button class="chip" data-tab="completed">Completed</button>
+        <button class="chip" data-tab="saved">Saved</button>
+      </div>
+      <div class="course-grid" id="courseGrid"></div>
+    </section>
+
+    <section class="view" id="academies">
+      <div class="page-heading">
+        <div><span class="eyebrow">Structured learning</span><h1>Academies</h1><p>Role-based learning paths that connect courses to demonstrated competencies.</p></div>
+        <select id="academyRoleFilter">
+          <option value="all">All role paths</option>
+          <option>Clinical</option>
+          <option>Member Services</option>
+          <option>Leadership</option>
+          <option>Operations</option>
+        </select>
+      </div>
+      <div class="academy-grid" id="academyGrid"></div>
+    </section>
+
+    <section class="view" id="foundationsAcademy">
+      <button class="back-link" id="backFromFoundations">← All Academies</button>
+      <div class="foundations-hero">
+        <div>
+          <span class="eyebrow light">Foundations Academy · Level 1</span>
+          <h1>Welcome to Hannah</h1>
+          <p>Build the shared language, principles, judgment, and service foundation every Hannah team member needs before role-specific training.</p>
+          <div class="button-row">
+            <a class="primary link-button" href="academies/foundations/course-1/index.html">Continue Foundations: The Heart of Hannah</a>
+            <button class="ghost" id="openFoundationsGuide">View Academy Guide</button>
+          </div>
+        </div>
+        <div class="foundation-summary">
+          <strong>Level 1</strong><span>8 courses</span><span>18–25 estimated hours</span>
+        </div>
+      </div>
+
+      <div class="metric-grid foundations-metrics">
+        <article class="metric-card"><span>Academy progress</span><strong>24%</strong><div class="progress"><span style="width:24%"></span></div></article>
+        <article class="metric-card"><span>Courses complete</span><strong>1 of 8</strong><small>Course 1 currently available</small></article>
+        <article class="metric-card"><span>Competencies</span><strong>6</strong><small>Manager validation follows learning</small></article>
+        <article class="metric-card"><span>Current assignment</span><strong>Course 1</strong><small>Foundations: The Heart of Hannah</small></article>
+      </div>
+
+      <section class="panel">
+        <div class="section-head">
+          <div><span class="eyebrow">Level 1 curriculum</span><h2>Foundations Academy courses</h2></div>
+          <span class="badge good">Current Hannah standard</span>
+        </div>
+        <div class="foundations-course-grid">
+          <article class="foundation-course available">
+            <div class="course-number">01</div><span class="badge good">Interactive course</span>
+            <h3>Foundations: The Heart of Hannah</h3>
+            <p>Hannah's story, principles, oath, decision framework, learning philosophy, and commitment to one another.</p>
+            <div class="course-meta"><span>Interactive reader</span><span>Progress saved locally</span></div>
+            <a class="primary link-button full-width" href="academies/foundations/course-1/index.html">Open Course 1</a>
+          </article>
+          <article class="foundation-course planned"><div class="course-number">02</div><span class="badge warning">Curriculum ready</span><h3>Understanding the Hannah Model</h3><p>Membership, TLC, ownership and companionship, care decisions, shared responsibilities, and Explain–Verify–Refer.</p><button class="secondary foundation-preview" data-course="2">View course blueprint</button></article>
+          <article class="foundation-course planned"><div class="course-number">03</div><span class="badge neutral">Planned</span><h3>One Hannah: Locations, Teams, and Departments</h3><p>How Hannah teams connect and where work, questions, decisions, and concerns belong.</p><button class="secondary foundation-preview" data-course="3">View outline</button></article>
+          <article class="foundation-course planned"><div class="course-number">04</div><span class="badge neutral">Planned</span><h3>Roles and the Pet Care Journey</h3><p>Follow a Member and Pet through each handoff from first contact through follow-up.</p><button class="secondary foundation-preview" data-course="4">View outline</button></article>
+          <article class="foundation-course planned"><div class="course-number">05</div><span class="badge neutral">Planned</span><h3>Your First 30 Days at Hannah</h3><p>Onboarding milestones, manager check-ins, training expectations, and competency validation.</p><button class="secondary foundation-preview" data-course="5">View outline</button></article>
+          <article class="foundation-course planned"><div class="course-number">06</div><span class="badge neutral">Planned</span><h3>Finding Information and Getting Help</h3><p>Use Hannah systems, approved resources, communication tools, and escalation pathways.</p><button class="secondary foundation-preview" data-course="6">View outline</button></article>
+          <article class="foundation-course planned"><div class="course-number">07</div><span class="badge neutral">Planned</span><h3>Professional Expectations from Day One</h3><p>Accountability, confidentiality, attendance, chain of command, communication, and conduct.</p><button class="secondary foundation-preview" data-course="7">View outline</button></article>
+          <article class="foundation-course planned"><div class="course-number">08</div><span class="badge neutral">Planned</span><h3>Welcome to Hannah Capstone</h3><p>A first-week simulation integrating the entire Welcome to Hannah level.</p><button class="secondary foundation-preview" data-course="8">View outline</button></article>
+        </div>
+      </section>
+
+      <div class="dashboard-layout foundations-lower">
+        <section class="panel span-2"><span class="eyebrow">Competency Passport</span><h2>Level 1 validation</h2><div class="foundation-competencies"><span>Explain the Hannah mission</span><span>Use Hannah principles in decisions</span><span>Explain the Hannah Model accurately</span><span>Identify role boundaries</span><span>Use approved resources</span><span>Demonstrate professional expectations</span></div></section>
+        <section class="panel"><span class="eyebrow">Manager validation</span><h2>After course completion</h2><p>Managers validate understanding through teach-back, scenario discussion, and observed application.</p><button class="secondary" id="openValidationGuide">Open validation guide</button></section>
+      </div>
+    </section>
+
+    <section class="view" id="ask">
+      <div class="ask-hero">
+        <span class="eyebrow light">Trusted Hannah knowledge</span>
+        <h1>Ask Hannah</h1>
+        <p>Ask about approved policies, clinical workflows, procedures, learning, and role expectations.</p>
+        <div class="ask-input">
+          <textarea id="askInput" placeholder="Example: What is the medical records request process?"></textarea>
+          <button class="primary" id="askBtn">Ask Hannah</button>
+        </div>
+      </div>
+      <div class="ask-layout">
+        <section class="panel conversation-panel">
+          <div id="chatMessages" class="chat-messages" aria-live="polite">
+            <div class="message assistant">
+              <div class="message-avatar">H</div>
+              <div><strong>Hannah</strong><p>How can I help? I can search approved Hannah procedures, policies, and learning resources.</p></div>
+            </div>
+          </div>
+        </section>
+        <aside class="panel">
+          <span class="eyebrow">Suggested</span>
+          <h2>Try asking</h2>
+          <div id="suggestedQuestions"></div>
+          <div class="safety-note">
+            <strong>Knowledge controls</strong>
+            <span>Approved sources • Version aware • Role aware • Citations displayed</span>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="view" id="knowledge">
+      <div class="page-heading">
+        <div><span class="eyebrow">Approved resources</span><h1>Knowledge Base</h1><p>Search SOPs, policies, protocols, forms, videos, and quick-reference guides.</p></div>
+        <button class="primary manager-only" id="uploadResourceBtn">Add resource</button>
+      </div>
+      <div class="knowledge-controls">
+        <input id="knowledgeSearch" type="search" placeholder="Search approved resources">
+        <select id="knowledgeCategory">
+          <option value="all">All categories</option>
+          <option>Clinical</option>
+          <option>Member Services</option>
+          <option>Operations</option>
+          <option>Leadership</option>
+          <option>Compliance</option>
+        </select>
+      </div>
+      <div class="resource-list" id="resourceList"></div>
+    </section>
+
+    <section class="view" id="diagnostics">
+      <div class="page-heading">
+        <div><span class="eyebrow">Clinical decision support</span><h1>Diagnostic Hub</h1><p>Find approved diagnostic workflows by complaint, symptom, or condition.</p></div>
+        <button class="primary" id="guidedTriageBtn">Start guided triage</button>
+      </div>
+      <div class="diagnostic-search">
+        <input id="diagnosticSearch" type="search" placeholder="Search complaint or condition">
+      </div>
+      <div class="diagnostic-grid" id="diagnosticGrid"></div>
+    </section>
+
+    <section class="view" id="competencies">
+      <div class="page-heading">
+        <div><span class="eyebrow">Demonstrated readiness</span><h1>Competencies</h1><p>Track learning, practice, validation, certification, and renewal.</p></div>
+        <button class="primary manager-only" id="newAssessmentBtn">New assessment</button>
+      </div>
+      <div class="competency-metrics" id="competencyMetrics"></div>
+      <div class="filters">
+        <button class="chip active" data-competency-filter="all">All</button>
+        <button class="chip" data-competency-filter="Certified">Certified</button>
+        <button class="chip" data-competency-filter="Practicing">Practicing</button>
+        <button class="chip" data-competency-filter="Awaiting Sign-Off">Awaiting Sign-Off</button>
+        <button class="chip" data-competency-filter="Expiring">Expiring</button>
+      </div>
+      <div class="competency-table" id="competencyTable"></div>
+    </section>
+
+    <section class="view" id="simulations">
+      <div class="page-heading">
+        <div><span class="eyebrow">Practice before it matters</span><h1>Simulation Center</h1><p>Build confidence through realistic role-specific decisions and coaching.</p></div>
+        <select id="simulationRoleFilter">
+          <option value="all">All roles</option>
+          <option>Pet Nurse</option>
+          <option>DVM / Practitioner</option>
+          <option>Service Coordinator</option>
+          <option>Membership Coordinator</option>
+          <option>Member Advocate</option>
+          <option>Leadership</option>
+        </select>
+      </div>
+      <div class="simulation-grid" id="simulationGrid"></div>
+    </section>
+
+    <section class="view" id="manager">
+      <div class="page-heading">
+        <div><span class="eyebrow">Learning operations</span><h1>Manager Portal</h1><p>Assign learning, monitor team progress, manage risk, and approve readiness.</p></div>
+        <button class="primary" id="createAssignmentBtn">Create assignment</button>
+      </div>
+      <div class="metric-grid" id="managerMetrics"></div>
+      <div class="manager-tabs" id="managerTabs">
+        <button class="chip active" data-manager-tab="team">Team Learning</button>
+        <button class="chip" data-manager-tab="assignments">Assignments</button>
+        <button class="chip" data-manager-tab="approvals">Approvals</button>
+        <button class="chip" data-manager-tab="compliance">Compliance</button>
+      </div>
+      <div id="managerContent"></div>
+    </section>
+
+    <section class="view" id="content">
+      <div class="page-heading">
+        <div><span class="eyebrow">Learning governance</span><h1>Content Studio</h1><p>Create, review, approve, publish, version, and retire Hannah learning resources.</p></div>
+        <button class="primary" id="createContentBtn">Create content</button>
+      </div>
+      <div class="content-stats" id="contentStats"></div>
+      <div class="content-layout">
+        <section class="panel">
+          <div class="section-head">
+            <h2>Content inventory</h2>
+            <select id="contentTypeFilter"><option value="all">All types</option><option>Course</option><option>Procedure</option><option>Simulation</option><option>Quiz</option></select>
+          </div>
+          <div id="contentInventory"></div>
+        </section>
+        <section class="panel">
+          <h2>Approval queue</h2>
+          <div id="contentApprovalQueue"></div>
+        </section>
+      </div>
+    </section>
+
+    <section class="view" id="reports">
+      <div class="page-heading">
+        <div><span class="eyebrow">Decision-ready analytics</span><h1>Reports</h1><p>Measure learning, readiness, compliance, simulation performance, and content effectiveness.</p></div>
+        <button class="primary" id="scheduleReportBtn">Schedule report</button>
+      </div>
+      <div class="report-grid" id="reportGrid"></div>
+      <section class="panel report-preview">
+        <div class="section-head"><div><span class="eyebrow">Preview</span><h2>Market learning trend</h2></div><select><option>Last 6 months</option><option>Last 12 months</option></select></div>
+        <div class="trend-chart" id="trendChart"></div>
+      </section>
+    </section>
+
+    <section class="view" id="admin">
+      <div class="page-heading">
+        <div><span class="eyebrow">System governance</span><h1>Administration</h1><p>Configure roles, permissions, locations, automations, and platform rules.</p></div>
+      </div>
+      <div class="admin-grid" id="adminGrid"></div>
+    </section>
+
+
+    <section class="view" id="medicalAcademy">
+      <div class="page-heading">
+        <div><span class="eyebrow">Hannah Medical Academy</span><h1>Medical Academy</h1><p>One connected clinical learning pathway inside the Hannah Learning System.</p></div>
+        <button class="secondary" data-jump="academies">← All academies</button>
+      </div>
+      <div class="academy-hero medical-hero">
+        <div><span class="eyebrow light">Clinical learning pathway</span><h2>Build knowledge, practice decisions, and demonstrate readiness.</h2><p>Levels 1–5 share the same learner profile, progress record, competency passport, Ask Hannah support, and manager reporting.</p></div>
+        <div class="academy-progress-ring"><strong>47%</strong><span>Academy progress</span></div>
+      </div>
+      <div class="level-grid" id="medicalLevelGrid"></div>
+      <section class="panel academy-summary-panel">
+        <div class="section-head"><div><span class="eyebrow">Your pathway</span><h2>Shared academy record</h2></div><button class="primary" id="openLevel5Btn">Open Level 5</button></div>
+        <div class="metric-grid compact" id="medicalAcademyMetrics"></div>
+      </section>
+    </section>
+
+    <section class="view" id="level5">
+      <button class="back-link" id="backToMedicalAcademy">← Medical Academy</button>
+      <div class="page-heading">
+        <div><span class="eyebrow">Hannah Medical Academy • Level 5</span><h1>Internal Medicine</h1><p>Connect history, assessment, diagnostics, treatment response, and Member communication.</p></div>
+        <div class="page-actions"><button class="secondary" id="level5ResourcesBtn">Resources</button><button class="primary" id="resumeBellaBtn">Resume Bella's case</button></div>
+      </div>
+      <div class="level5-tabs" id="level5Tabs">
+        <button class="chip active" data-l5tab="overview">Overview</button>
+        <button class="chip" data-l5tab="curriculum">Curriculum</button>
+        <button class="chip" data-l5tab="cases">Clinical Cases</button>
+        <button class="chip" data-l5tab="hospital">Virtual Hospital</button>
+        <button class="chip" data-l5tab="diagnostics">Diagnostics Lab</button>
+        <button class="chip" data-l5tab="competencies">Competencies</button>
+      </div>
+      <div id="level5Content"></div>
+    </section>
+
+    <section class="view level5-case-runner" id="level5CaseRunner">
+      <button class="back-link" id="exitLevel5Case">← Return to Level 5</button>
+      <div class="case-workspace">
+        <header class="case-workspace-head">
+          <div><span class="eyebrow light">Level 5 longitudinal case</span><h1>Bella — Vomiting Labrador</h1><p>7-year-old spayed female Labrador Retriever</p></div>
+          <div class="case-progress-box"><span id="l5CaseStepLabel">History</span><div class="progress"><span id="l5CaseProgress"></span></div></div>
+        </header>
+        <div class="case-stage-nav" id="l5CaseStageNav"></div>
+        <div class="case-workspace-body">
+          <aside class="patient-snapshot">
+            <span class="case-pill">Current patient</span><h2>Bella</h2>
+            <dl><dt>Presenting complaint</dt><dd>Vomiting × 24 hours</dd><dt>Current status</dt><dd>Quiet, stable, mildly dehydrated</dd><dt>Location</dt><dd id="bellaLocation">Exam Room</dd></dl>
+            <button class="secondary full" id="openAskHannahCase">Ask Hannah</button>
+          </aside>
+          <section class="case-stage-content" id="l5CaseStageContent"></section>
+        </div>
+      </div>
+    </section>
+
+
+    <section class="view" id="level6">
+      <button class="back-link" id="backToMedicalAcademyL6">← Medical Academy</button>
+      <div class="page-heading">
+        <div><span class="eyebrow">Hannah Medical Academy • Level 6</span><h1>Emergency &amp; Critical Care</h1><p>Recognize life-threatening problems, organize the team, support stabilization, reassess, and escalate without delay.</p></div>
+        <div class="page-actions"><button class="secondary" id="level6ResourcesBtn">Resources</button><button class="primary" id="resumeEmergencyBtn">Resume emergency shift</button></div>
+      </div>
+      <div class="level5-tabs" id="level6Tabs">
+        <button class="chip active" data-l6tab="overview">Overview</button>
+        <button class="chip" data-l6tab="curriculum">Curriculum</button>
+        <button class="chip" data-l6tab="triage">Triage Board</button>
+        <button class="chip" data-l6tab="crashcart">Crash Cart</button>
+        <button class="chip" data-l6tab="icu">ICU Monitor</button>
+        <button class="chip" data-l6tab="cases">Emergency Cases</button>
+        <button class="chip" data-l6tab="competencies">Competencies</button>
+      </div>
+      <div id="level6Content"></div>
+    </section>
+
+    <section class="view level5-case-runner" id="level6CaseRunner">
+      <button class="back-link" id="exitLevel6Case">← Return to Level 6</button>
+      <div class="case-workspace emergency-workspace">
+        <header class="case-workspace-head emergency-head">
+          <div><span class="eyebrow light">Level 6 multi-patient simulation</span><h1>The Emergency Shift</h1><p>Triage • Stabilization • Reassessment • Handoff</p></div>
+          <div class="case-progress-box"><span id="l6CaseStepLabel">Arrival</span><div class="progress"><span id="l6CaseProgress"></span></div></div>
+        </header>
+        <div class="case-stage-nav" id="l6CaseStageNav"></div>
+        <div class="case-workspace-body">
+          <aside class="patient-snapshot">
+            <span class="case-pill critical-pill">Live shift</span><h2 id="activeEmergencyPatient">Multiple arrivals</h2>
+            <dl><dt>Priority</dt><dd id="emergencyPriority">Unassigned</dd><dt>Team status</dt><dd id="emergencyTeamStatus">Awaiting roles</dd><dt>Current location</dt><dd id="emergencyLocation">Triage</dd></dl>
+            <button class="secondary full" id="openAskHannahEmergency">Ask Hannah</button>
+          </aside>
+          <section class="case-stage-content" id="l6CaseStageContent"></section>
+        </div>
+      </div>
+    </section>
+
+
+
+    <section class="view" id="level7">
+      <button class="back-link" id="backToMedicalAcademyL7">← Medical Academy</button>
+      <div class="page-heading">
+        <div><span class="eyebrow">Hannah Medical Academy • Level 9</span><h1>Hospitalized Patient Care</h1><p>Coordinate treatment plans, timelines, monitoring, nursing notes, escalation, shift handoffs, Member communication, and discharge preparation.</p></div>
+        <div class="page-actions"><button class="secondary" id="level7ResourcesBtn">Resources</button><button class="primary" id="resumeSurgeryBtn">Resume hospitalization</button></div>
+      </div>
+      <div class="level5-tabs" id="level7Tabs">
+        <button class="chip active" data-l7tab="overview">Overview</button>
+        <button class="chip" data-l7tab="curriculum">Curriculum</button>
+        <button class="chip" data-l7tab="checklist">Treatment Plan</button>
+        <button class="chip" data-l7tab="sterile">Treatment Timeline</button>
+        <button class="chip" data-l7tab="recovery">Monitoring & Notes</button>
+        <button class="chip" data-l7tab="cases">Simulations</button>
+        <button class="chip" data-l7tab="competencies">Competencies</button>
+      </div>
+      <div id="level7Content"></div>
+    </section>
+
+    <section class="view level5-case-runner" id="level7CaseRunner">
+      <button class="back-link" id="exitLevel7Case">← Return to Level 9</button>
+      <div class="case-workspace surgery-workspace">
+        <header class="case-workspace-head surgery-head">
+          <div><span class="eyebrow light">Level 9 longitudinal simulation</span><h1>Luna’s Hospitalization</h1><p>Admission • Treatment Plan • Monitoring • Escalation • Handoff • Discharge</p></div>
+          <div class="case-progress-box"><span id="l7CaseStepLabel">Admission</span><div class="progress"><span id="l7CaseProgress"></span></div></div>
+        </header>
+        <div class="case-stage-nav" id="l7CaseStageNav"></div>
+        <div class="case-workspace-body">
+          <aside class="patient-snapshot">
+            <span class="case-pill">Hospitalized patient</span><h2>Luna</h2>
+            <dl><dt>Care plan</dt><dd>Active hospitalization treatment and monitoring</dd><dt>Current phase</dt><dd id="surgeryPhase">Admission</dd><dt>Current location</dt><dd id="surgeryLocation">Hospitalization Intake</dd><dt>Safety status</dt><dd id="surgerySafety">Plan verification pending</dd></dl>
+            <button class="secondary full" id="openAskHannahSurgery">Ask Hannah</button>
+          </aside>
+          <section class="case-stage-content" id="l7CaseStageContent"></section>
+        </div>
+      </div>
+    </section>
+
+
+    <section class="view" id="level10">
+      <button class="back-link upper-back">← Medical Academy</button>
+      <div class="page-heading"><div><span class="eyebrow">Hannah Medical Academy • Level 10</span><h1>Member Communication</h1><p>Translate medical information into clear, compassionate conversations that help Members understand, decide, and follow through.</p></div><div class="page-actions"><button class="secondary upper-resources" data-level="10">Job aids</button><button class="primary upper-resume" data-level="10">Resume Level 10</button></div></div>
+      <div class="upper-tabs" data-level="10"></div><div class="upper-content" id="level10Content"></div>
+    </section>
+    <section class="view" id="level11">
+      <button class="back-link upper-back">← Medical Academy</button>
+      <div class="page-heading"><div><span class="eyebrow">Hannah Medical Academy • Level 11</span><h1>Advanced Medicine</h1><p>Advanced clinical support for senior Pet Nurses and DVMs across specialty, anesthesia, ICU, and complex-case workflows.</p></div><div class="page-actions"><button class="secondary upper-resources" data-level="11">Job aids</button><button class="primary upper-resume" data-level="11">Resume Level 11</button></div></div>
+      <div class="upper-tabs" data-level="11"></div><div class="upper-content" id="level11Content"></div>
+    </section>
+    <section class="view" id="level12">
+      <button class="back-link upper-back">← Medical Academy</button>
+      <div class="page-heading"><div><span class="eyebrow">Hannah Medical Academy • Level 12</span><h1>Hannah Standards of Excellence</h1><p>Master the connected Hannah workflows that make clinical care consistent, auditable, Member-centered, and safe.</p></div><div class="page-actions"><button class="secondary upper-resources" data-level="12">Job aids</button><button class="primary upper-resume" data-level="12">Resume Level 12</button></div></div>
+      <div class="upper-tabs" data-level="12"></div><div class="upper-content" id="level12Content"></div>
+    </section>
+
+    <section class="view simulation-runner" id="simulationRunner">
+      <button class="back-link" id="exitSimulation">← Exit simulation</button>
+      <div class="runner-shell">
+        <header class="runner-header">
+          <div><span class="eyebrow light" id="runnerRole"></span><h1 id="runnerTitle"></h1></div>
+          <div class="runner-progress"><span id="runnerStepText"></span><div class="progress"><span id="runnerProgress"></span></div></div>
+        </header>
+        <div class="runner-body">
+          <section class="case-side">
+            <span class="case-pill" id="casePill"></span>
+            <h2 id="caseHeading"></h2>
+            <p id="caseText"></p>
+            <div id="caseDetails"></div>
+          </section>
+          <section class="decision-side">
+            <span class="eyebrow">Choose your response</span>
+            <div id="decisionOptions"></div>
+            <div id="decisionFeedback" aria-live="polite"></div>
+          </section>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<dialog id="modal">
+  <button class="modal-close" id="modalClose" aria-label="Close">×</button>
+  <div id="modalContent"></div>
+</dialog>
+
+<div class="drawer" id="notificationDrawer">
+  <div class="drawer-head"><h2>Notifications</h2><button id="closeNotifications">×</button></div>
+  <div id="notificationList"></div>
+</div>
+<div class="overlay" id="overlay"></div>
+<div class="toast" id="toast"></div>
+<script src="assets/app.js"></script>
+</body>
+</html>

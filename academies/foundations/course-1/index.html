@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Hannah Learning System Foundations interactive book prototype">
+  <title>Hannah Learning System™ — Foundations</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="print.css" media="print">
+</head>
+<body>
+  <a class="skip-link" href="#book">Skip to book</a>
+
+  <header class="app-header" aria-label="Book controls">
+    <div class="brand-block">
+      <img class="header-logo" src="assets/hannah-logo.png" alt="Hannah Pet Hospital">
+      <div class="brand-copy">
+        <span class="eyebrow">Hannah Learning System™</span>
+        <strong>Foundations · Part I</strong>
+      </div>
+    </div>
+
+    <nav class="toolbar" aria-label="Reader tools">
+      <a class="tool-button back-to-hls" href="../../../index.html#foundationsAcademy">← Foundations Academy</a>
+      <button id="contentsButton" type="button" class="tool-button" aria-controls="contentsPanel" aria-expanded="false">Contents</button>
+      <button id="bookmarkButton" type="button" class="tool-button" aria-pressed="false">Bookmark</button>
+      <button id="printButton" type="button" class="tool-button">Print / Save PDF</button>
+      <button id="textSizeButton" type="button" class="tool-button">Text size</button>
+    </nav>
+  </header>
+
+  <div class="reading-progress" aria-hidden="true"><span id="progressBar"></span></div>
+
+  <aside id="contentsPanel" class="contents-panel" hidden>
+    <div class="contents-heading">
+      <div>
+        <span class="eyebrow">Navigate</span>
+        <h2>Contents</h2>
+      </div>
+      <button id="closeContentsButton" type="button" class="icon-button" aria-label="Close contents">×</button>
+    </div>
+    <ol id="contentsList" class="contents-list"></ol>
+  </aside>
+  <div id="scrim" class="scrim" hidden></div>
+
+  <main class="reader-shell">
+    <section id="book" class="book" aria-label="Interactive book" tabindex="-1">
+      <div id="pageLeft" class="page page-left" aria-live="polite"></div>
+      <div id="pageRight" class="page page-right" aria-live="polite"></div>
+      <div id="turnOverlay" class="turn-overlay" aria-hidden="true"></div>
+    </section>
+
+    <div class="reader-navigation" aria-label="Page navigation">
+      <button id="previousButton" type="button" class="nav-button">← Previous</button>
+      <p id="pageStatus" class="page-status" aria-live="polite"></p>
+      <button id="nextButton" type="button" class="nav-button">Next →</button>
+    </div>
+
+    <p class="keyboard-hint">Use the left and right arrow keys to turn pages.</p>
+  </main>
+
+  <section id="printEdition" class="print-edition" aria-label="Printable edition"></section>
+
+  <script src="content.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
