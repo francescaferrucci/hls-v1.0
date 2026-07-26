@@ -175,18 +175,103 @@ function applyHashRoute(){const id=location.hash.replace('#','');if(id&&document
 window.addEventListener('hashchange',applyHashRoute);
 
 
+/* ===== Supabase client + real authentication ===== */
+const SUPABASE_URL="https://yadypyjoflpxbkkrhmot.supabase.co";
+const SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlhZHlweWpvZmxweGJra3JobW90Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUwMzIxMTUsImV4cCI6MjEwMDYwODExNX0.2UJhisbHXI0vn11BrAJKibN7aFnoXipmq5JQBj5ldeQ";
+// Preview runs inside a sandboxed iframe where localStorage can throw, so fall back to an in-memory store.
+const authStorage=(()=>{
+ try{window.localStorage.setItem("__hlsProbe","1");window.localStorage.removeItem("__hlsProbe");return window.localStorage}
+ catch(e){const mem={};return{getItem:k=>k in mem?mem[k]:null,setItem:(k,v)=>{mem[k]=String(v)},removeItem:k=>{delete mem[k]}}}
+})();
+// The default Web Locks–based lock deadlocks the first post-sign-in query inside the sandboxed
+// preview iframe; this single-tab app does not need cross-tab coordination.
+const noopAuthLock=(name,acquireTimeout,fn)=>fn();
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{storage:authStorage,lock:noopAuthLock,persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
+const hlsAuth={user:null,profile:null};
+const STAFF_ROLES=["facilitator","manager","administrator"];
+function currentRole(){return hlsAuth.profile?.role||"learner"}
+function isStaffRole(){return STAFF_ROLES.includes(currentRole())}
+function isAdminRole(){return currentRole()==="administrator"}
+
+function applyRoleGating(){
+ const staff=isStaffRole(),admin=isAdminRole();
+ $$(".manager-only").forEach(x=>x.style.display=staff?"":"none");
+ $$(".admin-only").forEach(x=>x.style.display=admin?"":"none");
+ const active=document.querySelector(".view.active");
+ if(!staff&&active&&["manager","content","reports","admin"].includes(active.id))switchView("dashboard");
+}
+
+let authMode="signin";
+function setAuthNotice(el,msg){const n=$(el);n.textContent=msg||"";n.hidden=!msg}
+function clearAuthNotices(){setAuthNotice("#authError","");setAuthNotice("#authInfo","")}
+function setAuthMode(mode){
+ authMode=mode;
+ const signup=mode==="signup";
+ $("#authHeading").textContent=signup?"Create your account":"Sign in";
+ $("#authSubheading").textContent=signup?"Register with your Hannah email to start learning.":"Use your Hannah account to continue your learning.";
+ $("#authNameField").hidden=!signup;
+ $("#authSubmit").textContent=signup?"Create account":"Sign in";
+ $("#authToggle").textContent=signup?"Already have an account? Sign in":"Need an account? Create one";
+ $("#authPassword").autocomplete=signup?"new-password":"current-password";
+ clearAuthNotices();
+}
+$("#authToggle").addEventListener("click",()=>setAuthMode(authMode==="signup"?"signin":"signup"));
+$("#authForm").addEventListener("submit",async e=>{
+ e.preventDefault();
+ clearAuthNotices();
+ const email=$("#authEmail").value.trim(),password=$("#authPassword").value;
+ if(!email||!password){setAuthNotice("#authError","Enter your email and password.");return}
+ const btn=$("#authSubmit");btn.disabled=true;
+ try{
+  if(authMode==="signup"){
+   const {data,error}=await sb.auth.signUp({email,password,options:{data:{full_name:$("#authName").value.trim()}}});
+   if(error)throw error;
+   if(!data.session)setAuthNotice("#authInfo","Account created. Confirm your email address, then sign in.");
+  }else{
+   const {error}=await sb.auth.signInWithPassword({email,password});
+   if(error)throw error;
+  }
+ }catch(err){
+  setAuthNotice("#authError",err?.message||"We couldn't complete that request. Please try again.");
+ }finally{btn.disabled=false}
+});
+
+async function enterApp(user){
+ hlsAuth.user=user;
+ const {data,error}=await sb.from("profiles").select("*").eq("id",user.id).single();
+ hlsAuth.profile=error?null:data;
+ $("#authGate").hidden=true;
+ $("#appShell").hidden=false;
+ applyRoleGating();
+ document.dispatchEvent(new CustomEvent("hls:authenticated"));
+}
+function showAuthGate(){
+ hlsAuth.user=null;hlsAuth.profile=null;
+ $("#appShell").hidden=true;
+ $("#authGate").hidden=false;
+ setAuthMode("signin");
+ $("#authPassword").value="";
+}
+sb.auth.onAuthStateChange((event,session)=>{
+ // Supabase holds an internal auth lock for the duration of this callback, so defer DB work out of it.
+ if(session?.user){if(hlsAuth.user?.id!==session.user.id)setTimeout(()=>enterApp(session.user),0)}
+ else showAuthGate();
+});
+sb.auth.getSession().then(({data})=>{
+ if(data.session?.user){if(!hlsAuth.user)enterApp(data.session.user)}
+ else showAuthGate();
+});
+
 function updateRole(){
  state.role=$("#roleSwitch").value;state.location=$("#locationSwitch").value;
  const p=roleProfiles[state.role];
- $$(".manager-only").forEach(x=>x.style.display=p.manager?"":"none");
- $$(".admin-only").forEach(x=>x.style.display=p.admin?"":"none");
  $("#readinessScore").textContent=p.readiness+"%";
  $("#continueTitle").textContent=p.continue;
  $("#continueMeta").textContent=`Current course • ${p.progress}% complete`;
  $("#continueProgress").style.width=p.progress+"%";
  renderDashboard();renderCourses();renderSimulations();renderManager();
  toast(`View updated for ${state.role} at ${state.location}`);
- if(!p.manager && ["manager","content","reports","admin"].includes(document.querySelector(".view.active").id)) switchView("dashboard");
+ applyRoleGating();
 }
 $("#roleSwitch").addEventListener("change",updateRole);$("#locationSwitch").addEventListener("change",updateRole);
 
@@ -398,7 +483,13 @@ $("#globalSearch").addEventListener("input",e=>{
 document.addEventListener("click",e=>{if(!e.target.closest(".global-search-wrap"))$("#globalResults").classList.remove("open")});
 
 $("#themeBtn").addEventListener("click",()=>{const n=document.documentElement.dataset.theme==="dark"?"light":"dark";document.documentElement.dataset.theme=n;$("#themeBtn").textContent=n==="dark"?"☀":"☾"});
-$("#profileBtn").addEventListener("click",()=>openModal(`<span class="eyebrow">User profile</span><h1 class="modal-title">Francesca Ferrucci</h1><p>General Manager — Portland Market</p><div class="detail-card"><strong>Permissions</strong><span>Learner • Manager • Validator • Content Owner • Administrator</span></div><div class="detail-card"><strong>Learning summary</strong><span>86% completion • 12 validated competencies • 3 certificates</span></div>`));
+$("#profileBtn").addEventListener("click",()=>{
+ const p=hlsAuth.profile;
+ const name=p?.full_name||hlsAuth.user?.email||"Signed-in user";
+ const sub=[p?.job_title,p?.location].filter(Boolean).join(" — ")||hlsAuth.user?.email||"";
+ openModal(`<span class="eyebrow">User profile</span><h1 class="modal-title">${escapeHtml(name)}</h1><p>${escapeHtml(sub)}</p><div class="detail-card"><strong>Account role</strong><span>${escapeHtml(currentRole())}</span></div><div class="detail-card"><strong>Signed in as</strong><span>${escapeHtml(hlsAuth.user?.email||"—")}</span></div><button class="secondary" id="logoutBtn">Log out</button>`);
+ $("#logoutBtn").addEventListener("click",async()=>{$("#modal").close();await sb.auth.signOut();showAuthGate();toast("Signed out")});
+});
 $("#modalClose").addEventListener("click",()=>$("#modal").close());
 
 const notifications=[
@@ -786,563 +877,23 @@ renderMedicalAcademy();renderLevel5();renderLevel6();renderLevel7();applyHashRou
 })();
 
 
-/* ===== Hannah Medical Academy — Level 2: Ear Examination Fundamentals (Patient Assessment) ===== */
+/* ===== Hannah Medical Academy — Level 2 (Patient Assessment) generic lesson player ===== */
 (()=>{
-const L2_SOURCES = {
-  mite:{img:'https://upload.wikimedia.org/wikipedia/commons/c/c8/Otodectes_cynotis.jpg',caption:'Otodectes cynotis (ear mite), microscopic image obtained from a cat.',credit:'Wikimedia Commons — public domain / self-published work',link:'https://commons.wikimedia.org/wiki/File:Otodectes_cynotis.jpg'},
-  otoscopy:{img:'https://upload.wikimedia.org/wikipedia/commons/1/16/Otoscopy_dog.jpg',caption:'Otoscopic examination of a dog\u2019s ear canal.',credit:'Wikimedia Commons (CC BY-SA 3.0)',link:'https://commons.wikimedia.org/wiki/File:Otoscopy_dog.jpg'},
-  otitis:{img:'https://upload.wikimedia.org/wikipedia/commons/c/c9/Otitis_externa.jpg',caption:'Otitis externa — inflammation of the external ear canal.',credit:'Klaus D. Peter, Wiehl, Germany — Wikimedia Commons (CC BY 3.0 DE)',link:'https://commons.wikimedia.org/wiki/File:Otitis_externa.jpg'},
-  catears:{img:'https://upload.wikimedia.org/wikipedia/commons/0/04/EarsOfCat.jpg',caption:'Normal feline pinnae for baseline comparison.',credit:'Wikimedia Commons (CC BY 4.0)',link:'https://commons.wikimedia.org/wiki/File:EarsOfCat.jpg'}
-};
-function sourceFigureL2(key){
-  const s=L2_SOURCES[key];
-  return `<figure class="l2-source-figure"><img src="${s.img}" alt="${s.caption}" loading="lazy"><figcaption><strong>${s.caption}</strong></figcaption></figure>`;
-}
-function l2LegendBadge(x,y,n){
-  return `<circle cx="${x}" cy="${y}" r="10" fill="#063f63"/><text x="${x}" y="${y+4}" font-size="11" font-weight="700" fill="#fff" text-anchor="middle">${n}</text>`;
-}
-function l2LegendRow(x,y,n,label){
-  return `${l2LegendBadge(x,y,n)}<text x="${x+18}" y="${y+4}" font-size="13" font-weight="600" fill="#0b2338">${label}</text>`;
-}
-function canineEarSVGL2(){
-  return `<svg viewBox="0 0 700 260" role="img" aria-label="Diagram of canine ear cross-section showing pinna, L-shaped ear canal, tympanic membrane, middle ear, and inner ear">
-  <rect x="0" y="0" width="700" height="260" fill="none"/>
-  <path d="M40 60 C10 90 10 150 45 175 C65 190 90 175 95 150 L100 95 C100 70 70 45 40 60 Z" fill="#f3a43b" stroke="#063f63" stroke-width="3"/>
-  <path d="M100 100 C150 105 170 120 172 150 C174 175 190 178 210 178" fill="none" stroke="#129bd2" stroke-width="16" stroke-linecap="round"/>
-  <line x1="210" y1="178" x2="238" y2="178" stroke="#0b6696" stroke-width="16" stroke-linecap="round"/>
-  <rect x="236" y="163" width="6" height="30" fill="#063f63"/>
-  <circle cx="270" cy="178" r="22" fill="#8557b5" opacity=".85"/>
-  <circle cx="270" cy="178" r="8" fill="#fff"/>
-  <path d="M292 178 C320 178 320 150 350 150 C375 150 375 178 400 178" fill="none" stroke="#13a283" stroke-width="14" stroke-linecap="round"/>
-  <circle cx="400" cy="178" r="16" fill="#13a283"/>
-  ${l2LegendBadge(52,48,1)}
-  ${l2LegendBadge(140,92,2)}
-  ${l2LegendBadge(215,205,3)}
-  ${l2LegendBadge(239,138,4)}
-  ${l2LegendBadge(270,215,5)}
-  ${l2LegendBadge(400,215,6)}
-  <line x1="430" y1="15" x2="430" y2="245" stroke="#d8e2ea" stroke-width="2"/>
-  ${l2LegendRow(452,42,1,'Pinna')}
-  ${l2LegendRow(452,76,2,'Vertical canal')}
-  ${l2LegendRow(452,110,3,'Horizontal canal')}
-  ${l2LegendRow(452,144,4,'Tympanic membrane')}
-  ${l2LegendRow(452,178,5,'Middle ear (ossicles, bulla)')}
-  ${l2LegendRow(452,212,6,'Inner ear (cochlea, vestibular)')}
-  </svg>`;
-}
-function felineEarSVGL2(){
-  return `<svg viewBox="0 0 700 260" role="img" aria-label="Diagram of feline ear cross-section showing pinna, ear canal, tympanic membrane, middle ear, and inner ear">
-  <path d="M35 40 L100 100 C102 130 90 165 55 178 C25 188 8 160 12 130 C16 95 20 60 35 40 Z" fill="#f3a43b" stroke="#063f63" stroke-width="3"/>
-  <path d="M100 105 C145 112 165 130 168 155 C170 172 185 178 205 178" fill="none" stroke="#129bd2" stroke-width="15" stroke-linecap="round"/>
-  <line x1="205" y1="178" x2="235" y2="178" stroke="#0b6696" stroke-width="15" stroke-linecap="round"/>
-  <rect x="233" y="164" width="6" height="28" fill="#063f63"/>
-  <circle cx="266" cy="178" r="20" fill="#8557b5" opacity=".85"/>
-  <circle cx="266" cy="178" r="7" fill="#fff"/>
-  <path d="M286 178 C312 178 312 152 340 152 C365 152 365 178 392 178" fill="none" stroke="#13a283" stroke-width="13" stroke-linecap="round"/>
-  <circle cx="392" cy="178" r="15" fill="#13a283"/>
-  ${l2LegendBadge(40,42,1)}
-  ${l2LegendBadge(130,95,2)}
-  ${l2LegendBadge(220,200,3)}
-  ${l2LegendBadge(266,148,4)}
-  ${l2LegendBadge(392,205,5)}
-  <line x1="430" y1="15" x2="430" y2="245" stroke="#d8e2ea" stroke-width="2"/>
-  ${l2LegendRow(452,50,1,'Pinna')}
-  ${l2LegendRow(452,92,2,'Ear canal')}
-  ${l2LegendRow(452,134,3,'Tympanic membrane')}
-  ${l2LegendRow(452,176,4,'Middle ear')}
-  ${l2LegendRow(452,218,5,'Inner ear')}
-  </svg>`;
-}
-
-const l2Modules=[
- {id:1,title:'Ear Anatomy',minutes:12,icon:'\u{1F9E9}',
-  content:`<p>The external ear includes the <strong>pinna</strong>, the vertical and horizontal portions of the external ear canal, and the <strong>tympanic membrane</strong>; the tympanic membrane separates the external and middle ear.</p>
-   <p>The middle ear includes the tympanic bulla, auditory tube opening, and ossicles, while the inner ear includes cochlear and vestibular structures relevant to hearing and balance.</p>
-   <p>Dogs have an <strong>L-shaped ear canal</strong>, which affects drainage and makes technique important during otoscopic examination.</p>
-   <div class="l2-module-grid" style="margin-top:16px">
-     <figure class="l2-anatomy-figure">${canineEarSVGL2()}<figcaption><strong>Original instructional diagram — canine ear cross-section.</strong> Not a photograph; illustrates pinna, L-shaped vertical/horizontal canal, tympanic membrane, middle ear, and inner ear.</figcaption></figure>
-     <figure class="l2-anatomy-figure">${felineEarSVGL2()}<figcaption><strong>Original instructional diagram — feline ear cross-section.</strong> Illustrates pinna, ear canal, tympanic membrane, middle ear, and inner ear.</figcaption></figure>
-   </div>`,
-  quiz:[
-   {q:'Which structure separates the external ear canal from the middle ear?',opts:['Pinna','Tympanic membrane','Cochlea','Auditory tube'],correct:1,exp:'The tympanic membrane separates the external and middle ear.'},
-   {q:'True or False: The canine ear canal is straight, so fluid drains easily from the deepest part of the canal.',opts:['True','False'],correct:1,exp:'False. Dogs have an L-shaped canal, which affects drainage and examination technique.'},
-   {q:'Which structure is part of the inner ear?',opts:['Pinna','Horizontal canal','Cochlea','Ceruminous gland'],correct:2,exp:'The inner ear includes cochlear and vestibular structures.'},
-   {q:'Which phrase is most accurate?',opts:['The pinna is the eardrum.','The pinna helps collect sound toward the ear canal.','The middle ear is the same as the vertical canal.','The tympanic membrane is outside the pinna.'],correct:1,exp:'The pinna collects and transmits sound waves toward the tympanic membrane.'}
-  ]},
- {id:2,title:'Normal Otoscopic Technique & Handling',minutes:15,icon:'\u{1FA7A}',
-  content:`<p>A safe exam begins with observation and pinna/preauricular skin assessment, followed by otoscopic examination and tympanic membrane assessment where tolerated.</p>
-   <p>Check the otoscope head, handle, speculum, and light before use, and choose a clean, dry speculum appropriate for the patient.</p>
-   <p>Examine the <strong>least affected ear first</strong>, handle the pinna gently since ear disease may be painful, and remember that painful or resistant patients may require sedation or veterinarian reassessment rather than forced examination.</p>
-   ${sourceFigureL2('otoscopy')}`,
-  quiz:[
-   {q:'Before placing a cone in the ear, what should staff do first?',opts:['Clean the ear deeply','Check equipment, choose a clean appropriate cone, and observe/palpate as directed','Add medication','Skip the less affected ear'],correct:1,exp:'Assembly, clean cone selection, light check, and careful handling come first.'},
-   {q:'True or False: It is acceptable to force the otoscope cone past resistance if visualization is poor.',opts:['True','False'],correct:1,exp:'False. Painful or resistant ears may require veterinarian reassessment or sedation rather than forced examination.'},
-   {q:'Which ear should usually be examined first when one ear appears less affected?',opts:['The most painful ear','The less affected ear','The right ear always','The ear the Member points to first'],correct:1,exp:'Begin with the less affected or less irritated ear when possible.'},
-   {q:'Which behavior is a stop-and-escalate sign?',opts:['Patient calmly standing','Severe pain response when the pinna is touched','Clean cone selected','Normal canal view'],correct:1,exp:'Pain may make otoscopy unsafe or require sedation/an alternate plan.'}
-  ]},
- {id:3,title:'Recognizing Normal vs. Abnormal',minutes:15,icon:'\u{1F441}\uFE0F',
-  content:`<p>Normal ear canals are generally smooth and pale pink, and normal tympanic membranes are semitransparent/concave with a recognizable pars flaccida and pars tensa.</p>
-   <p>Abnormal findings that support staff should recognize and document include erythema, exudate amount/character, erosion, ulceration, edema, stenosis, glandular hyperplasia, masses, foreign material, parasites, and inability to visualize the tympanic membrane.</p>
-   ${sourceFigureL2('otitis')}`,
-  quiz:[
-   {q:'Which finding should be documented as abnormal?',opts:['Pale pink canal with no discharge','Dark exudate with head shaking','Comfortable exam','Normal-looking pinna'],correct:1,exp:'Exudate and head shaking are consistent with abnormal ear findings that warrant veterinary evaluation.'},
-   {q:'True or False: Support staff should describe what they see before assigning a diagnosis.',opts:['True','False'],correct:0,exp:'True. Otitis diagnosis depends on history, otoscopy, and cytologic evaluation, so observable documentation is appropriate at this stage.'},
-   {q:'Which image label is most objective?',opts:['Bad yeast infection','Gross ear','Brown waxy debris and mild redness','Needs antibiotics'],correct:2,exp:'Objective descriptors support veterinarian assessment without overdiagnosis.'},
-   {q:'Which abnormality is listed among otoscopic findings to evaluate?',opts:['Stenosis','Tail length','Tooth calculus','Paw pad color'],correct:0,exp:'Stenosis is among the ear-canal findings to evaluate during otoscopy.'}
-  ]},
- {id:4,title:'Intro to Common Ear Conditions',minutes:12,icon:'\u{1FA7B}',
-  content:`<p><strong>Otitis externa</strong> is inflammation of the external ear canal and may be acute/chronic, unilateral/bilateral, infectious/noninfectious, and multifactorial.</p>
-   <p><strong>Allergic disease</strong> can cause erythema and pruritus of the pinnae and external ear canals and can predispose to secondary bacterial or yeast otitis externa.</p>
-   <p><strong>Ear mites</strong>, especially in puppies and kittens, can cause intense itching and dark brown/granular discharge.</p>
-   ${sourceFigureL2('mite')}`,
-  quiz:[
-   {q:'Otitis externa is best defined as:',opts:['Inflammation of the external ear canal','A specific yeast diagnosis','A medication name','A middle-ear tumor only'],correct:0,exp:'Otitis externa is inflammation of the external ear canal.'},
-   {q:'True or False: Allergic disease can predispose dogs and cats to secondary bacterial or yeast otitis externa.',opts:['True','False'],correct:0,exp:'True. Allergic conditions can predispose to secondary bacterial or yeast otitis externa.'},
-   {q:'Ear mites are especially important to consider in which foundational case?',opts:['Newly adopted kitten with dark granular debris and scratching','Adult dog with normal ears','Dog with a broken toenail','Cat with no ear signs'],correct:0,exp:'Ear mites are often identified in young cats and can present with dark granular otic discharge.'},
-   {q:'Which statement is scope-appropriate for this stage?',opts:['This chronic ear case is caused only by bacteria.','The ear is red and has discharge; the veterinarian may recommend cytology.','No exam is needed.','Use leftover medication at home.'],correct:1,exp:'Diagnosis is based on history, otoscopy, and cytology rather than assumptions.'}
-  ]},
- {id:5,title:'Ear Cytology Preview',minutes:15,icon:'\u{1F52C}',
-  content:`<p>Ear cytology is a rapid, inexpensive in-house procedure used to identify microbial or parasitic contributors in pruritic or abnormal ears.</p>
-   <p><em>Malassezia</em> yeast is commonly described as peanut-, snowman-, or shoeprint-shaped; cocci are commonly associated with <em>Staphylococcus</em> or <em>Streptococcus</em>; rods commonly include organisms such as <em>Pseudomonas</em> or <em>Proteus</em>.</p>
-   <p>At this stage, learners only need visual recognition and appropriate documentation/hand-off — collection, slide preparation, grading, and interpretation build on this foundation later in the Patient Assessment and Diagnostics pathway.</p>
-   ${sourceFigureL2('mite')}`,
-  quiz:[
-   {q:'Which cytology finding has a peanut, snowman, or shoeprint appearance?',opts:['Malassezia yeast','Tympanic membrane','Foreign body','Pinna'],correct:0,exp:'Malassezia is described as peanut-, snowman-, or shoeprint-shaped.'},
-   {q:'Which organisms are often described as rods in otic cytology contexts?',opts:['Pseudomonas or Proteus','Fleas only','Heartworms','Roundworms'],correct:0,exp:'Rod bacteria in otitis contexts commonly include Pseudomonas and Proteus.'},
-   {q:'True or False: At this stage, participants are expected to prescribe treatment based on cytology images.',opts:['True','False'],correct:1,exp:'False. This module is recognition and handoff; treatment decisions remain veterinarian-directed.'},
-   {q:'Ear mites are typically sought under which preparation style?',opts:['Mineral oil at low magnification','Urinalysis strip only','Blood smear only','Dental radiograph'],correct:0,exp:'Ectoparasites are evaluated by placing suspicious material in mineral oil and examining at low magnification.'}
-  ]},
- {id:6,title:'Member Communication Basics',minutes:12,icon:'\u{1F4AC}',
-  content:`<p>Explain observable findings in plain language, avoid saying "it is definitely yeast/bacteria/allergies" before diagnostics, and reinforce that the veterinarian uses history, otoscopy, and cytology to determine next steps.</p>
-   <p>Gather useful history such as duration, prior treatment, seasonality, swimming/moisture, other skin signs, other pets, and medication/cleaner use.</p>
-   ${sourceFigureL2('catears')}`,
-  quiz:[
-   {q:'Which Member statement is best?',opts:['Your pet definitely has yeast.','The ear looks red with debris, and the doctor may recommend a sample to identify what is present.','Use vinegar tonight.','No recheck will be needed.'],correct:1,exp:'Diagnosis and treatment planning depend on history, otoscopy, and cytology.'},
-   {q:'True or False: Staff should ask about seasonality, swimming, prior medications, and other skin signs when collecting an ear history.',opts:['True','False'],correct:0,exp:'True. Otitis workups benefit from detailed history and dermatologic context.'},
-   {q:'A Member asks, "Why can\u2019t we just refill the old ear drops?" The best response is:',opts:['Sure, old drops always work.','The doctor needs to assess the ear because different causes can look similar, and cytology may be needed.','Ear drops are never used.','It is definitely mites.'],correct:1,exp:'Treating otitis successfully requires identifying the inciting cause and current findings.'},
-   {q:'Which phrase avoids overdiagnosis?',opts:['Looks consistent with debris and redness.','Guaranteed bacterial infection.','Definitely allergies.','No diagnostics are needed.'],correct:0,exp:'Observable language supports accurate handoff.'}
-  ]}
+const COURSE_SLUG='patient-assessment';
+/* Lessons still in development are not in the database yet; live lessons are loaded from Supabase. */
+const plannedLessons=[
+ {id:'history',title:'Patient History',desc:'Structured history-taking, Member interview technique, and chart documentation.'},
+ {id:'tpr',title:'TPR',desc:'Temperature, pulse, and respiration: technique, normal ranges, and red flags.'},
+ {id:'bcs',title:'Body Condition Scoring',desc:'9-point body condition and muscle condition scoring with Member communication.'},
+ {id:'pain',title:'Pain Assessment',desc:'Species-specific pain scales, behavioral cues, and escalation criteria.'},
+ {id:'hydration',title:'Hydration Assessment',desc:'Skin turgor, mucous membranes, and dehydration percentage estimation.'},
+ {id:'neuro',title:'Neurologic Screening',desc:'Cranial nerve checks, gait, proprioception, and reflex screening basics.'},
+ {id:'mobility',title:'Mobility Evaluation',desc:'Gait analysis, orthopedic screening, and lameness grading fundamentals.'},
+ {id:'ophthalmic',title:'Ophthalmic Basics',desc:'External eye exam, pupillary light reflex, and common abnormality recognition.'},
+ {id:'derm',title:'Dermatologic Examination',desc:'Skin and coat exam technique, lesion recognition, and cytology preview.'}
 ];
 
-const l2Cases=[
- {id:0,title:'Bella — Wellness Ear Check',patient:'Bella',species:'Feline',signalment:'3-year-old neutered male domestic shorthair cat, indoor only',history:'Presented for wellness exam; Member reports no scratching, head shaking, odor, or discharge.',
-  stages:['Exam Findings','Documentation','Member Communication','Diagnostics Decision','Escalation Triggers'],
-  content:[
-   `<span class="eyebrow">Exam findings</span><h2>Review the otoscopic view</h2><p>Clean pinnae, pale pink canal entrance, minimal cerumen, no erythema, no discharge, no pain response, and an otoscopic view adequate to identify a normal-looking canal and tympanic membrane.</p>${sourceFigureL2('catears')}`,
-   `<span class="eyebrow">Documentation</span><h2>Which findings should be documented?</h2><div class="choice-grid" id="l2c0s1"></div>`,
-   `<span class="eyebrow">Member communication</span><h2>What should the team say to the Member?</h2><div class="choice-grid" id="l2c0s2"></div>`,
-   `<span class="eyebrow">Diagnostics decision</span><h2>Does this patient need cytology based on the information gathered?</h2><div class="choice-grid" id="l2c0s3"></div>`,
-   `<span class="eyebrow">Escalation triggers</span><h2>What would make the team stop and get the veterinarian sooner?</h2><div class="choice-grid" id="l2c0s4"></div><button class="primary" id="completeL2Case0" style="margin-top:16px">Complete case</button>`
-  ],
-  decisions:{
-   l2c0s1:{opts:['"Both pinnae clean; canals appear pale pink; minimal cerumen; no discharge noted; patient tolerated exam."','"Ears look totally fine, nothing to say."','"Cat has healthy ears, no need to check again for years."'],correct:0,exp:'Objective, specific documentation supports the medical record and future comparison.'},
-   l2c0s2:{opts:['"Your cat has perfect ears forever."','"The doctor did not see concerning ear findings today; if you notice head shaking, odor, discharge, or scratching, please call us."','"No further ear care is ever needed."'],correct:1,exp:'This response is accurate, non-diagnostic, and gives the Member clear next steps.'},
-   l2c0s3:{opts:['Yes, cytology is required today.','Not based on the presented normal wellness findings, but the veterinarian makes final diagnostic decisions.','Cytology is never needed for cats.'],correct:1,exp:'Normal wellness findings do not indicate cytology, but the DVM always makes the final call.'},
-   l2c0s4:{opts:['Pain, sudden resistance, discharge, foreign material, bleeding, severe redness, suspected mass, or inability to safely visualize.','A slightly dusty exam room.','The Member being in a hurry.'],correct:0,exp:'These are the recognized stop-and-escalate signs for staff at this level.'}
-  }},
- {id:1,title:'Cooper — Mild Otitis Externa',patient:'Cooper',species:'Canine',signalment:'5-year-old spayed female Cocker spaniel mix',history:'Two weeks of intermittent head shaking and ear rubbing; Member reports "a musty smell" and occasional brown debris; dog swims weekly.',
-  stages:['Exam Findings','Documentation','Handoff','Scope Check','Next Steps'],
-  content:[
-   `<span class="eyebrow">Exam findings</span><h2>Review the otoscopic view</h2><p>Right ear with mild erythema and brown waxy debris; left ear mildly pink with less debris; dog tolerates gentle pinna handling but withdraws when the cone is advanced too quickly.</p>${sourceFigureL2('otitis')}`,
-   `<span class="eyebrow">Documentation</span><h2>What observable findings should be documented without diagnosing?</h2><div class="choice-grid" id="l2c1s1"></div>`,
-   `<span class="eyebrow">Handoff</span><h2>What is the correct next-step handoff to the veterinarian?</h2><div class="choice-grid" id="l2c1s2"></div>`,
-   `<span class="eyebrow">Scope check</span><h2>Which statement is not appropriate for support staff at this level?</h2><div class="choice-grid" id="l2c1s3"></div>`,
-   `<span class="eyebrow">Next steps</span><h2>Which upcoming topic will build on this case?</h2><div class="choice-grid" id="l2c1s4"></div><button class="primary" id="completeL2Case1" style="margin-top:16px">Complete case</button>`
-  ],
-  decisions:{
-   l2c1s1:{opts:['"Right ear: mild redness and brown waxy debris; odor reported by Member; patient mildly sensitive during otoscope attempt. Left ear: mild pinkness and less debris."','"Dog has a bad ear infection."','"Nothing unusual, just needs a bath."'],correct:0,exp:'Objective, side-specific documentation supports accurate veterinary review.'},
-   l2c1s2:{opts:['"Tell the veterinarian the dog has head shaking, swimming history, odor, debris, erythema, and sensitivity; ask whether cytology is indicated before cleaning or medication."','"Just start ear drops now."','"No handoff is needed, it is minor."'],correct:0,exp:'A complete, objective handoff lets the DVM decide on cytology and next steps.'},
-   l2c1s3:{opts:['"I will document what I observed for the doctor to review."','"This is definitely yeast, and the doctor will prescribe antifungal drops."','"I will ask the doctor whether cytology is indicated."'],correct:1,exp:'Diagnosing yeast before cytology overstates scope at this level.'},
-   l2c1s4:{opts:['Cytology collection, preparation, organism identification, and diagnostic decision-making.','Surgical suturing technique.','Radiograph positioning for the thorax.'],correct:0,exp:'The Patient Assessment and Diagnostics pathway builds directly on this case with hands-on cytology skills.'}
-  }},
- {id:2,title:'Milo — Suspected Ear Mites',patient:'Milo',species:'Feline (kitten)',signalment:'14-week-old intact male domestic medium hair kitten, recently adopted from a multi-cat environment',history:'Member reports intense scratching, head shaking, and dark crumbly material in both ears.',
-  stages:['Exam Findings','Documentation','Member Communication','Household Risk','Image ID'],
-  content:[
-   `<span class="eyebrow">Exam findings</span><h2>Review the otoscopic and microscope preview</h2><p>Bilateral dark granular "coffee-ground" debris, erythematous canal entrance, excoriations around the pinnae, and a microscope preview image showing an <em>Otodectes cynotis</em> adult mite in mineral oil.</p>${sourceFigureL2('mite')}`,
-   `<span class="eyebrow">Documentation</span><h2>What observable findings should be documented?</h2><div class="choice-grid" id="l2c2s1"></div>`,
-   `<span class="eyebrow">Member communication</span><h2>What should the team say to the Member before the veterinarian confirms diagnosis?</h2><div class="choice-grid" id="l2c2s2"></div>`,
-   `<span class="eyebrow">Household risk</span><h2>Why should other pets in the home be mentioned to the veterinarian?</h2><div class="choice-grid" id="l2c2s3"></div>`,
-   `<span class="eyebrow">Image ID</span><h2>Which image should learners identify in this case?</h2><div class="choice-grid" id="l2c2s4"></div><button class="primary" id="completeL2Case2" style="margin-top:16px">Complete case</button>`
-  ],
-  decisions:{
-   l2c2s1:{opts:['"Bilateral dark granular debris; scratching/head shaking reported; redness at canal entrance; excoriations around pinnae."','"Kitten definitely has ear mites, no need to check."','"Ears look a little dirty."'],correct:0,exp:'This documentation is observable and specific without assuming the final diagnosis.'},
-   l2c2s2:{opts:['"This type of debris can be seen with parasites such as ear mites, but the veterinarian will confirm the cause and recommend the safest plan."','"Your kitten definitely has ear mites, here is medication."','"This is nothing to worry about."'],correct:0,exp:'This communicates a reasonable possibility without overdiagnosing or overpromising.'},
-   l2c2s3:{opts:['Ear mite infestation follows direct contact and commonly occurs in close-contact animals, so household exposure may matter.','It is just polite small talk.','Other pets are never relevant to ear cases.'],correct:0,exp:'Contagion risk to other household pets is clinically relevant and should be shared with the DVM.'},
-   l2c2s4:{opts:['Low-power mineral-oil image of an ear mite or mite eggs.','A chest radiograph.','A blood smear for anemia.'],correct:0,exp:'Ear mites are identified via low-power mineral-oil preparation.'}
-  }}
-];
-
-const l2Stations=[
- {icon:'\u{1FA7A}',title:'Station 1: Normal Ear Exam',time:'18 min',desc:'Observe pinnae, describe normal findings, demonstrate gentle positioning, and identify stop points on an approved calm patient or teaching model.'},
- {icon:'\u{1F50E}',title:'Station 2: Otoscope & Model Practice',time:'18 min',desc:'Assemble the otoscope, choose cone size, verify light, and navigate a model from entrance to horizontal canal while maintaining visualization.'},
- {icon:'\u{1F5BC}\uFE0F',title:'Station 3: Image ID Gallery',time:'18 min',desc:'Sort images into normal, abnormal, stop/escalate, and insufficient-view categories using observable language.'},
- {icon:'\u{1F52C}',title:'Station 4: Cytology Preview Gallery',time:'18 min',desc:'Match microscope images to yeast, cocci, rods, inflammatory cells, and mite/egg categories, and identify what to hand off.'},
- {icon:'\u{1F5E3}\uFE0F',title:'Station 5: Member Roleplay',time:'18 min',desc:'Explain normal exam, mild abnormal findings, and suspected mites to a "Member" using non-diagnostic, empathetic language.'}
-];
-
-const l2ChecklistItems=[
- {t:'Washes/sanitizes hands and prepares clean equipment.',critical:true},
- {t:'Confirms otoscope head is secure, light works, and cone is clean/appropriate.',critical:true},
- {t:'Observes patient body language before touching ears.',critical:true},
- {t:'Handles pinna gently and avoids painful manipulation.',critical:true},
- {t:'Starts with less affected ear when applicable.',critical:false},
- {t:'Maintains visualization while advancing the cone on model.',critical:true},
- {t:'Does not force cone past resistance or pain.',critical:true},
- {t:'Describes findings objectively: color, debris, discharge, odor reported, swelling, visible lesion, patient response.',critical:true},
- {t:'Correctly identifies normal vs. abnormal image findings.',critical:true},
- {t:'Recognizes yeast/cocci/rods/mite examples at a foundational level.',critical:false},
- {t:'Uses role-appropriate language and avoids diagnosis/treatment promises.',critical:true},
- {t:'Provides a concise veterinarian handoff using history + observed findings.',critical:true}
-];
-
-const l2CertRows=[
- {req:'Prework completion',criterion:'100% complete before lab'},
- {req:'Module knowledge checks',criterion:'Average 85% across all six modules'},
- {req:'Image identification assessment',criterion:'85% correct on normal/abnormal/escalate set'},
- {req:'Cytology preview assessment',criterion:'80% correct on organism/artifact set'},
- {req:'Skills lab checklist',criterion:'100% of critical items signed off'},
- {req:'Final attestation',criterion:'Learner signs scope-of-practice statement'}
-];
-
-let l2State=JSON.parse(localStorage.getItem('hlsTrueLevel2')||JSON.stringify({tab:'overview',moduleProgress:{},moduleScores:{},caseId:null,caseStep:0,casesCompleted:[],checklist:{},attested:false,signoffRequested:false}));
-function persistL2(){localStorage.setItem('hlsTrueLevel2',JSON.stringify(l2State))}
-
-function l2CompletedModuleCount(){return Object.values(l2State.moduleProgress).filter(Boolean).length}
-function l2OverallPercent(){
- const modulePct=(l2CompletedModuleCount()/l2Modules.length)*100;
- const checklistPct=(Object.values(l2State.checklist).filter(Boolean).length/l2ChecklistItems.length)*100;
- const casePct=(l2State.casesCompleted.length/l2Cases.length)*100;
- return Math.round((modulePct+checklistPct+casePct)/3);
-}
-
-const level2Lessons=[
- {id:'nose-to-tail',title:'Nose-to-Tail Examination',desc:'Systematic nose-to-tail physical exam sequence and normal-finding documentation.',status:'live'},
- {id:'history',title:'Patient History',desc:'Structured history-taking, Member interview technique, and chart documentation.',status:'planned'},
- {id:'tpr',title:'TPR',desc:'Temperature, pulse, and respiration: technique, normal ranges, and red flags.',status:'planned'},
- {id:'bcs',title:'Body Condition Scoring',desc:'9-point body condition and muscle condition scoring with Member communication.',status:'planned'},
- {id:'pain',title:'Pain Assessment',desc:'Species-specific pain scales, behavioral cues, and escalation criteria.',status:'planned'},
- {id:'hydration',title:'Hydration Assessment',desc:'Skin turgor, mucous membranes, and dehydration percentage estimation.',status:'planned'},
- {id:'neuro',title:'Neurologic Screening',desc:'Cranial nerve checks, gait, proprioception, and reflex screening basics.',status:'planned'},
- {id:'mobility',title:'Mobility Evaluation',desc:'Gait analysis, orthopedic screening, and lameness grading fundamentals.',status:'planned'},
- {id:'ophthalmic',title:'Ophthalmic Basics',desc:'External eye exam, pupillary light reflex, and common abnormality recognition.',status:'planned'},
- {id:'otic',title:'Otic Examination',desc:'Ear anatomy, safe otoscopic technique, normal vs. abnormal recognition, common condition awareness, cytology preview, and Member communication.',status:'live'},
- {id:'derm',title:'Dermatologic Examination',desc:'Skin and coat exam technique, lesion recognition, and cytology preview.',status:'planned'}
-];
-
-function openLevel2Hub(){renderLevel2Hub();switchView('level2Hub')}
-
-function renderLevel2Hub(){
- const oticPct=l2OverallPercent();
- const ntPct=l2NtOverallPercent();
- const hubPct=Math.round((oticPct+ntPct)/level2Lessons.length);
- const ring=document.querySelector('#level2HubProgressRing'); if(ring)ring.innerHTML=`<strong>${hubPct}%</strong><span>Level complete</span>`;
- const grid=document.querySelector('#level2LessonGrid'); if(!grid)return;
- grid.innerHTML=level2Lessons.map((l,i)=>{
-  const n=i+1;
-  const isLive=l.status==='live';
-  const pct=l.id==='otic'?oticPct:l.id==='nose-to-tail'?ntPct:0;
-  const badge=isLive?(pct>=100?'good':'warning'):'neutral';
-  const badgeLabel=isLive?(pct>=100?'Complete':pct>0?'In progress':'Start here'):'Coming soon';
-  const cta=isLive?(pct>0?'Continue lesson':'Start lesson'):'Coming soon';
-  return `<article class="level-card ${isLive?'':'locked'}" data-lesson="${l.id}"><div class="section-head"><div class="level-number">${n}</div><span class="badge ${badge}">${badgeLabel}</span></div><h2>${l.title}</h2><p>${l.desc}</p><div class="progress"><span style="width:${pct}%"></span></div><div class="card-footer"><strong>${pct}%</strong><button class="${isLive?'primary':'secondary'} l2-lesson-open" data-lesson="${l.id}" ${isLive?'':'disabled'}>${cta}</button></div></article>`;
- }).join('');
- document.querySelectorAll('.l2-lesson-open').forEach(b=>b.onclick=()=>{
-  const lesson=level2Lessons.find(x=>x.id===b.dataset.lesson);
-  if(lesson&&lesson.id==='nose-to-tail')window.openLevel2Nt();
-  else if(lesson&&lesson.status==='live')openLevel2();
-  else openModal(`<span class="eyebrow">Patient Assessment • Coming soon</span><h1 class="modal-title">${lesson.title}</h1><p>${lesson.desc}</p><p class="safety-note"><strong>In development</strong><span>This lesson is planned for Level 2 — Patient Assessment and will appear here once built and clinically reviewed.</span></p><button class="primary" onclick="document.querySelector('#modal').close()">Close</button>`);
- });
-}
-window.openLevel2Hub=openLevel2Hub;
-
-function openLevel2(tab){if(tab)l2State.tab=tab;persistL2();renderLevel2();switchView('level2')}
-
-function renderLevel2(){
- document.querySelectorAll('[data-l2tab]').forEach(b=>b.classList.toggle('active',b.dataset.l2tab===l2State.tab));
- const host=document.querySelector('#level2Content'); if(!host)return;
- const pct=l2OverallPercent();
- const ring=document.querySelector('#l2ProgressRing'); if(ring)ring.innerHTML=`<strong>${pct}%</strong><span>Complete</span>`;
-
- if(l2State.tab==='overview'){
-  host.innerHTML=`<div class="l5-dashboard-grid">
-   <section class="panel span-2">
-    <span class="eyebrow">Why this matters</span>
-    <h2>Ear exams are one of the most common reasons pets visit Hannah</h2>
-    <p>Otitis externa is common in dogs and cats, and diagnosis is built from history, otoscopic examination, and cytologic evaluation. This course intentionally stops at recognition, documentation, safe handling, and escalation rather than independent diagnosis or treatment selection.</p>
-    <ul class="l2-obj-list">
-     <li>Identify pinna, ear canal, tympanic membrane, middle ear, and inner ear structures.</li>
-     <li>Demonstrate a safe, gentle otoscopic exam workflow and know when to stop.</li>
-     <li>Classify findings as normal, mildly abnormal, or urgent/escalate.</li>
-     <li>Recognize foundational cytology organisms and ear mites at a visual level.</li>
-     <li>Use plain, non-diagnostic Member communication.</li>
-    </ul>
-    <p class="safety-note" style="margin-top:16px"><strong>How this course connects forward</strong><span>Ear Examination Fundamentals is the flagship course inside <strong>Level 2 (Patient Assessment)</strong> — vitals, history-taking, and full physical assessment modules join this level next, then hand off into cytology collection and interpretation, treatment-plan implementation under DVM direction, and advanced dermatology case review in later levels.</span></p>
-   </section>
-   <section class="panel">
-    <span class="eyebrow">Your progress</span>
-    <h2>${pct}% complete</h2>
-    <div class="progress"><span style="width:${pct}%"></span></div>
-    <div class="list-item"><span>Modules complete</span><strong>${l2CompletedModuleCount()} of ${l2Modules.length}</strong></div>
-    <div class="list-item"><span>Case studies complete</span><strong>${l2State.casesCompleted.length} of ${l2Cases.length}</strong></div>
-    <div class="list-item"><span>Skills checklist</span><strong>${Object.values(l2State.checklist).filter(Boolean).length} of ${l2ChecklistItems.length}</strong></div>
-    <div class="card-footer"><button class="primary l2-jump" data-tab="curriculum">Continue curriculum</button></div>
-   </section>
-  </div>`;
- }
- if(l2State.tab==='curriculum'){
-  host.innerHTML=`<div class="l2-module-grid">${l2Modules.map(m=>{
-   const done=!!l2State.moduleProgress[m.id];
-   const score=l2State.moduleScores[m.id];
-   return `<article class="l2-module-card"><div class="section-head"><div class="l2-module-num">${m.id}</div><span class="badge ${done?'good':'neutral'}">${done?'Complete':'Not started'}</span></div><h3>${m.title}</h3><p>${m.minutes} min \u2022 knowledge check on completion${score!=null?` \u2022 scored ${score}%`:''}</p><button class="${done?'secondary':'primary'} l2-open-module" data-module="${m.id}">${done?'Review module':'Open module'}</button></article>`;
-  }).join('')}</div>`;
- }
- if(l2State.tab==='cases'){
-  host.innerHTML=`<div class="l2-case-list">${l2Cases.map(c=>{
-   const done=l2State.casesCompleted.includes(c.id);
-   return `<article class="clinical-case"><span class="eyebrow">${c.species}</span><h2>${c.title}</h2><p>${c.history}</p><span class="badge ${done?'good':'neutral'}">${done?'Completed':'Not started'}</span><br><button class="${done?'secondary':'primary'} l2-open-case" data-case="${c.id}">${done?'Review case':'Open case'}</button></article>`;
-  }).join('')}</div>`;
- }
- if(l2State.tab==='skillslab'){
-  host.innerHTML=`<section class="panel">
-   <span class="eyebrow">Hands-on skills lab</span><h2>Five rotating stations \u2022 90 minutes total</h2>
-   <div class="l2-station-grid">${l2Stations.map(s=>`<article class="l2-station-card"><div class="l2-station-icon">${s.icon}</div><h3>${s.title}</h3><p>${s.desc}</p><span class="badge neutral">${s.time}</span></article>`).join('')}</div>
-  </section>
-  <section class="panel" style="margin-top:18px">
-   <div class="section-head"><div><span class="eyebrow">Skills checklist / rubric</span><h2>Facilitator sign-off — ${Object.values(l2State.checklist).filter(Boolean).length}/${l2ChecklistItems.length} complete (${Math.round((Object.values(l2State.checklist).filter(Boolean).length/l2ChecklistItems.length)*100)}%)</h2></div></div>
-   <div class="checklist-grid">${l2ChecklistItems.map((item,i)=>`<label class="l2-check-row ${l2State.checklist[i]?'done':''}"><input type="checkbox" data-l2-check="${i}" ${l2State.checklist[i]?'checked':''}><span>${item.t} ${item.critical?'<span class=\\"badge risk\\">Critical</span>':'<span class=\\"badge neutral\\">Non-critical</span>'}</span></label>`).join('')}</div>
-   <p class="safety-note" style="margin-top:14px"><strong>Pass standard</strong><span>All critical items must be marked complete, and no safety-critical item may be missed.</span></p>
-  </section>`;
- }
- if(l2State.tab==='certification'){
-  const modAvg=Object.keys(l2State.moduleScores).length?Math.round(Object.values(l2State.moduleScores).reduce((a,b)=>a+b,0)/Object.values(l2State.moduleScores).length):0;
-  const criticalDone=l2ChecklistItems.every((item,i)=>!item.critical||l2State.checklist[i]);
-  host.innerHTML=`<section class="panel">
-   <div class="section-head"><div><span class="eyebrow">Competency passport</span><h2>Ear Examination Foundation</h2><p>Certification title: "Ear Examination Foundation: Cleared for Supervised Ear Exam Support."</p></div><button class="primary" id="requestL2Validation">Request sign-off</button></div>
-   <div class="l2-cert-table">
-    <div class="l2-cert-head"><span>Requirement</span><span>Status</span><span>Passing criterion</span></div>
-    ${l2CertRows.map((r,i)=>{
-      let status='In progress';
-      if(i===1)status=modAvg>=85?'Met':`${modAvg}% avg`;
-      if(i===4)status=criticalDone?'Met':'Incomplete';
-      if(i===5)status=l2State.attested?'Signed':'Not signed';
-      const good=status==='Met'||status==='Signed';
-      return `<div class="l2-cert-row"><strong>${r.req}</strong><span class="badge ${good?'good':'warning'}">${status}</span><span>${r.criterion}</span></div>`;
-    }).join('')}
-   </div>
-   <label class="l2-check-row ${l2State.attested?'done':''}" style="margin-top:16px"><input type="checkbox" id="l2AttestCheck" ${l2State.attested?'checked':''}><span>I attest that this course does not authorize independent diagnosis, cytology interpretation for treatment, ear cleaning decisions, or medication recommendations.</span></label>
-   <p class="safety-note" style="margin-top:14px"><strong>What comes next in Patient Assessment</strong><span>Upcoming Level 2 modules add vitals, history-taking, and full physical assessment. Later levels add cytology collection and slide prep, treatment-plan implementation and medication administration technique under DVM direction, and advanced dermatology case review.</span></p>
-  </section>`;
- }
- wireLevel2();
-}
-
-function wireLevel2(){
- document.querySelectorAll('.l2-jump').forEach(b=>b.onclick=()=>{l2State.tab=b.dataset.tab;persistL2();renderLevel2()});
- document.querySelectorAll('.l2-open-module').forEach(b=>b.onclick=()=>openL2Module(+b.dataset.module));
- document.querySelectorAll('.l2-open-case').forEach(b=>b.onclick=()=>openL2Case(+b.dataset.case));
- document.querySelectorAll('[data-l2-check]').forEach(cb=>cb.onchange=()=>{l2State.checklist[cb.dataset.l2Check]=cb.checked;persistL2();renderLevel2();toast(cb.checked?'Checklist item marked complete':'Checklist item unchecked')});
- document.querySelector('#l2AttestCheck')?.addEventListener('change',e=>{l2State.attested=e.target.checked;persistL2();renderLevel2();toast(e.target.checked?'Attestation signed':'Attestation removed')});
- document.querySelector('#requestL2Validation')?.addEventListener('click',()=>{
-  l2State.signoffRequested=true;persistL2();
-  openModal('<span class="eyebrow">Competency validation</span><h1>Request sign-off</h1><p>Select an approved validator and shift for observed sign-off of the Ear Examination Foundation competencies.</p><button class="primary" onclick="document.querySelector(\'#modal\').close()">Submit request</button>');
-  toast('Sign-off requested');
- });
-}
-
-/* ---- Module modal with knowledge check ---- */
-let l2ActiveModule=null, l2QuizAnswers={};
-function openL2Module(id){
- l2ActiveModule=l2Modules.find(m=>m.id===id);
- l2QuizAnswers={};
- renderL2ModuleModal();
-}
-function renderL2ModuleModal(){
- const m=l2ActiveModule;
- const answeredCount=Object.keys(l2QuizAnswers).length;
- openModal(`<span class="eyebrow">Module ${m.id} of ${l2Modules.length} \u2022 ${m.minutes} min</span>
-  <h1 class="modal-title">${m.title}</h1>
-  ${m.content}
-  <div style="margin-top:22px;border-top:1px solid var(--line);padding-top:18px">
-   <div class="section-head"><div><span class="eyebrow">Knowledge check</span><h2>Answer all ${m.quiz.length} questions</h2></div><span class="l2-quiz-score" id="l2QuizScoreLabel">${answeredCount}/${m.quiz.length} answered</span></div>
-   <div id="l2QuizContainer">${m.quiz.map((q,qi)=>`
-    <div class="l2-quiz-question">
-     <h4>${qi+1}. ${q.q}</h4>
-     <div id="l2q-${qi}">${q.opts.map((o,oi)=>`<button class="decision-option" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('')}</div>
-     <div id="l2fb-${qi}"></div>
-    </div>`).join('')}
-   </div>
-   <div id="l2QuizResult" style="margin-top:16px"></div>
-  </div>`);
- document.querySelectorAll('#l2QuizContainer .decision-option').forEach(btn=>btn.onclick=()=>l2AnswerQuestion(+btn.dataset.qi,+btn.dataset.oi));
- if(answeredCount===m.quiz.length)renderL2QuizResult();
-}
-function l2AnswerQuestion(qi,oi){
- const m=l2ActiveModule;
- if(l2QuizAnswers[qi])return;
- const q=m.quiz[qi];
- const isCorrect=oi===q.correct;
- l2QuizAnswers[qi]={oi,correct:isCorrect};
- const wrap=document.querySelector(`#l2q-${qi}`);
- wrap.querySelectorAll('.decision-option').forEach((btn,idx)=>{
-  btn.disabled=true;
-  if(idx===q.correct)btn.classList.add('correct');
-  else if(idx===oi)btn.classList.add('wrong');
- });
- document.querySelector(`#l2fb-${qi}`).innerHTML=`<div class="feedback"><p><strong>${isCorrect?'Correct.':'Not quite.'}</strong> ${q.exp}</p></div>`;
- const label=document.querySelector('#l2QuizScoreLabel');
- if(label)label.textContent=`${Object.keys(l2QuizAnswers).length}/${m.quiz.length} answered`;
- if(Object.keys(l2QuizAnswers).length===m.quiz.length)renderL2QuizResult();
-}
-function renderL2QuizResult(){
- const m=l2ActiveModule;
- const correctCount=Object.values(l2QuizAnswers).filter(a=>a.correct).length;
- const pct=Math.round((correctCount/m.quiz.length)*100);
- const passed=pct>=75;
- if(passed){
-  l2State.moduleProgress[m.id]=true;
-  l2State.moduleScores[m.id]=pct;
-  persistL2();
- } else {
-  l2State.moduleScores[m.id]=pct;
-  persistL2();
- }
- document.querySelector('#l2QuizResult').innerHTML=`<div class="feedback-box"><strong>Score: ${pct}%</strong> (${correctCount} of ${m.quiz.length} correct) \u2014 ${passed?'Module marked complete.':'Retake recommended (75% needed to mark complete).'}</div>
-  <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
-   ${!passed?'<button class="secondary" id="l2RetakeQuiz">Retake knowledge check</button>':''}
-   <button class="primary" id="l2CloseModuleModal">Return to curriculum</button>
-  </div>`;
- document.querySelector('#l2RetakeQuiz')?.addEventListener('click',()=>{l2QuizAnswers={};renderL2ModuleModal()});
- document.querySelector('#l2CloseModuleModal')?.addEventListener('click',()=>{document.querySelector('#modal').close();renderLevel2()});
- if(passed)toast(`${m.title} module complete — ${pct}%`);
-}
-
-/* ---- Case runner ---- */
-function openL2Case(id){
- l2State.caseId=id;l2State.caseStep=0;persistL2();
- renderL2Case();
- switchView('level2CaseRunner');
-}
-function renderL2Case(){
- const c=l2Cases.find(x=>x.id===l2State.caseId); if(!c)return;
- document.querySelector('#l2CaseTitle').textContent=c.title;
- document.querySelector('#l2CaseSubtitle').textContent=`${c.species} \u2022 ${c.stages[l2State.caseStep]}`;
- document.querySelector('#l2CaseStepLabel').textContent=c.stages[l2State.caseStep];
- document.querySelector('#l2CaseProgress').style.width=`${((l2State.caseStep+1)/c.stages.length)*100}%`;
- document.querySelector('#l2CaseStageNav').innerHTML=c.stages.map((s,i)=>`<button class="${i===l2State.caseStep?'active':''}" data-l2-case-step="${i}">${i+1}. ${s}</button>`).join('');
- document.querySelector('#l2CasePatientName').textContent=c.patient;
- document.querySelector('#l2CaseSignalment').textContent=c.signalment;
- document.querySelector('#l2CaseHistory').textContent=c.history;
- document.querySelector('#l2CaseStepName').textContent=c.stages[l2State.caseStep];
- document.querySelector('#l2CaseStageContent').innerHTML=c.content[l2State.caseStep];
- document.querySelectorAll('[data-l2-case-step]').forEach(b=>b.onclick=()=>{l2State.caseStep=+b.dataset.l2CaseStep;persistL2();renderL2Case()});
- Object.keys(c.decisions).forEach(hostId=>{
-  const el=document.querySelector('#'+hostId);
-  if(!el)return;
-  const d=c.decisions[hostId];
-  el.innerHTML=d.opts.map((o,i)=>`<button class="case-choice" data-opt="${i}">${o}</button>`).join('')+'<div class="l2-case-feedback"></div>';
-  el.querySelectorAll('.case-choice').forEach(btn=>btn.onclick=()=>{
-   const chosen=+btn.dataset.opt;
-   el.querySelectorAll('.case-choice').forEach((b2,i2)=>{b2.disabled=true;if(i2===d.correct)b2.classList.add('selected')});
-   el.querySelector('.l2-case-feedback').innerHTML=`<div class="feedback"><p><strong>${chosen===d.correct?'Correct.':'Consider the veterinarian-approved answer:'}</strong> ${d.exp}</p></div>`;
-   toast(chosen===d.correct?'Correct decision recorded':'Feedback recorded');
-  });
- });
- document.querySelector(`#completeL2Case${c.id}`)?.addEventListener('click',()=>{
-  if(!l2State.casesCompleted.includes(c.id)){l2State.casesCompleted.push(c.id);persistL2()}
-  toast(`${c.title} completed`);
-  renderLevel2();
-  openLevel2('cases');
- });
-}
-document.querySelector('#openAskHannahL2')?.addEventListener('click',()=>{switchView('ask');document.querySelector('#askInput').value='What is the approved Hannah ear examination and otoscopy workflow?'});
-document.querySelector('#openAskHannahL2Overview')?.addEventListener('click',()=>{switchView('ask');document.querySelector('#askInput').value='What is the approved Hannah ear examination and otoscopy workflow?'});
-document.querySelector('#backToAcademiesL2')?.addEventListener('click',()=>openLevel2Hub());
-document.querySelector('#backToMedicalAcademyFromL2Hub')?.addEventListener('click',()=>window.openMedicalAcademy());
-document.querySelector('#exitLevel2Case')?.addEventListener('click',()=>openLevel2('cases'));
-document.querySelector('#level2ResourcesBtn')?.addEventListener('click',()=>openModal('<span class="eyebrow">Level 2 resources</span><h1>Ear Examination Foundation resource library</h1><p>Approved Hannah otoscopic technique guides, escalation criteria, and Member-communication scripts will appear here after clinical review.</p><p class="safety-note"><strong>Prototype boundary</strong><span>This build uses openly licensed reference images and original diagrams; production content requires Hannah-approved clinical photography and CMO review.</span></p>'));
-document.querySelectorAll('[data-l2tab]').forEach(b=>b.onclick=()=>{l2State.tab=b.dataset.l2tab;persistL2();renderLevel2()});
-
-
-/* ===== Nose-to-Tail Examination lesson (Level 2 — Patient Assessment) ===== */
-function ntBodySVG(species){
- const canine = species !== 'feline';
- const earsPath = canine
-  ? `<path d="M60 95 C40 100 32 130 45 148 C55 160 72 152 76 135 L82 108 C84 96 72 90 60 95 Z" fill="#eb9530" stroke="#063f63" stroke-width="2.5"/>`
-  : `<path d="M55 90 L75 60 L88 100 Z" fill="#eb9530" stroke="#063f63" stroke-width="2.5"/><path d="M105 90 L100 58 L122 96 Z" fill="#eb9530" stroke="#063f63" stroke-width="2.5"/>`;
- const tailPath = canine
-  ? `<path d="M388 168 C420 168 445 145 448 108" fill="none" stroke="#f3a43b" stroke-width="16" stroke-linecap="round"/>`
-  : `<path d="M388 165 C415 165 428 130 415 98" fill="none" stroke="#f3a43b" stroke-width="14" stroke-linecap="round"/>`;
- const muzzle = canine
-  ? `<ellipse cx="48" cy="140" rx="20" ry="14" fill="#f6b866" stroke="#063f63" stroke-width="2"/>`
-  : `<ellipse cx="52" cy="138" rx="16" ry="12" fill="#f6b866" stroke="#063f63" stroke-width="2"/>`;
- const tailBadgeX = canine ? 432 : 410;
- const tailBadgeY = canine ? 115 : 105;
- return `<svg viewBox="0 0 700 260" role="img" aria-label="Diagram of ${canine?'canine':'feline'} body-region map showing head and face, neck and throat, thorax, abdomen and urogenital, integument and musculoskeletal, and tail and perineal zones">
-  <ellipse cx="250" cy="170" rx="140" ry="50" fill="#f3a43b" stroke="#063f63" stroke-width="3"/>
-  <circle cx="90" cy="128" r="40" fill="#f3a43b" stroke="#063f63" stroke-width="3"/>
-  ${muzzle}
-  ${earsPath}
-  <circle cx="78" cy="118" r="3" fill="#063f63"/>
-  <rect x="140" y="205" width="14" height="42" rx="4" fill="#f3a43b" stroke="#063f63" stroke-width="2"/>
-  <rect x="170" y="205" width="14" height="42" rx="4" fill="#f3a43b" stroke="#063f63" stroke-width="2"/>
-  <rect x="320" y="205" width="14" height="42" rx="4" fill="#f3a43b" stroke="#063f63" stroke-width="2"/>
-  <rect x="350" y="205" width="14" height="42" rx="4" fill="#f3a43b" stroke="#063f63" stroke-width="2"/>
-  ${tailPath}
-  ${l2LegendBadge(90,128,1)}
-  ${l2LegendBadge(140,158,2)}
-  ${l2LegendBadge(210,165,3)}
-  ${l2LegendBadge(300,170,4)}
-  ${l2LegendBadge(160,225,5)}
-  ${l2LegendBadge(tailBadgeX,tailBadgeY,6)}
-  <line x1="470" y1="15" x2="470" y2="245" stroke="#d8e2ea" stroke-width="2"/>
-  ${l2LegendRow(492,42,1,'Head & face')}
-  ${l2LegendRow(492,76,2,'Neck & throat')}
-  ${l2LegendRow(492,110,3,'Thorax (heart & lungs)')}
-  ${l2LegendRow(492,144,4,'Abdomen & urogenital')}
-  ${l2LegendRow(492,178,5,'Integument & musculoskeletal')}
-  ${l2LegendRow(492,212,6,'Tail & perineal area')}
-  </svg>`;
-}
-function mmColorReferenceSVG(){
- return `<svg viewBox="0 0 700 150" role="img" aria-label="Mucous membrane color reference chart showing pink as normal, pale as a flag finding, blue as an emergency finding, and yellow as a flag finding">
-  <rect x="20" y="20" width="140" height="70" rx="10" fill="#e88fa0" stroke="#063f63" stroke-width="2"/>
-  <text x="90" y="110" font-size="13" font-weight="700" fill="#0b2338" text-anchor="middle">Pink</text>
-  <text x="90" y="128" font-size="11" fill="#0b2338" text-anchor="middle">Normal</text>
-  <rect x="195" y="20" width="140" height="70" rx="10" fill="#f0d9dd" stroke="#063f63" stroke-width="2"/>
-  <text x="265" y="110" font-size="13" font-weight="700" fill="#0b2338" text-anchor="middle">Pale</text>
-  <text x="265" y="128" font-size="11" fill="#0b2338" text-anchor="middle">Flag for review</text>
-  <rect x="370" y="20" width="140" height="70" rx="10" fill="#5b8fd6" stroke="#063f63" stroke-width="2"/>
-  <text x="440" y="110" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">Blue</text>
-  <text x="440" y="128" font-size="11" fill="#0b2338" text-anchor="middle">Emergency</text>
-  <rect x="545" y="20" width="140" height="70" rx="10" fill="#e8d24a" stroke="#063f63" stroke-width="2"/>
-  <text x="615" y="110" font-size="13" font-weight="700" fill="#0b2338" text-anchor="middle">Yellow</text>
-  <text x="615" y="128" font-size="11" fill="#0b2338" text-anchor="middle">Flag for review</text>
-  </svg>`;
-}
-
-function hwCheckLabel(cfgId,prefix,label){
- const value=prefix?`${prefix}:${label}`:label;
- return `<label class="hw-mock-check"><input type="checkbox" data-hwfind="${cfgId}" value="${value}"> ${label}</label>`;
-}
-function hwWidgetHTML(cfg){
- const sideCols=!!cfg.sides;
- const stateOpts=['WNL','ABN','STA','CNA'];
- return `<div class="hw-mock" data-hwid="${cfg.id}">
-  <div class="hw-mock-header"><span>Hannahware</span><span>Physical Exam</span></div>
-  <p class="hw-mock-dialogue"><span class="hw-mock-role">PetNurse</span>to Member: "${cfg.dialogue.nurse}"<br><span class="hw-mock-role">Member</span>"${cfg.dialogue.member}"</p>
-  <div class="hw-mock-row"><strong>${cfg.system}</strong>
-   <div class="hw-mock-state-group">${stateOpts.map(s=>`<label><input type="radio" name="hwstate-${cfg.id}" value="${s}" data-hwstate="${cfg.id}"> ${s}</label>`).join('')}</div>
-  </div>
-  <div class="hw-mock-detail" id="hwdetail-${cfg.id}" hidden>
-   ${sideCols
-     ?`<div class="hw-mock-columns"><div><h5>Left</h5>${cfg.findingsLeft.map(f=>hwCheckLabel(cfg.id,'L',f)).join('')}</div><div><h5>Right</h5>${cfg.findingsRight.map(f=>hwCheckLabel(cfg.id,'R',f)).join('')}</div></div>`
-     :(cfg.findings&&cfg.findings.length?cfg.findings.map(f=>hwCheckLabel(cfg.id,'',f)).join(''):'')}
-   ${cfg.durationOptions?`<div class="hw-mock-duration"><span class="hw-mock-duration-label">Duration</span>${cfg.durationOptions.map(d=>`<label><input type="radio" name="hwdur-${cfg.id}" value="${d}" data-hwdur="${cfg.id}"> ${d}</label>`).join('')}</div>`:''}
-  </div>
-  <div class="hw-mock-actions"><button class="secondary" data-hwsave="${cfg.id}">Save to Hannahware</button></div>
-  <div id="hwfeedback-${cfg.id}" style="padding:0 14px 14px"></div>
- </div>`;
-}
+/* ---- Hannahware documentation widget (config now travels inside lesson content) ---- */
 function wireHwWidget(cfg){
  const root=document.querySelector(`[data-hwid="${cfg.id}"]`); if(!root)return;
  root.querySelectorAll(`[data-hwstate="${cfg.id}"]`).forEach(r=>r.onchange=()=>{
@@ -1372,419 +923,360 @@ function wireHwWidget(cfg){
  };
 }
 
-const hwFluffyDemo={
- id:'m6fluffy',
- dialogue:{nurse:"I notice some discharge coming from Fluffy's left eye. How long has she had that?",member:"That started about three days ago."},
- system:'Eyes & Tearing',
- sides:true,
- findingsLeft:['Bleeding','Discharge','Excess Tears','Redness','Cloudy'],
- findingsRight:['Bleeding','Discharge','Excess Tears','Redness','Cloudy'],
- correctFindings:['L:Discharge'],
- correctState:'ABN',
- durationOptions:['1-2 Days','3-7 Days','Over A Week','Chronic'],
- correctDuration:'3-7 Days',
- explanation:"The PetNurse verbalized a finding in the left eye only, so ABN is selected for Eyes & Tearing, Discharge is checked in the Left column (not the Right, and not a different finding), and the duration matches exactly what the Member reported — 3-7 Days."
-};
-const hwRangerDemo={
- id:'c0ranger',
- dialogue:{nurse:"Ranger's abdomen feels soft with no pain, and his appetite has been normal — everything there looks good.",member:"Yes, he's been eating great and acting like himself."},
- system:'Gastrointestinal',
- sides:false,
- findings:[],
- correctFindings:[],
- correctState:'WNL',
- explanation:"When the PetNurse verbalizes a normal finding, the Nurse Aide still documents it — selecting WNL for Gastrointestinal in Hannahware confirms the system was checked and found normal, which matters just as much as flagging an abnormal one."
-};
-const hwWillowDemo={
- id:'c1willow',
- dialogue:{nurse:"I'm seeing some mild redness right along Willow's incision edges, but no discharge or swelling. Has she been licking or bothering it at all?",member:"No, she hasn't touched it, and she's been eating and playing normally."},
- system:'Integumentary',
- sides:false,
- findings:['Redness/Erythema Along Incision','Discharge/Exudate','Swelling','Incision Opening (Dehiscence)','Pain On Palpation'],
- correctFindings:['Redness/Erythema Along Incision'],
- correctState:'ABN',
- explanation:"Only what the PetNurse actually verbalized gets checked — mild redness along the incision edges — with no discharge, swelling, or dehiscence boxes checked, since those weren't observed. This objective entry is what the attending Hannah DVM reviews before the visit ends."
-};
-const hwGusDemo={
- id:'c2gus',
- dialogue:{nurse:"I found a small lump on Gus's left flank — it feels firm and moves easily under the skin, and he's not showing any pain there. Have you noticed it before?",member:"Actually, yes — I first felt it about two weeks ago but wasn't sure it was anything."},
- system:'Integumentary',
- sides:false,
- findings:['New Mass/Growth','Redness/Erythema','Discharge/Exudate','Hair Loss (Alopecia)','Pain On Palpation'],
- correctFindings:['New Mass/Growth'],
- correctState:'ABN',
- durationOptions:['1-2 Days','3-7 Days','Over A Week','Chronic'],
- correctDuration:'Over A Week',
- explanation:"Only New Mass/Growth is checked since that's the single finding the PetNurse described, and the duration is set to Over A Week to reflect the Member-reported two-week timeline — the record should match the conversation exactly, not round up to Chronic or guess at a shorter window."
-};
-const l2NtCaseHwWidgets={'0-2':hwRangerDemo,'1-2':hwWillowDemo,'2-2':hwGusDemo};
+/* ---- Data access ---- */
+const lessonCache={};
+const lessonStates={};
+let courseLessons=[];
+let activeSlug=null;
 
-const l2NtModules=[
- {id:1,title:'Preparation, Initial Observation & Vital Signs (TPR)',minutes:15,icon:'🩺',
-  content:`<p><strong>Gather supplies</strong> before starting: thermometer, stethoscope, a watch or timer for respiratory/pulse rate, and an otoscope/ophthalmoscope if available. Approach the patient calmly and speak in a reassuring tone, moving slowly and confidently to minimize stress.</p>
-   <p><strong>Initial observation</strong> happens before any hands-on contact: watch the patient's overall behavior, posture, and gait as they move in the exam room. Note any lameness, ataxia (a lack of coordination resulting in an abnormal gait — not a disease itself, but a clinical sign), or reluctance to move, and check for respiratory distress such as open-mouth breathing or excessive panting.</p>
-   <p class="safety-note"><strong>Critter Clue</strong><span>Begin documentation (paper or electronic) of any observations before handling the patient.</span></p>
-   <p><strong>Two roles, one record:</strong> throughout the exam, the PetNurse examines the patient and speaks findings aloud to the Member in plain language, while the Nurse Aide enters those same findings into the Physical Exam section of Hannahware in real time on the touch-screen monitor. Module 6 covers this PetNurse-and-Nurse-Aide documentation workflow in detail, including a hands-on Hannahware entry exercise.</p>
-   <p><strong>Vital signs (TPR) and weight:</strong></p>
-   <ul class="l2-obj-list">
-    <li>Temperature — take a rectal temperature unless another method is directed by the patient's condition.</li>
-    <li>Pulse/heart rate — palpate the femoral artery (usually on the inside of the hind leg) or use a stethoscope; count beats for 15 seconds and multiply by four for beats per minute.</li>
-    <li>Respiratory rate — observe or auscultate breathing for 15 seconds and multiply by four for breaths per minute; watch chest movements for rapid, shallow, or labored breathing.</li>
-    <li>Weight — confirm the recorded weight is accurate; reweigh and record if it wasn't captured at check-in or looks off.</li>
-    <li>Body Condition Score (BCS) — evaluate muscle mass and fat coverage and record the BCS accurately in Hannahware.</li>
-   </ul>
-   <figure class="l2-anatomy-figure">${ntBodySVG('canine')}<figcaption><strong>Original instructional diagram — canine body-region map.</strong> Illustrates the six regions used throughout the nose-to-tail sequence.</figcaption></figure>`,
-  quiz:[
-   {q:'According to the procedure, what should happen before handling the patient?',opts:['Administer any prescribed medication','Begin documentation of observations','Take the temperature first','Express the anal glands'],correct:1,exp:'Critter Clue: begin documentation of any observations before handling the patient.'},
-   {q:'True or False: Pulse and respiratory rate should each be counted for a full 60 seconds.',opts:['True','False'],correct:1,exp:'False. Count beats or breaths for 15 seconds and multiply by four to get the per-minute rate.'},
-   {q:'Where is the femoral artery typically palpated to check pulse?',opts:['On the inside of the hind leg','On top of the head','Along the tail','Behind the ear'],correct:0,exp:'The femoral artery is usually palpated on the inside of the hind leg.'},
-   {q:'What should be done if a patient\'s recorded weight looks inaccurate or wasn\'t captured at check-in?',opts:['Ignore it and proceed','Reweigh the patient and record the accurate weight','Estimate the weight visually','Skip the BCS'],correct:1,exp:'Weigh the patient and record the accurate weight so that BCS and dosing decisions are based on correct information.'}
-  ]},
- {id:2,title:'Head and Face Examination',minutes:15,icon:'👁️',
-  content:`<p><strong>Nose</strong> — check for discharge, crusting, or asymmetry, and note color and moistness. A healthy nose can be moist or slightly dry; watch for excessive dryness or cracking.</p>
-   <p><strong>Eyes</strong> — look for redness, discharge, squinting, cloudiness, or other abnormalities of the sclera (whites) or cornea. Assess the eyelids and conjunctiva, and note any signs of pain or swelling. If directed by a Hannah DVM, use an ophthalmoscope for a more detailed look.</p>
-   <p><strong>Ears</strong> — inspect the external pinna for redness, hair loss, lesions, or parasites. If trained and directed, use an otoscope to examine the ear canal for wax, discharge, or odor. Detailed otoscopic technique, normal-vs-abnormal recognition, and cytology preview are covered in depth in the separate <strong>Otic Examination</strong> course.</p>
-   <p><strong>Oral cavity and teeth</strong> — gently lift the lips to check the gums (mucous membrane color and gum texture), and perform a capillary refill time (CRT) test by pressing on the gum and timing how long it takes for color to return. Normal CRT is under 2 seconds. Examine teeth for tartar buildup, fractures, or worn spots, and check the tongue and roof of the mouth for ulcers or masses if possible.</p>
-   <figure class="l2-anatomy-figure">${mmColorReferenceSVG()}<figcaption><strong>Original instructional diagram — mucous membrane color reference.</strong> Supports the gum-color check performed alongside the CRT test.</figcaption></figure>`,
-  quiz:[
-   {q:'What is the normal capillary refill time (CRT)?',opts:['Under 2 seconds','5 to 10 seconds','15 to 20 seconds','It should not return at all'],correct:0,exp:'Normal capillary refill time is under 2 seconds.'},
-   {q:'True or False: A moist nose is always an abnormal finding.',opts:['True','False'],correct:1,exp:'False. A healthy nose can be moist or slightly dry — the concern is excessive dryness or cracking.'},
-   {q:'Where is detailed ear canal examination technique (otoscopy) taught in this program?',opts:['In the separate Otic Examination course','Nowhere — it is not covered','In the Musculoskeletal module','In the Documentation module'],correct:0,exp:'Detailed otoscopic technique and normal-vs-abnormal ear findings are covered in the dedicated Otic Examination course.'},
-   {q:'Which oral finding should be specifically checked for on the tongue and roof of the mouth?',opts:['Tartar buildup','Ulcers or masses','Nail length','Coat brittleness'],correct:1,exp:'The tongue and roof of the mouth should be checked for ulcers or masses if possible.'}
-  ]},
- {id:3,title:'Neck, Throat, Integument & Coat',minutes:12,icon:'🐾',
-  content:`<p><strong>Lymph nodes</strong> — palpate the submandibular (under the jaw) lymph nodes and note any enlargement or asymmetry.</p>
-   <p><strong>Thyroid region</strong> — gently feel the trachea and surrounding tissues for any masses or sensitivity.</p>
-   <p><strong>Jugular furrow</strong> — observe for distension of the veins or any lumps along the neck.</p>
-   <p><strong>Skin condition</strong> — part the hair in several locations to check for external parasites (fleas, ticks), redness, lesions, or dryness, and check for signs of alopecia (hair loss), matting, or abnormal lumps/bumps.</p>
-   <p><strong>Coat quality</strong> — note if the coat is dull, greasy, or brittle. A healthy, regularly groomed coat should appear shiny and well-maintained.</p>`,
-  quiz:[
-   {q:'Which lymph nodes are palpated during the neck and throat portion of the exam?',opts:['Submandibular (under the jaw)','Popliteal (behind the knee)','Axillary only','Inguinal only'],correct:0,exp:'The submandibular lymph nodes, under the jaw, are palpated and checked for enlargement or asymmetry.'},
-   {q:'True or False: The jugular furrow should be observed for vein distension or lumps.',opts:['True','False'],correct:0,exp:'True. Observing the jugular furrow for distension or lumps is part of the neck and throat exam.'},
-   {q:'What technique helps identify external parasites and skin lesions during the integument exam?',opts:['Parting the hair in several locations','Only looking at the tail','Checking the teeth','Auscultating the chest'],correct:0,exp:'Parting the hair in several locations helps reveal parasites, redness, lesions, or dryness.'},
-   {q:'Which coat description is a potential concern rather than a normal finding?',opts:['Shiny and well-maintained','Dull, greasy, or brittle','Regularly groomed','Smooth to the touch'],correct:1,exp:'A dull, greasy, or brittle coat is noted as a potential concern; a healthy coat should appear shiny and well-maintained.'}
-  ]},
- {id:4,title:'Thoracic and Abdominal Examination',minutes:18,icon:'🫁',
-  content:`<p><strong>Heart auscultation</strong> — place the stethoscope on both sides of the chest, generally starting behind the elbow on the left side and then the right, and listen for rate, rhythm, and any murmurs or arrhythmias.</p>
-   <p><strong>Respiratory auscultation</strong> — while listening with a stethoscope, note lung sounds in multiple locations (cranial, middle, and caudal lung fields) and check for crackles, wheezes, or decreased breath sounds.</p>
-   <p><strong>Cardiac pulse synchronization</strong> — compare the femoral pulse while listening to the heart; pulse deficits (missing pulses) can be noted if any arrhythmias are present.</p>
-   <p><strong>Abdominal palpation</strong> — gently palpate each quadrant of the abdomen to identify any masses, fluid, or discomfort, and observe the patient's reaction for signs of pain or tension.</p>
-   <p><strong>Specific organ palpation</strong> (if trained and supervised) — attempt to palpate the liver edge (cranially), the spleen (left side), the kidneys (dorsally), and the bladder (caudally).</p>
-   <p><strong>Abdominal auscultation</strong> — often less emphasized in small pets, but can be done to listen for gut sounds if GI issues are suspected.</p>`,
-  quiz:[
-   {q:'Where does heart auscultation generally begin?',opts:['Behind the elbow on the left side','At the base of the tail','Over the trachea','On the paw pad'],correct:0,exp:'Heart auscultation generally starts with the stethoscope placed behind the elbow on the left side, then the right.'},
-   {q:'Which lung fields should be checked during respiratory auscultation?',opts:['Cranial, middle, and caudal lung fields','Only the caudal field','Only the left side','Only the trachea'],correct:0,exp:'Respiratory auscultation checks lung sounds in the cranial, middle, and caudal lung fields.'},
-   {q:'What is a pulse deficit?',opts:['A missing pulse relative to the heartbeats heard, often noted with arrhythmias','A normal finding in every healthy patient','A measurement of respiratory rate','A type of abdominal mass'],correct:0,exp:'A pulse deficit is a missing pulse compared to the heartbeats heard on auscultation, and can be noted when arrhythmias are present.'},
-   {q:'True or False: Specific organ palpation of the liver, spleen, kidneys, and bladder should only be attempted if trained and supervised.',opts:['True','False'],correct:0,exp:'True. The procedure specifies that specific organ palpation should only be attempted if trained and supervised.'}
-  ]},
- {id:5,title:'Urogenital, Musculoskeletal & Neurologic Screening',minutes:15,icon:'🦴',
-  content:`<p><strong>External genitalia</strong> — evaluate for discharge, swelling, or redness. In males, observe the prepuce and check the male genital organ, if extruded, for abnormalities. In females, check the vulva for discharge or inflammation.</p>
-   <p><strong>Mammary glands</strong> — palpate along the mammary chain for lumps, swelling, or sensitivity.</p>
-   <p><strong>Limbs and joints</strong> — check each limb systematically, palpate joints for swelling, warmth, or signs of pain, and passively flex and extend major joints (shoulder, elbow, carpus, hip, stifle, hock) if allowed by the patient.</p>
-   <p><strong>Feet and nails</strong> — inspect paw pads for cuts, foreign bodies, or redness, and check nail length and condition.</p>
-   <p><strong>Gait assessment</strong> — if not already done during initial observation, walk the patient on a leash where applicable to observe any lameness or abnormal gait patterns.</p>
-   <p><strong>Neurological quick check (basic)</strong> — mentation: note if the patient is bright, alert, and responsive, or dull, depressed, or anxious. Cranial nerves: check for head tilt, facial symmetry, normal eye movements, and the ability to blink. Proprioception (if relevant and safe): gently flip a paw and see if the patient corrects it quickly.</p>`,
-  quiz:[
-   {q:'Which joints are commonly checked for passive flexion and extension?',opts:['Shoulder, elbow, carpus, hip, stifle, hock','Only the jaw','Only the tail vertebrae','Only the ears'],correct:0,exp:'The procedure lists shoulder, elbow, carpus, hip, stifle, and hock as the major joints checked, if allowed by the patient.'},
-   {q:'True or False: Proprioception can be checked by gently flipping a paw and observing whether the patient corrects it quickly.',opts:['True','False'],correct:0,exp:'True. This is the basic proprioception check described in the procedure.'},
-   {q:'Which findings should be documented during the urogenital exam?',opts:['Discharge, swelling, or redness of the external genitalia; lumps/swelling/sensitivity along the mammary chain','Only nail length','Only coat quality','Only tail position'],correct:0,exp:'The urogenital exam covers external genitalia findings and mammary gland palpation for lumps, swelling, or sensitivity.'},
-   {q:'What does the basic mentation check assess?',opts:['Whether the patient is bright, alert, and responsive versus dull, depressed, or anxious','Nail length','Coat texture','Respiratory rate'],correct:0,exp:'Mentation describes the patient\'s overall alertness and responsiveness.'}
-  ]},
- {id:6,title:'Tail, Perineal Area, Documentation & Communication',minutes:12,icon:'📋',
-  content:`<p><strong>Tail</strong> — gently run a hand along the tail, feeling for lumps, pain, or irregularities in vertebral alignment.</p>
-   <p><strong>Anus and perineal region</strong> — check for swelling, masses, or anal sac issues; anal glands should only be expressed if indicated and under supervision.</p>
-   <p><strong>Documentation and follow-up</strong> — record all normal and abnormal findings thoroughly in the Physical Exam and New Findings sections of the patient's medical record in Hannahware. Enter any medications given, newly prescribed, or refilled in the medication tab. Immediately communicate any significant abnormalities to the attending Hannah DVM. Disinfect exam surfaces and tools per hospital standards, and provide the Hannah DVM or Member with any information needed as appropriate to your role. Review and print the Report Card found in the Actions tab dropdown.</p>
-   <p class="safety-note"><strong>Critter Clue</strong><span>Always prioritize safety — use proper restraint techniques and ask for help if the patient shows signs of distress or aggression. Practice gentle handling, maintain clear communication with the DVM and Traffic Controller, and keep the patient's comfort in mind: offer breaks, ensure they aren't standing on slippery surfaces, and watch for stress signals.</span></p>
-   <p><strong>How the record actually gets built: PetNurse and Nurse Aide</strong></p>
-   <p>At Hannah, documentation happens live, in the room, as a two-person job. The <strong>PetNurse</strong> performs the exam and narrates each body system out loud to the Member in plain, non-diagnostic language — what she's seeing, and any follow-up question the finding raises. At the same time, the <strong>Nurse Aide</strong> works the touch-screen monitor and enters those same findings into the Physical Exam section of Hannahware as they're spoken, using the WNL / ABN / STA / CNA status for each body system (Within Normal Limit, Abnormal, Stable, Can Not Assess) and the finding-specific checkboxes, side (Left/Right), and duration or frequency options that appear underneath.</p>
-   <p>For example, while examining the eyes the PetNurse might say to the Member: <em>"I notice some discharge coming from Fluffy's left eye. How long has she had that?"</em> The Member answers that it started about three days ago. The Nurse Aide records this immediately: ABN for Eyes &amp; Tearing, Discharge checked in the Left column only, and Duration set to 3-7 Days — nothing more, nothing less than what was actually said. Try it yourself below.</p>
-   ${hwWidgetHTML(hwFluffyDemo)}
-   <p class="safety-note"><strong>Critter Clue</strong><span>Only check the boxes that match what was actually observed and reported — an accurate, spoken-word-for-spoken-word record protects the patient and the Member's trust, and gives the attending Hannah DVM exactly what they need to review before the visit ends.</span></p>`,
-  quiz:[
-   {q:'When should anal glands be expressed during a nose-to-tail exam?',opts:['Every time, as a routine step','Only if indicated and under supervision','Only if the Member requests it','Never, under any circumstance'],correct:1,exp:'Anal gland expression should only be performed if indicated and under supervision.'},
-   {q:'True or False: Significant abnormalities can wait until the end of the shift to be reported to the veterinarian.',opts:['True','False'],correct:1,exp:'False. Significant abnormalities should be communicated to the attending Hannah DVM immediately.'},
-   {q:'Where should exam findings be documented?',opts:['The Physical Exam and New Findings sections of the medical record in Hannahware','A personal notebook only','Nowhere, if the patient is normal','Only in the Member\'s chat messages'],correct:0,exp:'Findings should be recorded thoroughly in the Physical Exam and New Findings sections in Hannahware.'},
-   {q:'What should be reviewed and printed at the end of the visit, per the procedure?',opts:['The Report Card from the Actions tab dropdown','The invoice only','The vaccine history only','Nothing further is needed'],correct:0,exp:'The procedure calls for reviewing and printing the Report Card found in the Actions tab dropdown.'},
-   {q:'During the exam, who verbalizes each finding to the Member, and who enters it into Hannahware?',opts:['The PetNurse verbalizes findings while examining; the Nurse Aide enters them into Hannahware in real time','The Nurse Aide verbalizes findings; the PetNurse enters them into Hannahware','The Member enters their own findings into Hannahware','Only the attending DVM may verbalize or document exam findings'],correct:0,exp:'The PetNurse examines the patient and speaks findings aloud to the Member, while the Nurse Aide enters those same findings into the Physical Exam section of Hannahware at the same time.'},
-   {q:'In Hannahware\'s Physical Exam screen, what does selecting "ABN" for a body system mean?',opts:['Abnormal','A Body Note','Above Baseline Normal','Auto-Balanced Normal'],correct:0,exp:'ABN stands for Abnormal, one of Hannahware\'s four body-system statuses alongside WNL (Within Normal Limit), STA (Stable), and CNA (Can Not Assess).'}
-  ]}
-];
+function stateFor(slug){
+ if(!lessonStates[slug])lessonStates[slug]={tab:'overview',moduleProgress:{},moduleScores:{},caseId:null,caseStep:0,casesCompleted:[],checklist:{},attested:false,signoff:null,progressRow:null,loaded:false};
+ return lessonStates[slug];
+}
+function activeLesson(){return lessonCache[activeSlug]}
+function activeState(){return stateFor(activeSlug)}
 
-const l2NtCases=[
- {id:0,title:'Ranger — Annual Wellness Exam',patient:'Ranger',species:'Canine',signalment:'4-year-old neutered male Labrador retriever',history:'Presented for annual wellness exam; Member reports no concerns, patient is active and eating normally.',
-  stages:['Exam Findings','TPR Technique','Documentation','Member Communication','Next Steps'],
-  content:[
-   `<span class="eyebrow">Exam findings</span><h2>Review the nose-to-tail findings</h2><p>Initial observation shows a bright, alert, comfortable dog with a normal gait, no lameness or ataxia, and no respiratory distress. Nose-to-tail exam: pink moist gums with CRT under 2 seconds, clear eyes, no nasal discharge, no submandibular lymph node enlargement, clean coat, normal heart and lung auscultation with no murmurs or pulse deficits, soft non-painful abdomen, full pain-free range of motion in all joints, normal mentation and proprioception, and a normal tail and perineal exam.</p>${ntBodySVG('canine')}`,
-   `<span class="eyebrow">TPR technique</span><h2>Ranger's pulse is counted for 15 seconds and comes to 23 beats; his breathing is counted for 15 seconds at 6 breaths. How should these be calculated and interpreted?</h2><div class="choice-grid" id="l2ntc0s1"></div>`,
-   `<span class="eyebrow">Documentation</span><h2>Record what the PetNurse verbalized, then choose the narrative note</h2><p>As the PetNurse examines Ranger, she narrates each system to the Member while the Nurse Aide enters findings into Hannahware. Complete the Nurse Aide's entry below first.</p>${hwWidgetHTML(hwRangerDemo)}<h3 style="margin-top:20px">Which New Findings narrative note is most appropriate?</h3><div class="choice-grid" id="l2ntc0s2"></div>`,
-   `<span class="eyebrow">Member communication</span><h2>What should the team say to the Member?</h2><div class="choice-grid" id="l2ntc0s3"></div>`,
-   `<span class="eyebrow">Next steps</span><h2>Which upcoming Level 2 topic builds directly on this wellness exam?</h2><div class="choice-grid" id="l2ntc0s4"></div><button class="primary" id="completeL2NtCase0" style="margin-top:16px">Complete case</button>`
-  ],
-  decisions:{
-   l2ntc0s1:{opts:['Multiply each 15-second count by four: heart rate is 92 bpm and respiratory rate is 24 breaths per minute, both within normal canine reference ranges.','Use the 15-second counts as the final per-minute values without multiplying.','Divide each 15-second count by four.'],correct:0,exp:'Per the procedure, multiply the 15-second count by four to get the per-minute rate: 23×4=92 bpm and 6×4=24 breaths/min, both within normal ranges for a dog.'},
-   l2ntc0s2:{opts:['"Nose-to-tail exam performed; pink moist gums with CRT <2 sec, no lymph node or auscultation abnormalities, soft non-painful abdomen, full pain-free joint range of motion, normal mentation and gait; TPR within normal limits."','"Dog is perfectly healthy forever."','"Nothing to report, exam was quick."'],correct:0,exp:'Objective, region-by-region documentation in the Physical Exam section supports the medical record and future comparison.'},
-   l2ntc0s3:{opts:['"Everything looks great today — no concerns from the nose-to-tail exam, and his vitals are all within normal range."','"Your dog is guaranteed to never get sick."','"We didn\'t really check anything today."'],correct:0,exp:'This response is accurate, plain-language, and appropriately confident for a fully normal wellness exam.'},
-   l2ntc0s4:{opts:['Patient History, Body Condition Scoring, and Pain Assessment modules joining Level 2.','Surgical suturing technique.','Radiograph positioning for the thorax.'],correct:0,exp:'The Patient Assessment level continues with History, Body Condition Scoring, and Pain Assessment modules next.'}
-  }},
- {id:1,title:'Willow — Post-Surgical Recheck',patient:'Willow',species:'Feline',signalment:'2-year-old spayed female domestic shorthair, day 5 post-spay',history:'Presented for a routine post-surgical incision recheck 5 days after spay surgery; Member reports the cat is eating and behaving normally.',
-  stages:['Exam Findings','Integument Findings','Documentation','Member Communication','Escalation Triggers'],
-  content:[
-   `<span class="eyebrow">Exam findings</span><h2>Review the nose-to-tail findings</h2><p>Initial observation shows a bright, alert, comfortable cat with normal gait and no respiratory distress. TPR is within normal limits, gums are pink with CRT under 2 seconds, and the remainder of the nose-to-tail exam is unremarkable.</p>`,
-   `<span class="eyebrow">Integument findings</span><h2>During the integument exam, mild redness is noted along the incision edges, with no discharge, swelling, or pain response on gentle palpation near the site. Which action is correct?</h2><div class="choice-grid" id="l2ntc1s1"></div>`,
-   `<span class="eyebrow">Documentation</span><h2>Record what the PetNurse verbalized, then choose the narrative note</h2><p>As the PetNurse checks Willow's incision, she narrates the finding to the Member while the Nurse Aide enters it into Hannahware. Complete the Nurse Aide's entry below first.</p>${hwWidgetHTML(hwWillowDemo)}<h3 style="margin-top:20px">Which New Findings narrative note is most appropriate?</h3><div class="choice-grid" id="l2ntc1s2"></div>`,
-   `<span class="eyebrow">Member communication</span><h2>What should the team say to the Member about the incision?</h2><div class="choice-grid" id="l2ntc1s3"></div>`,
-   `<span class="eyebrow">Escalation triggers</span><h2>Which change at a future recheck would require immediately reporting to the attending Hannah DVM?</h2><div class="choice-grid" id="l2ntc1s4"></div><button class="primary" id="completeL2NtCase1" style="margin-top:16px">Complete case</button>`
-  ],
-  decisions:{
-   l2ntc1s1:{opts:['Note the finding and report it to the attending Hannah DVM so they can examine the incision before the visit ends.','Declare the incision fully healed and skip mentioning it.','Apply a topical treatment without veterinary input.'],correct:0,exp:'Per the procedure, significant abnormalities — including new integument findings — should be reported to the attending DVM immediately, who then examines and decides next steps.'},
-   l2ntc1s2:{opts:['"Incision edges mildly red, no discharge, no swelling, no pain response on palpation; remainder of exam normal; reported to attending DVM for review."','"Incision looks perfect, totally healed."','"Nothing unusual with the incision."'],correct:0,exp:'Objective, specific documentation of the incision in the Physical Exam/New Findings sections supports accurate veterinary review.'},
-   l2ntc1s3:{opts:['"There\'s some mild redness at the incision edges; the doctor will take a quick look before you head out."','"Everything is 100% perfect, no need to check again."','"We didn\'t look at the incision today."'],correct:0,exp:'This response is accurate, non-diagnostic, and sets an appropriate next step for veterinarian review.'},
-   l2ntc1s4:{opts:['Increasing redness, swelling, discharge, an opening incision, or new pain','The cat purring during the exam','A slightly dusty exam room','The Member arriving a few minutes late'],correct:0,exp:'Increasing redness, swelling, discharge, incision opening, or new pain at the surgical site are findings that require immediate DVM notification.'}
-  }},
- {id:2,title:'Gus — Senior Wellness with a New Lump',patient:'Gus',species:'Canine',signalment:'10-year-old neutered male beagle mix',history:'Presented for senior wellness exam; Member mentions a new lump on the left flank first noticed about two weeks ago.',
-  stages:['Exam Findings','Integument Findings','Documentation','Member Communication','Escalation Triggers'],
-  content:[
-   `<span class="eyebrow">Exam findings</span><h2>Review the nose-to-tail findings</h2><p>Initial observation shows a bright, alert senior dog with a normal gait, no lameness or ataxia. TPR is within normal limits, heart and lung auscultation are unremarkable, and abdominal palpation reveals no masses or discomfort.</p>${ntBodySVG('canine')}`,
-   `<span class="eyebrow">Integument findings</span><h2>During the integument exam, a firm, freely movable, dime-sized subcutaneous mass is found on the left flank, non-painful on palpation, reportedly present for about two weeks. What is the correct next action?</h2><div class="choice-grid" id="l2ntc2s1"></div>`,
-   `<span class="eyebrow">Documentation</span><h2>Record what the PetNurse verbalized, then choose the narrative note</h2><p>As the PetNurse describes the new lump, she narrates the finding to the Member while the Nurse Aide enters it into Hannahware. Complete the Nurse Aide's entry below first.</p>${hwWidgetHTML(hwGusDemo)}<h3 style="margin-top:20px">Which New Findings narrative note of the mass is most appropriate?</h3><div class="choice-grid" id="l2ntc2s2"></div>`,
-   `<span class="eyebrow">Member communication</span><h2>What should the team say to the Member about the new lump?</h2><div class="choice-grid" id="l2ntc2s3"></div>`,
-   `<span class="eyebrow">Escalation triggers</span><h2>Which change would require immediately reporting to the attending Hannah DVM rather than waiting for the next scheduled recheck?</h2><div class="choice-grid" id="l2ntc2s4"></div><button class="primary" id="completeL2NtCase2" style="margin-top:16px">Complete case</button>`
-  ],
-  decisions:{
-   l2ntc2s1:{opts:['Document the objective findings in the New Findings section and report the mass to the attending Hannah DVM before the visit ends.','Tell the Member it is definitely a benign fatty lump.','Ignore it since the dog isn\'t painful.'],correct:0,exp:'New masses found during the integument exam should be documented objectively and reported to the attending DVM immediately, per the procedure.'},
-   l2ntc2s2:{opts:['"Firm, freely movable, dime-sized subcutaneous mass on left flank, non-painful, reportedly present ~2 weeks; reported to attending DVM."','"Definitely a benign fatty lump, nothing to worry about."','"Small bump, probably fine."'],correct:0,exp:'Objective description — location, size, texture, mobility, pain response, and duration — supports veterinary evaluation without overdiagnosing.'},
-   l2ntc2s3:{opts:['"The doctor found a small lump and will want to take a closer look, possibly with a quick needle sample, to see what it is."','"It\'s definitely just a fatty lump, no need to worry."','"It\'s probably cancer, you should be very worried."'],correct:0,exp:'This response is accurate, non-diagnostic, and previews the likely next diagnostic step without overpromising or alarming the Member.'},
-   l2ntc2s4:{opts:['Rapid growth, texture change, ulceration, bleeding, or new pain in the mass','The mass staying the same size and texture','The dog eating normally','The Member asking general questions about lumps'],correct:0,exp:'Rapid growth, texture change, ulceration, bleeding, or new pain are recognized triggers to report to the DVM right away rather than waiting.'}
-  }}
-];
+async function fetchCourseLessons(){
+ const {data:course,error:cErr}=await sb.from('courses').select('id,slug,title').eq('slug',COURSE_SLUG).single();
+ if(cErr)throw cErr;
+ const {data,error}=await sb.from('lessons').select('*').eq('course_id',course.id).eq('status','published').order('sort_order',{ascending:true});
+ if(error)throw error;
+ courseLessons=data||[];
+ courseLessons.forEach(l=>{lessonCache[l.slug]=l});
+ return courseLessons;
+}
+async function fetchLesson(slug){
+ if(lessonCache[slug])return lessonCache[slug];
+ const {data,error}=await sb.from('lessons').select('*').eq('slug',slug).single();
+ if(error)throw error;
+ lessonCache[slug]=data;
+ return data;
+}
 
-const l2NtStations=[
- {icon:'🧘',title:'Station 1: Calm Approach & Restraint',time:'18 min',desc:'Practice a calm introduction, proper restraint, and body-language reading for the full nose-to-tail sequence on an approved calm patient or teaching model.'},
- {icon:'🩺',title:'Station 2: TPR Technique Practice',time:'18 min',desc:'Practice taking a rectal temperature, palpating the femoral pulse, and counting respiratory rate using the 15-second × 4 method, then record results in Hannahware.'},
- {icon:'🔁',title:'Station 3: Nose-to-Tail Sequence Practice',time:'18 min',desc:'Run the full 12-section sequence in order — preparation and observation through documentation — without skipping a section.'},
- {icon:'🖼️',title:'Station 4: Image ID Gallery',time:'18 min',desc:'Sort body-region and mucous-membrane-color images into normal, flag-for-review, and escalate-immediately categories using observable language.'},
- {icon:'🗣️',title:'Station 5: Member Roleplay',time:'18 min',desc:'Narrate a wellness exam and explain both a normal finding and a flagged finding to a "Member" using plain, non-diagnostic language.'},
- {icon:'\uD83D\uDCF2',title:'Station 6: PetNurse\u2013Nurse Aide Documentation Practice',time:'20 min',desc:'Partner up: one learner plays PetNurse, examining a teaching model and verbalizing findings to a "Member" for at least three body systems; the other plays Nurse Aide, selecting the correct WNL/ABN/STA/CNA status and checkboxes in the Hannahware Physical Exam mock for each finding in real time. Switch roles and repeat.'}
-];
-
-const l2NtChecklistItems=[
- {t:'Gathers necessary supplies (thermometer, stethoscope, timer, otoscope/ophthalmoscope) before starting.',critical:true},
- {t:'Approaches the patient calmly and begins documentation before handling.',critical:true},
- {t:'Completes initial observation for gait, lameness, ataxia, and respiratory distress.',critical:true},
- {t:'Obtains temperature, pulse, and respiratory rate using correct technique (rectal temp; 15-second count × 4 for pulse and respiration).',critical:true},
- {t:'Confirms weight and records an accurate Body Condition Score in Hannahware.',critical:false},
- {t:'Completes head and face exam: nose, eyes, ears, oral cavity, and capillary refill time.',critical:true},
- {t:'Palpates submandibular lymph nodes, thyroid region, and jugular furrow.',critical:false},
- {t:'Performs heart and lung auscultation and compares femoral pulse for pulse deficits.',critical:true},
- {t:'Palpates all four abdominal quadrants and notes pain, masses, or fluid.',critical:true},
- {t:'Completes musculoskeletal, urogenital, and basic neurological screening as directed.',critical:true},
- {t:'Checks tail and perineal area and follows supervision requirements for anal gland expression.',critical:true},
- {t:'Documents all findings in the Physical Exam/New Findings sections and reports concerns to the attending DVM immediately.',critical:true},
- {t:'As Nurse Aide, correctly enters the PetNurse\'s verbalized findings into Hannahware\'s Physical Exam checkboxes \u2014 right status (WNL/ABN/STA/CNA), correct side, and correct duration \u2014 for at least three body systems.',critical:true}
-];
-
-const l2NtCertRows=[
- {req:'Prework completion',criterion:'100% complete before lab'},
- {req:'Module knowledge checks',criterion:'Average 85% across all six modules'},
- {req:'TPR & vitals technique assessment',criterion:'85% correct on technique and normal-range questions'},
- {req:'Image identification assessment',criterion:'85% correct on normal/flag/escalate set'},
- {req:'Skills lab checklist',criterion:'100% of critical items signed off'},
- {req:'Final attestation',criterion:'Learner signs scope-of-practice statement'}
-];
-
-let l2NtState=JSON.parse(localStorage.getItem('hlsTrueLevel2NoseToTail')||JSON.stringify({tab:'overview',moduleProgress:{},moduleScores:{},caseId:null,caseStep:0,casesCompleted:[],checklist:{},attested:false,signoffRequested:false}));
-function persistL2Nt(){localStorage.setItem('hlsTrueLevel2NoseToTail',JSON.stringify(l2NtState))}
-
-function l2NtCompletedModuleCount(){return Object.values(l2NtState.moduleProgress).filter(Boolean).length}
-function l2NtOverallPercent(){
- const modulePct=(l2NtCompletedModuleCount()/l2NtModules.length)*100;
- const checklistPct=(Object.values(l2NtState.checklist).filter(Boolean).length/l2NtChecklistItems.length)*100;
- const casePct=(l2NtState.casesCompleted.length/l2NtCases.length)*100;
+function allRequirementsMet(lesson,st){
+ const c=lesson.content;
+ return c.modules.every(m=>st.moduleProgress[m.id])&&c.cases.every(x=>st.casesCompleted.includes(x.id))&&c.checklistItems.every((it,i)=>!!st.checklist[i]);
+}
+function lessonPercent(lesson,st){
+ const c=lesson.content;
+ const modulePct=(Object.values(st.moduleProgress).filter(Boolean).length/c.modules.length)*100;
+ const checklistPct=(Object.values(st.checklist).filter(Boolean).length/c.checklistItems.length)*100;
+ const casePct=(st.casesCompleted.length/c.cases.length)*100;
  return Math.round((modulePct+checklistPct+casePct)/3);
 }
 
-function openLevel2Nt(tab){if(tab)l2NtState.tab=tab;persistL2Nt();renderLevel2Nt();switchView('level2Nt')}
+async function loadRemoteState(lesson,st){
+ const uid=hlsAuth.user?.id; if(!uid)return;
+ const {data:prog}=await sb.from('lesson_progress').select('*').eq('user_id',uid).eq('lesson_id',lesson.id).maybeSingle();
+ if(prog){
+  st.progressRow=prog;
+  const detail=prog.detail&&typeof prog.detail==='object'?prog.detail:null;
+  if(detail&&(detail.moduleProgress||detail.moduleScores||detail.casesCompleted||detail.checklist)){
+   Object.assign(st.moduleProgress,detail.moduleProgress||{});
+   Object.assign(st.moduleScores,detail.moduleScores||{});
+   (detail.casesCompleted||[]).forEach(id=>{if(!st.casesCompleted.includes(id))st.casesCompleted.push(id)});
+   Object.assign(st.checklist,detail.checklist||{});
+   if(detail.attested)st.attested=true;
+  }else if(prog.status==='completed'){
+   // Legacy rows saved before the detail column existed: reconstruct a fully-complete
+   // state so previously completed lessons don't regress to "not started".
+   lesson.content.modules.forEach(m=>{st.moduleProgress[m.id]=true;if(st.moduleScores[m.id]==null)st.moduleScores[m.id]=prog.quiz_score??100});
+   lesson.content.cases.forEach(c=>{if(!st.casesCompleted.includes(c.id))st.casesCompleted.push(c.id)});
+   lesson.content.checklistItems.forEach((_,i)=>{st.checklist[i]=true});
+  }
+ }
+ const {data:so}=await sb.from('sign_offs').select('*').eq('user_id',uid).eq('lesson_id',lesson.id).order('requested_at',{ascending:false}).limit(1);
+ st.signoff=so&&so.length?so[0]:null;
+}
+async function saveProgress(lesson,st,opts={}){
+ const uid=hlsAuth.user?.id; if(!uid)return;
+ const scores=Object.values(st.moduleScores);
+ const avg=scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length):0;
+ const done=allRequirementsMet(lesson,st);
+ const detail={
+  moduleProgress:st.moduleProgress,
+  moduleScores:st.moduleScores,
+  casesCompleted:st.casesCompleted,
+  checklist:st.checklist,
+  attested:!!st.attested
+ };
+ const row={
+  user_id:uid,lesson_id:lesson.id,
+  status:done?'completed':'in_progress',
+  quiz_score:avg,
+  quiz_attempts:(st.progressRow?.quiz_attempts||0)+(opts.attempt?1:0),
+  completed_at:done?new Date().toISOString():null,
+  detail
+ };
+ const {data,error}=await sb.from('lesson_progress').upsert(row,{onConflict:'user_id,lesson_id'}).select().single();
+ if(error){toast('Progress could not be saved');return}
+ st.progressRow=data;
+}
+async function requestSignoff(lesson,st){
+ const uid=hlsAuth.user?.id; if(!uid)return null;
+ const {data,error}=await sb.from('sign_offs').insert({user_id:uid,lesson_id:lesson.id,status:'pending'}).select().single();
+ if(error){toast('Sign-off request could not be submitted');return null}
+ st.signoff=data;
+ return data;
+}
 
-function renderLevel2Nt(){
- document.querySelectorAll('[data-l2nttab]').forEach(b=>b.classList.toggle('active',b.dataset.l2nttab===l2NtState.tab));
- const host=document.querySelector('#level2NtContent'); if(!host)return;
- const pct=l2NtOverallPercent();
- const ring=document.querySelector('#l2NtProgressRing'); if(ring)ring.innerHTML=`<strong>${pct}%</strong><span>Complete</span>`;
+/* ---- Level 2 hub ---- */
+async function openLevel2Hub(){switchView('level2Hub');await renderLevel2Hub()}
+async function renderLevel2Hub(){
+ const grid=document.querySelector('#level2LessonGrid'); if(!grid)return;
+ let lessons=[];
+ try{lessons=await fetchCourseLessons()}
+ catch(e){grid.innerHTML=`<section class="panel"><span class="eyebrow">Patient Assessment</span><h2>We couldn't load this course</h2><p>${escapeHtml(e.message||'Unknown error')}</p></section>`;return}
+ for(const l of lessons){const st=stateFor(l.slug);if(!st.loaded){st.loaded=true;await loadRemoteState(l,st)}}
+ const tiles=lessons.map(l=>({live:true,slug:l.slug,title:l.title,desc:l.summary||'',pct:lessonPercent(l,stateFor(l.slug))})).concat(plannedLessons.map(l=>({live:false,slug:l.id,title:l.title,desc:l.desc,pct:0})));
+ const livePct=tiles.filter(t=>t.live).reduce((a,t)=>a+t.pct,0);
+ const hubPct=tiles.length?Math.round(livePct/tiles.length):0;
+ const ring=document.querySelector('#level2HubProgressRing'); if(ring)ring.innerHTML=`<strong>${hubPct}%</strong><span>Level complete</span>`;
+ grid.innerHTML=tiles.map((t,i)=>{
+  const n=i+1;
+  const badge=t.live?(t.pct>=100?'good':'warning'):'neutral';
+  const badgeLabel=t.live?(t.pct>=100?'Complete':t.pct>0?'In progress':'Start here'):'Coming soon';
+  const cta=t.live?(t.pct>0?'Continue lesson':'Start lesson'):'Coming soon';
+  return `<article class="level-card ${t.live?'':'locked'}" data-lesson="${t.slug}"><div class="section-head"><div class="level-number">${n}</div><span class="badge ${badge}">${badgeLabel}</span></div><h2>${t.title}</h2><p>${t.desc}</p><div class="progress"><span style="width:${t.pct}%"></span></div><div class="card-footer"><strong>${t.pct}%</strong><button class="${t.live?'primary':'secondary'} l2-lesson-open" data-lesson="${t.slug}" data-live="${t.live}" ${t.live?'':'disabled'}>${cta}</button></div></article>`;
+ }).join('');
+ document.querySelectorAll('.l2-lesson-open').forEach(b=>b.onclick=()=>{
+  const tile=tiles.find(x=>x.slug===b.dataset.lesson);
+  if(tile&&tile.live)renderLessonPlayer(tile.slug,'overview');
+  else if(tile)openModal(`<span class="eyebrow">Patient Assessment • Coming soon</span><h1 class="modal-title">${tile.title}</h1><p>${tile.desc}</p><p class="safety-note"><strong>In development</strong><span>This lesson is planned for Level 2 — Patient Assessment and will appear here once built and clinically reviewed.</span></p><button class="primary" onclick="document.querySelector('#modal').close()">Close</button>`);
+ });
+}
+window.openLevel2Hub=openLevel2Hub;
 
- if(l2NtState.tab==='overview'){
+/* ---- Generic lesson player ---- */
+async function renderLessonPlayer(lessonSlug,tab){
+ activeSlug=lessonSlug;
+ const st=stateFor(lessonSlug);
+ if(tab)st.tab=tab;
+ switchView('level2');
+ const host=document.querySelector('#level2Content'); if(!host)return;
+ let lesson;
+ try{lesson=await fetchLesson(lessonSlug)}
+ catch(e){host.innerHTML=`<section class="panel"><span class="eyebrow">Lesson unavailable</span><h2>We couldn't load this lesson</h2><p>${escapeHtml(e.message||'Unknown error')}</p></section>`;return}
+ if(!st.loaded){st.loaded=true;await loadRemoteState(lesson,st)}
+ paintLesson();
+}
+window.renderLessonPlayer=renderLessonPlayer;
+
+function paintLessonHeader(lesson){
+ const h=lesson.content.header||{};
+ const set=(sel,txt)=>{const el=document.querySelector(sel);if(el&&txt!=null)el.textContent=txt};
+ set('#lessonEyebrow',h.eyebrow);
+ set('#lessonTitle',h.title||lesson.title);
+ set('#lessonSubtitle',h.subtitle||lesson.summary);
+}
+
+function paintLesson(){
+ const lesson=activeLesson(),st=activeState();
+ if(!lesson)return;
+ const c=lesson.content;
+ paintLessonHeader(lesson);
+ document.querySelectorAll('[data-l2tab]').forEach(b=>b.classList.toggle('active',b.dataset.l2tab===st.tab));
+ const host=document.querySelector('#level2Content'); if(!host)return;
+ const pct=lessonPercent(lesson,st);
+ const ring=document.querySelector('#l2ProgressRing'); if(ring)ring.innerHTML=`<strong>${pct}%</strong><span>Complete</span>`;
+
+ if(st.tab==='overview'){
+  const o=c.overview||{};
   host.innerHTML=`<div class="l5-dashboard-grid">
    <section class="panel span-2">
-    <span class="eyebrow">Why this matters</span>
-    <h2>A consistent sequence prevents missed findings</h2>
-    <p>This course follows the approved Hannah Nose-to-Tail Exam procedure: preparation and initial observation, vital signs (TPR) and weight, head and face, neck and throat, integument and coat, thoracic and abdominal examination, urogenital and musculoskeletal screening, a basic neurological quick check, tail and perineal area, and documentation and follow-up. Following the same sequence every time — and reporting significant findings to the attending Hannah DVM immediately — keeps patients safe and the medical record complete.</p>
+    <span class="eyebrow">${o.eyebrow||'Why this matters'}</span>
+    <h2>${o.heading||''}</h2>
+    <p>${o.intro||''}</p>
     <ul class="l2-obj-list">
-     <li>Follow the full 12-section nose-to-tail exam sequence in order.</li>
-     <li>Correctly perform TPR technique (rectal temperature, 15-second × 4 pulse and respiration counts) and record weight/BCS.</li>
-     <li>Recognize normal findings and observable red flags across each body region.</li>
-     <li>Use low-stress handling and proper restraint throughout the exam.</li>
-     <li>Document findings in Hannahware and report significant abnormalities to the attending DVM immediately.</li>
+     ${(o.objectives||[]).map(x=>`<li>${x}</li>`).join('')}
     </ul>
-    <p class="safety-note" style="margin-top:16px"><strong>How this course connects forward</strong><span>Nose-to-Tail Examination is a flagship course inside <strong>Level 2 (Patient Assessment)</strong> — Patient History, Body Condition Scoring, and Pain Assessment join this level next, building toward hydration assessment, neurologic and mobility screening, ophthalmic basics, and advanced dermatology case review in later levels.</span></p>
+    <p class="safety-note" style="margin-top:16px"><strong>${o.connectsForwardTitle||'How this course connects forward'}</strong><span>${o.connectsForward||''}</span></p>
    </section>
    <section class="panel">
     <span class="eyebrow">Your progress</span>
     <h2>${pct}% complete</h2>
     <div class="progress"><span style="width:${pct}%"></span></div>
-    <div class="list-item"><span>Modules complete</span><strong>${l2NtCompletedModuleCount()} of ${l2NtModules.length}</strong></div>
-    <div class="list-item"><span>Case studies complete</span><strong>${l2NtState.casesCompleted.length} of ${l2NtCases.length}</strong></div>
-    <div class="list-item"><span>Skills checklist</span><strong>${Object.values(l2NtState.checklist).filter(Boolean).length} of ${l2NtChecklistItems.length}</strong></div>
-    <div class="card-footer"><button class="primary l2nt-jump" data-tab="curriculum">Continue curriculum</button></div>
+    <div class="list-item"><span>Modules complete</span><strong>${Object.values(st.moduleProgress).filter(Boolean).length} of ${c.modules.length}</strong></div>
+    <div class="list-item"><span>Case studies complete</span><strong>${st.casesCompleted.length} of ${c.cases.length}</strong></div>
+    <div class="list-item"><span>Skills checklist</span><strong>${Object.values(st.checklist).filter(Boolean).length} of ${c.checklistItems.length}</strong></div>
+    <div class="card-footer"><button class="primary l2-jump" data-tab="curriculum">Continue curriculum</button></div>
    </section>
   </div>`;
  }
- if(l2NtState.tab==='curriculum'){
-  host.innerHTML=`<div class="l2-module-grid">${l2NtModules.map(m=>{
-   const done=!!l2NtState.moduleProgress[m.id];
-   const score=l2NtState.moduleScores[m.id];
-   return `<article class="l2-module-card"><div class="section-head"><div class="l2-module-num">${m.id}</div><span class="badge ${done?'good':'neutral'}">${done?'Complete':'Not started'}</span></div><h3>${m.title}</h3><p>${m.minutes} min • knowledge check on completion${score!=null?` • scored ${score}%`:''}</p><button class="${done?'secondary':'primary'} l2nt-open-module" data-module="${m.id}">${done?'Review module':'Open module'}</button></article>`;
+ if(st.tab==='curriculum'){
+  host.innerHTML=`<div class="l2-module-grid">${c.modules.map(m=>{
+   const done=!!st.moduleProgress[m.id];
+   const score=st.moduleScores[m.id];
+   return `<article class="l2-module-card"><div class="section-head"><div class="l2-module-num">${m.id}</div><span class="badge ${done?'good':'neutral'}">${done?'Complete':'Not started'}</span></div><h3>${m.title}</h3><p>${m.minutes} min • knowledge check on completion${score!=null?` • scored ${score}%`:''}</p><button class="${done?'secondary':'primary'} l2-open-module" data-module="${m.id}">${done?'Review module':'Open module'}</button></article>`;
   }).join('')}</div>`;
  }
- if(l2NtState.tab==='cases'){
-  host.innerHTML=`<div class="l2-case-list">${l2NtCases.map(c=>{
-   const done=l2NtState.casesCompleted.includes(c.id);
-   return `<article class="clinical-case"><span class="eyebrow">${c.species}</span><h2>${c.title}</h2><p>${c.history}</p><span class="badge ${done?'good':'neutral'}">${done?'Completed':'Not started'}</span><br><button class="${done?'secondary':'primary'} l2nt-open-case" data-case="${c.id}">${done?'Review case':'Open case'}</button></article>`;
+ if(st.tab==='cases'){
+  host.innerHTML=`<div class="l2-case-list">${c.cases.map(x=>{
+   const done=st.casesCompleted.includes(x.id);
+   return `<article class="clinical-case"><span class="eyebrow">${x.species}</span><h2>${x.title}</h2><p>${x.history}</p><span class="badge ${done?'good':'neutral'}">${done?'Completed':'Not started'}</span><br><button class="${done?'secondary':'primary'} l2-open-case" data-case="${x.id}">${done?'Review case':'Open case'}</button></article>`;
   }).join('')}</div>`;
  }
- if(l2NtState.tab==='skillslab'){
+ if(st.tab==='skillslab'){
+  const checkedCount=Object.values(st.checklist).filter(Boolean).length;
   host.innerHTML=`<section class="panel">
-   <span class="eyebrow">Hands-on skills lab</span><h2>Five rotating stations • 90 minutes total</h2>
-   <div class="l2-station-grid">${l2NtStations.map(s=>`<article class="l2-station-card"><div class="l2-station-icon">${s.icon}</div><h3>${s.title}</h3><p>${s.desc}</p><span class="badge neutral">${s.time}</span></article>`).join('')}</div>
+   <span class="eyebrow">Hands-on skills lab</span><h2>${(c.skillsLab&&c.skillsLab.heading)||'Rotating stations'}</h2>
+   <div class="l2-station-grid">${c.stations.map(s=>`<article class="l2-station-card"><div class="l2-station-icon">${s.icon}</div><h3>${s.title}</h3><p>${s.desc}</p><span class="badge neutral">${s.time}</span></article>`).join('')}</div>
   </section>
   <section class="panel" style="margin-top:18px">
-   <div class="section-head"><div><span class="eyebrow">Skills checklist / rubric</span><h2>Facilitator sign-off — ${Object.values(l2NtState.checklist).filter(Boolean).length}/${l2NtChecklistItems.length} complete (${Math.round((Object.values(l2NtState.checklist).filter(Boolean).length/l2NtChecklistItems.length)*100)}%)</h2></div></div>
-   <div class="checklist-grid">${l2NtChecklistItems.map((item,i)=>`<label class="l2-check-row ${l2NtState.checklist[i]?'done':''}"><input type="checkbox" data-l2nt-check="${i}" ${l2NtState.checklist[i]?'checked':''}><span>${item.t} ${item.critical?'<span class=\\"badge risk\\">Critical</span>':'<span class=\\"badge neutral\\">Non-critical</span>'}</span></label>`).join('')}</div>
+   <div class="section-head"><div><span class="eyebrow">Skills checklist / rubric</span><h2>Facilitator sign-off — ${checkedCount}/${c.checklistItems.length} complete (${Math.round((checkedCount/c.checklistItems.length)*100)}%)</h2></div></div>
+   <div class="checklist-grid">${c.checklistItems.map((item,i)=>`<label class="l2-check-row ${st.checklist[i]?'done':''}"><input type="checkbox" data-l2-check="${i}" ${st.checklist[i]?'checked':''}><span>${item.t} ${item.critical?'<span class=\\"badge risk\\">Critical</span>':'<span class=\\"badge neutral\\">Non-critical</span>'}</span></label>`).join('')}</div>
    <p class="safety-note" style="margin-top:14px"><strong>Pass standard</strong><span>All critical items must be marked complete, and no safety-critical item may be missed.</span></p>
   </section>`;
  }
- if(l2NtState.tab==='certification'){
-  const modAvg=Object.keys(l2NtState.moduleScores).length?Math.round(Object.values(l2NtState.moduleScores).reduce((a,b)=>a+b,0)/Object.values(l2NtState.moduleScores).length):0;
-  const criticalDone=l2NtChecklistItems.every((item,i)=>!item.critical||l2NtState.checklist[i]);
+ if(st.tab==='certification'){
+  const cert=c.certification||{};
+  const scores=Object.values(st.moduleScores);
+  const modAvg=scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length):0;
+  const modulesComplete=c.modules.every(m=>st.moduleProgress[m.id]);
+  const moduleReqMet=modulesComplete&&modAvg>=85;
+  const criticalDone=c.checklistItems.every((item,i)=>!item.critical||st.checklist[i]);
+  const soStatus=st.signoff?.status;
+  const signoffLabel=soStatus==='approved'?'Approved ✓':soStatus==='pending'?'Pending facilitator approval':soStatus==='rejected'?'Sign-off rejected — request again':'Request sign-off';
   host.innerHTML=`<section class="panel">
-   <div class="section-head"><div><span class="eyebrow">Competency passport</span><h2>Nose-to-Tail Examination Foundation</h2><p>Certification title: "Nose-to-Tail Examination Foundation: Cleared for Supervised Nose-to-Tail Exam Support."</p></div><button class="primary" id="requestL2NtValidation">Request sign-off</button></div>
+   <div class="section-head"><div><span class="eyebrow">Competency passport</span><h2>${cert.passportTitle||lesson.title}</h2><p>${cert.certificationTitle||''}</p></div><button class="primary" id="requestL2Validation" ${soStatus==='pending'||soStatus==='approved'?'disabled':''}>${signoffLabel}</button></div>
    <div class="l2-cert-table">
     <div class="l2-cert-head"><span>Requirement</span><span>Status</span><span>Passing criterion</span></div>
-    ${l2NtCertRows.map((r,i)=>{
+    ${c.certRows.map((r,i)=>{
       let status='In progress';
-      if(i===1)status=modAvg>=85?'Met':`${modAvg}% avg`;
+      if(i===1)status=moduleReqMet?'Met':modulesComplete?`${modAvg}% avg`:`${Object.keys(st.moduleScores).length}/${c.modules.length} modules`;
       if(i===4)status=criticalDone?'Met':'Incomplete';
-      if(i===5)status=l2NtState.attested?'Signed':'Not signed';
+      if(i===5)status=st.attested?'Signed':'Not signed';
       const good=status==='Met'||status==='Signed';
       return `<div class="l2-cert-row"><strong>${r.req}</strong><span class="badge ${good?'good':'warning'}">${status}</span><span>${r.criterion}</span></div>`;
     }).join('')}
    </div>
-   <label class="l2-check-row ${l2NtState.attested?'done':''}" style="margin-top:16px"><input type="checkbox" id="l2NtAttestCheck" ${l2NtState.attested?'checked':''}><span>I attest that this course follows the Hannah Nose-to-Tail Exam procedure and that I will report significant findings to the attending Hannah DVM immediately rather than diagnosing or treating independently.</span></label>
-   <p class="safety-note" style="margin-top:14px"><strong>What comes next in Patient Assessment</strong><span>Upcoming Level 2 modules add Patient History, Body Condition Scoring, and Pain Assessment. Later levels add hydration assessment, neurologic and mobility screening, ophthalmic basics, and advanced dermatology case review.</span></p>
+   <label class="l2-check-row ${st.attested?'done':''}" style="margin-top:16px"><input type="checkbox" id="l2AttestCheck" ${st.attested?'checked':''}><span>${cert.attestation||''}</span></label>
+   <p class="safety-note" style="margin-top:14px"><strong>${cert.nextTitle||'What comes next in Patient Assessment'}</strong><span>${cert.next||''}</span></p>
   </section>`;
  }
- wireLevel2Nt();
+ wireLessonPlayer();
 }
 
-function wireLevel2Nt(){
- document.querySelectorAll('.l2nt-jump').forEach(b=>b.onclick=()=>{l2NtState.tab=b.dataset.tab;persistL2Nt();renderLevel2Nt()});
- document.querySelectorAll('.l2nt-open-module').forEach(b=>b.onclick=()=>openL2NtModule(+b.dataset.module));
- document.querySelectorAll('.l2nt-open-case').forEach(b=>b.onclick=()=>openL2NtCase(+b.dataset.case));
- document.querySelectorAll('[data-l2nt-check]').forEach(cb=>cb.onchange=()=>{l2NtState.checklist[cb.dataset.l2ntCheck]=cb.checked;persistL2Nt();renderLevel2Nt();toast(cb.checked?'Checklist item marked complete':'Checklist item unchecked')});
- document.querySelector('#l2NtAttestCheck')?.addEventListener('change',e=>{l2NtState.attested=e.target.checked;persistL2Nt();renderLevel2Nt();toast(e.target.checked?'Attestation signed':'Attestation removed')});
- document.querySelector('#requestL2NtValidation')?.addEventListener('click',()=>{
-  l2NtState.signoffRequested=true;persistL2Nt();
-  openModal('<span class="eyebrow">Competency validation</span><h1>Request sign-off</h1><p>Select an approved validator and shift for observed sign-off of the Nose-to-Tail Examination Foundation competencies.</p><button class="primary" onclick="document.querySelector(\'#modal\').close()">Submit request</button>');
+function wireLessonPlayer(){
+ const lesson=activeLesson(),st=activeState();
+ document.querySelectorAll('.l2-jump').forEach(b=>b.onclick=()=>{st.tab=b.dataset.tab;paintLesson()});
+ document.querySelectorAll('.l2-open-module').forEach(b=>b.onclick=()=>openLessonModule(+b.dataset.module));
+ document.querySelectorAll('.l2-open-case').forEach(b=>b.onclick=()=>openLessonCase(+b.dataset.case));
+ document.querySelectorAll('[data-l2-check]').forEach(cb=>cb.onchange=async()=>{
+  st.checklist[cb.dataset.l2Check]=cb.checked;
+  paintLesson();
+  toast(cb.checked?'Checklist item marked complete':'Checklist item unchecked');
+  await saveProgress(lesson,st);
+ });
+ document.querySelector('#l2AttestCheck')?.addEventListener('change',async e=>{
+  st.attested=e.target.checked;paintLesson();
+  toast(e.target.checked?'Attestation signed':'Attestation removed');
+  await saveProgress(lesson,st);
+ });
+ document.querySelector('#requestL2Validation')?.addEventListener('click',async()=>{
+  const cert=lesson.content.certification||{};
+  const c2=lesson.content;
+  const modulesComplete=c2.modules.every(m=>st.moduleProgress[m.id]);
+  const modScores=Object.values(st.moduleScores);
+  const modAvgOk=modScores.length&&Math.round(modScores.reduce((a,b)=>a+b,0)/modScores.length)>=85;
+  const criticalDone=c2.checklistItems.every((item,i)=>!item.critical||st.checklist[i]);
+  if(!modulesComplete||!modAvgOk||!criticalDone||!st.attested){
+   openModal(`<span class="eyebrow">Competency validation</span><h1>Request sign-off</h1><p>Complete all six knowledge-check modules (85% average or higher), every critical skills-lab checklist item, and sign the attestation before requesting facilitator sign-off.</p><button class="primary" onclick="document.querySelector('#modal').close()">Close</button>`);
+   return;
+  }
+  const row=await requestSignoff(lesson,st);
+  if(!row)return;
+  paintLesson();
+  openModal(`<span class="eyebrow">Competency validation</span><h1>Request sign-off</h1><p>${cert.signoffBody||''}</p><button class="primary" onclick="document.querySelector('#modal').close()">Submit request</button>`);
   toast('Sign-off requested');
  });
 }
 
-/* ---- Nose-to-Tail module modal with knowledge check ---- */
-let l2NtActiveModule=null, l2NtQuizAnswers={};
-function openL2NtModule(id){
- l2NtActiveModule=l2NtModules.find(m=>m.id===id);
- l2NtQuizAnswers={};
- renderL2NtModuleModal();
+/* ---- Module modal with knowledge check ---- */
+let activeModule=null, quizAnswers={};
+function openLessonModule(id){
+ activeModule=activeLesson().content.modules.find(m=>m.id===id);
+ quizAnswers={};
+ renderModuleModal();
 }
-function renderL2NtModuleModal(){
- const m=l2NtActiveModule;
- const answeredCount=Object.keys(l2NtQuizAnswers).length;
- openModal(`<span class="eyebrow">Module ${m.id} of ${l2NtModules.length} • ${m.minutes} min</span>
+function renderModuleModal(){
+ const m=activeModule,lesson=activeLesson();
+ const answeredCount=Object.keys(quizAnswers).length;
+ openModal(`<span class="eyebrow">Module ${m.id} of ${lesson.content.modules.length} • ${m.minutes} min</span>
   <h1 class="modal-title">${m.title}</h1>
   ${m.content}
   <div style="margin-top:22px;border-top:1px solid var(--line);padding-top:18px">
-   <div class="section-head"><div><span class="eyebrow">Knowledge check</span><h2>Answer all ${m.quiz.length} questions</h2></div><span class="l2-quiz-score" id="l2NtQuizScoreLabel">${answeredCount}/${m.quiz.length} answered</span></div>
-   <div id="l2NtQuizContainer">${m.quiz.map((q,qi)=>`
+   <div class="section-head"><div><span class="eyebrow">Knowledge check</span><h2>Answer all ${m.quiz.length} questions</h2></div><span class="l2-quiz-score" id="l2QuizScoreLabel">${answeredCount}/${m.quiz.length} answered</span></div>
+   <div id="l2QuizContainer">${m.quiz.map((q,qi)=>`
     <div class="l2-quiz-question">
      <h4>${qi+1}. ${q.q}</h4>
-     <div id="l2ntq-${qi}">${q.opts.map((o,oi)=>`<button class="decision-option" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('')}</div>
-     <div id="l2ntfb-${qi}"></div>
+     <div id="l2q-${qi}">${q.opts.map((o,oi)=>`<button class="decision-option" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('')}</div>
+     <div id="l2fb-${qi}"></div>
     </div>`).join('')}
    </div>
-   <div id="l2NtQuizResult" style="margin-top:16px"></div>
+   <div id="l2QuizResult" style="margin-top:16px"></div>
   </div>`);
- document.querySelectorAll('#l2NtQuizContainer .decision-option').forEach(btn=>btn.onclick=()=>l2NtAnswerQuestion(+btn.dataset.qi,+btn.dataset.oi));
- if(m.id===6)wireHwWidget(hwFluffyDemo);
- if(answeredCount===m.quiz.length)renderL2NtQuizResult();
+ document.querySelectorAll('#l2QuizContainer .decision-option').forEach(btn=>btn.onclick=()=>answerQuizQuestion(+btn.dataset.qi,+btn.dataset.oi));
+ if(m.hwWidget)wireHwWidget(m.hwWidget);
+ if(answeredCount===m.quiz.length)renderQuizResult();
 }
-function l2NtAnswerQuestion(qi,oi){
- const m=l2NtActiveModule;
- if(l2NtQuizAnswers[qi])return;
+function answerQuizQuestion(qi,oi){
+ const m=activeModule;
+ if(quizAnswers[qi])return;
  const q=m.quiz[qi];
  const isCorrect=oi===q.correct;
- l2NtQuizAnswers[qi]={oi,correct:isCorrect};
- const wrap=document.querySelector(`#l2ntq-${qi}`);
+ quizAnswers[qi]={oi,correct:isCorrect};
+ const wrap=document.querySelector(`#l2q-${qi}`);
  wrap.querySelectorAll('.decision-option').forEach((btn,idx)=>{
   btn.disabled=true;
   if(idx===q.correct)btn.classList.add('correct');
   else if(idx===oi)btn.classList.add('wrong');
  });
- document.querySelector(`#l2ntfb-${qi}`).innerHTML=`<div class="feedback"><p><strong>${isCorrect?'Correct.':'Not quite.'}</strong> ${q.exp}</p></div>`;
- const label=document.querySelector('#l2NtQuizScoreLabel');
- if(label)label.textContent=`${Object.keys(l2NtQuizAnswers).length}/${m.quiz.length} answered`;
- if(Object.keys(l2NtQuizAnswers).length===m.quiz.length)renderL2NtQuizResult();
+ document.querySelector(`#l2fb-${qi}`).innerHTML=`<div class="feedback"><p><strong>${isCorrect?'Correct.':'Not quite.'}</strong> ${q.exp}</p></div>`;
+ const label=document.querySelector('#l2QuizScoreLabel');
+ if(label)label.textContent=`${Object.keys(quizAnswers).length}/${m.quiz.length} answered`;
+ if(Object.keys(quizAnswers).length===m.quiz.length)renderQuizResult();
 }
-function renderL2NtQuizResult(){
- const m=l2NtActiveModule;
- const correctCount=Object.values(l2NtQuizAnswers).filter(a=>a.correct).length;
+async function renderQuizResult(){
+ const m=activeModule,lesson=activeLesson(),st=activeState();
+ const correctCount=Object.values(quizAnswers).filter(a=>a.correct).length;
  const pct=Math.round((correctCount/m.quiz.length)*100);
  const passed=pct>=75;
- if(passed){
-  l2NtState.moduleProgress[m.id]=true;
-  l2NtState.moduleScores[m.id]=pct;
-  persistL2Nt();
- } else {
-  l2NtState.moduleScores[m.id]=pct;
-  persistL2Nt();
- }
- document.querySelector('#l2NtQuizResult').innerHTML=`<div class="feedback-box"><strong>Score: ${pct}%</strong> (${correctCount} of ${m.quiz.length} correct) — ${passed?'Module marked complete.':'Retake recommended (75% needed to mark complete).'}</div>
+ st.moduleScores[m.id]=pct;
+ if(passed)st.moduleProgress[m.id]=true;
+ document.querySelector('#l2QuizResult').innerHTML=`<div class="feedback-box"><strong>Score: ${pct}%</strong> (${correctCount} of ${m.quiz.length} correct) — ${passed?'Module marked complete.':'Retake recommended (75% needed to mark complete).'}</div>
   <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
-   ${!passed?'<button class="secondary" id="l2NtRetakeQuiz">Retake knowledge check</button>':''}
-   <button class="primary" id="l2NtCloseModuleModal">Return to curriculum</button>
+   ${!passed?'<button class="secondary" id="l2RetakeQuiz">Retake knowledge check</button>':''}
+   <button class="primary" id="l2CloseModuleModal">Return to curriculum</button>
   </div>`;
- document.querySelector('#l2NtRetakeQuiz')?.addEventListener('click',()=>{l2NtQuizAnswers={};renderL2NtModuleModal()});
- document.querySelector('#l2NtCloseModuleModal')?.addEventListener('click',()=>{document.querySelector('#modal').close();renderLevel2Nt()});
+ document.querySelector('#l2RetakeQuiz')?.addEventListener('click',()=>{quizAnswers={};renderModuleModal()});
+ document.querySelector('#l2CloseModuleModal')?.addEventListener('click',()=>{document.querySelector('#modal').close();paintLesson()});
  if(passed)toast(`${m.title} module complete — ${pct}%`);
+ await saveProgress(lesson,st,{attempt:true});
 }
 
-/* ---- Nose-to-Tail case runner ---- */
-function openL2NtCase(id){
- l2NtState.caseId=id;l2NtState.caseStep=0;persistL2Nt();
- renderL2NtCase();
- switchView('level2NtCaseRunner');
+/* ---- Case runner ---- */
+function openLessonCase(id){
+ const st=activeState();
+ st.caseId=id;st.caseStep=0;
+ renderLessonCase();
+ switchView('level2CaseRunner');
 }
-function renderL2NtCase(){
- const c=l2NtCases.find(x=>x.id===l2NtState.caseId); if(!c)return;
- document.querySelector('#l2NtCaseTitle').textContent=c.title;
- document.querySelector('#l2NtCaseSubtitle').textContent=`${c.species} • ${c.stages[l2NtState.caseStep]}`;
- document.querySelector('#l2NtCaseStepLabel').textContent=c.stages[l2NtState.caseStep];
- document.querySelector('#l2NtCaseProgress').style.width=`${((l2NtState.caseStep+1)/c.stages.length)*100}%`;
- document.querySelector('#l2NtCaseStageNav').innerHTML=c.stages.map((s,i)=>`<button class="${i===l2NtState.caseStep?'active':''}" data-l2nt-case-step="${i}">${i+1}. ${s}</button>`).join('');
- document.querySelector('#l2NtCasePatientName').textContent=c.patient;
- document.querySelector('#l2NtCaseSignalment').textContent=c.signalment;
- document.querySelector('#l2NtCaseHistory').textContent=c.history;
- document.querySelector('#l2NtCaseStepName').textContent=c.stages[l2NtState.caseStep];
- document.querySelector('#l2NtCaseStageContent').innerHTML=c.content[l2NtState.caseStep];
- const hwCfg=l2NtCaseHwWidgets[`${c.id}-${l2NtState.caseStep}`]; if(hwCfg)wireHwWidget(hwCfg);
- document.querySelectorAll('[data-l2nt-case-step]').forEach(b=>b.onclick=()=>{l2NtState.caseStep=+b.dataset.l2ntCaseStep;persistL2Nt();renderL2NtCase()});
+function renderLessonCase(){
+ const lesson=activeLesson(),st=activeState();
+ const c=lesson.content.cases.find(x=>x.id===st.caseId); if(!c)return;
+ document.querySelector('#l2CaseTitle').textContent=c.title;
+ document.querySelector('#l2CaseSubtitle').textContent=`${c.species} • ${c.stages[st.caseStep]}`;
+ document.querySelector('#l2CaseStepLabel').textContent=c.stages[st.caseStep];
+ document.querySelector('#l2CaseProgress').style.width=`${((st.caseStep+1)/c.stages.length)*100}%`;
+ document.querySelector('#l2CaseStageNav').innerHTML=c.stages.map((s,i)=>`<button class="${i===st.caseStep?'active':''}" data-l2-case-step="${i}">${i+1}. ${s}</button>`).join('');
+ document.querySelector('#l2CasePatientName').textContent=c.patient;
+ document.querySelector('#l2CaseSignalment').textContent=c.signalment;
+ document.querySelector('#l2CaseHistory').textContent=c.history;
+ document.querySelector('#l2CaseStepName').textContent=c.stages[st.caseStep];
+ document.querySelector('#l2CaseStageContent').innerHTML=c.content[st.caseStep];
+ const hwCfg=c.hwWidgets&&c.hwWidgets[String(st.caseStep)]; if(hwCfg)wireHwWidget(hwCfg);
+ document.querySelectorAll('[data-l2-case-step]').forEach(b=>b.onclick=()=>{st.caseStep=+b.dataset.l2CaseStep;renderLessonCase()});
  Object.keys(c.decisions).forEach(hostId=>{
   const el=document.querySelector('#'+hostId);
   if(!el)return;
@@ -1797,26 +1289,31 @@ function renderL2NtCase(){
    toast(chosen===d.correct?'Correct decision recorded':'Feedback recorded');
   });
  });
- document.querySelector(`#completeL2NtCase${c.id}`)?.addEventListener('click',()=>{
-  if(!l2NtState.casesCompleted.includes(c.id)){l2NtState.casesCompleted.push(c.id);persistL2Nt()}
+ document.querySelector(`#completeL2Case${c.id}`)?.addEventListener('click',async()=>{
+  if(!st.casesCompleted.includes(c.id))st.casesCompleted.push(c.id);
   toast(`${c.title} completed`);
-  renderLevel2Nt();
-  openLevel2Nt('cases');
+  await saveProgress(lesson,st);
+  st.tab='cases';
+  switchView('level2');
+  paintLesson();
  });
 }
-document.querySelector('#openAskHannahL2Nt')?.addEventListener('click',()=>{switchView('ask');document.querySelector('#askInput').value='What is the approved Hannah Nose-to-Tail Exam procedure?'});
-document.querySelector('#openAskHannahL2NtOverview')?.addEventListener('click',()=>{switchView('ask');document.querySelector('#askInput').value='What is the approved Hannah Nose-to-Tail Exam procedure?'});
-document.querySelector('#backToAcademiesL2Nt')?.addEventListener('click',()=>openLevel2Hub());
-document.querySelector('#exitLevel2NtCase')?.addEventListener('click',()=>openLevel2Nt('cases'));
-document.querySelector('#level2NtResourcesBtn')?.addEventListener('click',()=>openModal('<span class="eyebrow">Level 2 resources</span><h1>Nose-to-Tail Examination Foundation resource library</h1><p>The approved Hannah Nose-to-Tail Exam procedure, escalation criteria, and Member-communication scripts will appear here after clinical review.</p><p class="safety-note"><strong>Prototype boundary</strong><span>This build uses only original diagrams; production content requires Hannah-approved clinical photography and CMO review.</span></p>'));
-document.querySelectorAll('[data-l2nttab]').forEach(b=>b.onclick=()=>{l2NtState.tab=b.dataset.l2nttab;persistL2Nt();renderLevel2Nt()});
 
+function askHannahAboutLesson(){
+ const prompt=activeLesson()?.content?.header?.askPrompt;
+ switchView('ask');
+ if(prompt)document.querySelector('#askInput').value=prompt;
+}
+document.querySelector('#openAskHannahL2')?.addEventListener('click',askHannahAboutLesson);
+document.querySelector('#openAskHannahL2Overview')?.addEventListener('click',askHannahAboutLesson);
+document.querySelector('#backToAcademiesL2')?.addEventListener('click',()=>openLevel2Hub());
+document.querySelector('#backToMedicalAcademyFromL2Hub')?.addEventListener('click',()=>window.openMedicalAcademy());
+document.querySelector('#exitLevel2Case')?.addEventListener('click',()=>{activeState().tab='cases';switchView('level2');paintLesson()});
+document.querySelector('#level2ResourcesBtn')?.addEventListener('click',()=>{
+ const h=activeLesson()?.content?.header||{};
+ openModal(`<span class="eyebrow">Level 2 resources</span><h1>${h.resourcesTitle||'Resource library'}</h1><p>${h.resourcesBody||''}</p><p class="safety-note"><strong>Prototype boundary</strong><span>${h.resourcesNote||''}</span></p>`);
+});
+document.querySelectorAll('[data-l2tab]').forEach(b=>b.onclick=()=>{activeState().tab=b.dataset.l2tab;paintLesson()});
 
-
-window.openLevel2=openLevel2;
-window.openLevel2Nt=openLevel2Nt;
-renderLevel2Hub();
-
-renderLevel2();
-renderLevel2Nt();
+document.addEventListener('hls:authenticated',()=>{renderLevel2Hub()});
 })();

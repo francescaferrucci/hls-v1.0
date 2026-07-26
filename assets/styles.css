@@ -110,3 +110,20 @@ dialog{width:min(720px,calc(100% - 30px));border:0;border-radius:20px;background
 .hw-mock-duration label{border:1px solid var(--line);border-radius:999px;padding:6px 11px;font-size:12px;cursor:pointer;background:var(--panel);display:flex;align-items:center;gap:5px}
 .hw-mock-actions{padding:14px;display:flex;justify-content:flex-end}
 @media(max-width:900px){.l2-cert-row,.l2-cert-head{grid-template-columns:1fr}.hw-mock-columns{grid-template-columns:1fr}}
+[hidden]{display:none!important}
+.auth-gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:linear-gradient(150deg,var(--navy),var(--navy2) 55%,var(--blue))}
+.auth-card{width:100%;max-width:400px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:30px}
+.auth-brand{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+.auth-brand div{display:flex;flex-direction:column;line-height:1.15}
+.auth-brand strong{font-size:17px;letter-spacing:.14em;color:var(--navy)}
+.auth-brand span{font-size:11px;color:var(--muted)}
+.auth-logo{width:42px;height:42px;object-fit:contain;background:var(--navy);border-radius:11px;padding:5px}
+.auth-card h1{font-size:22px;margin:0 0 6px}
+.auth-card>p{color:var(--muted);font-size:13px;margin:0 0 20px}
+.auth-field{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:14px}
+.auth-field input{border:1px solid var(--line);border-radius:11px;padding:11px 13px;font:inherit;font-weight:400;color:var(--ink);background:var(--bg)}
+.auth-field input:focus{outline:2px solid var(--blue);outline-offset:1px}
+.auth-error,.auth-info{border-radius:11px;padding:10px 12px;font-size:12.5px;margin-bottom:14px}
+.auth-error{background:#fdecec;border:1px solid #f3bcbc;color:#a02020}
+.auth-info{background:#e8f6f2;border:1px solid #a9ded1;color:#0c6b56}
+.auth-toggle{display:block;width:100%;margin-top:14px;background:none;border:0;color:var(--navy2);font:inherit;font-size:13px;cursor:pointer;text-decoration:underline}

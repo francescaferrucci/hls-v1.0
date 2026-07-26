@@ -8,7 +8,33 @@
   <link rel="stylesheet" href="assets/styles.css">
 </head>
 <body>
-<div class="app">
+<div class="auth-gate" id="authGate" hidden>
+  <div class="auth-card">
+    <div class="auth-brand">
+      <img class="auth-logo" src="assets/hannah-logo-white.png" alt="Hannah Pet Hospital logo">
+      <div><strong>HANNAH</strong><span>Learning System™</span></div>
+    </div>
+    <h1 id="authHeading">Sign in</h1>
+    <p id="authSubheading">Use your Hannah account to continue your learning.</p>
+    <form id="authForm" novalidate>
+      <label class="auth-field auth-name" id="authNameField" hidden>Full name
+        <input type="text" id="authName" autocomplete="name">
+      </label>
+      <label class="auth-field">Email
+        <input type="email" id="authEmail" autocomplete="email" required>
+      </label>
+      <label class="auth-field">Password
+        <input type="password" id="authPassword" autocomplete="current-password" required>
+      </label>
+      <div class="auth-error" id="authError" role="alert" hidden></div>
+      <div class="auth-info" id="authInfo" role="status" hidden></div>
+      <button class="primary full" type="submit" id="authSubmit">Sign in</button>
+    </form>
+    <button class="auth-toggle" id="authToggle" type="button">Need an account? Create one</button>
+  </div>
+</div>
+
+<div class="app" id="appShell" hidden>
   <aside class="sidebar" id="sidebar">
     <div class="brand">
       <img class="brand-logo" src="assets/hannah-logo-white.png" alt="Hannah Pet Hospital logo">
@@ -386,7 +412,7 @@
     <section class="view" id="level2">
       <button class="back-link" id="backToAcademiesL2">← Patient Assessment</button>
       <div class="page-heading">
-        <div><span class="eyebrow">Hannah Medical Academy • Level 2 — Patient Assessment</span><h1>Otic Examination</h1><p>Ear Examination Fundamentals: anatomy, safe otoscopic technique, normal vs. abnormal recognition, common condition awareness, cytology preview, and Member communication.</p></div>
+        <div><span class="eyebrow" id="lessonEyebrow">Hannah Medical Academy • Level 2 — Patient Assessment</span><h1 id="lessonTitle">Otic Examination</h1><p id="lessonSubtitle">Ear Examination Fundamentals: anatomy, safe otoscopic technique, normal vs. abnormal recognition, common condition awareness, cytology preview, and Member communication.</p></div>
         <div class="page-actions"><button class="secondary" id="level2ResourcesBtn">Resources</button><button class="primary" id="openAskHannahL2Overview">Ask Hannah</button></div>
       </div>
       <div class="level5-tabs" id="level2Tabs">
@@ -414,41 +440,6 @@
             <button class="secondary full" id="openAskHannahL2">Ask Hannah</button>
           </aside>
           <section class="case-stage-content" id="l2CaseStageContent"></section>
-        </div>
-      </div>
-    </section>
-
-    <section class="view" id="level2Nt">
-      <button class="back-link" id="backToAcademiesL2Nt">← Patient Assessment</button>
-      <div class="page-heading">
-        <div><span class="eyebrow">Hannah Medical Academy • Level 2 — Patient Assessment</span><h1>Nose-to-Tail Examination</h1><p>Systematic nose-to-tail physical exam sequence, normal-finding documentation, and Member communication.</p></div>
-        <div class="page-actions"><button class="secondary" id="level2NtResourcesBtn">Resources</button><button class="primary" id="openAskHannahL2NtOverview">Ask Hannah</button></div>
-      </div>
-      <div class="level5-tabs" id="level2NtTabs">
-        <button class="chip active" data-l2nttab="overview">Overview</button>
-        <button class="chip" data-l2nttab="curriculum">Curriculum</button>
-        <button class="chip" data-l2nttab="cases">Case Studies</button>
-        <button class="chip" data-l2nttab="skillslab">Skills Lab</button>
-        <button class="chip" data-l2nttab="certification">Certification</button>
-      </div>
-      <div id="level2NtContent"></div>
-    </section>
-
-    <section class="view level5-case-runner" id="level2NtCaseRunner">
-      <button class="back-link" id="exitLevel2NtCase">← Return to Level 2</button>
-      <div class="case-workspace">
-        <header class="case-workspace-head">
-          <div><span class="eyebrow light">Level 2 case simulation</span><h1 id="l2NtCaseTitle">Case</h1><p id="l2NtCaseSubtitle"></p></div>
-          <div class="case-progress-box"><span id="l2NtCaseStepLabel">Signalment</span><div class="progress"><span id="l2NtCaseProgress"></span></div></div>
-        </header>
-        <div class="case-stage-nav" id="l2NtCaseStageNav"></div>
-        <div class="case-workspace-body">
-          <aside class="patient-snapshot">
-            <span class="case-pill">Patient snapshot</span><h2 id="l2NtCasePatientName">Patient</h2>
-            <dl><dt>Signalment</dt><dd id="l2NtCaseSignalment">—</dd><dt>History</dt><dd id="l2NtCaseHistory">—</dd><dt>Current step</dt><dd id="l2NtCaseStepName">—</dd></dl>
-            <button class="secondary full" id="openAskHannahL2Nt">Ask Hannah</button>
-          </aside>
-          <section class="case-stage-content" id="l2NtCaseStageContent"></section>
         </div>
       </div>
     </section>
@@ -619,6 +610,7 @@
 </div>
 <div class="overlay" id="overlay"></div>
 <div class="toast" id="toast"></div>
+<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="assets/app.js"></script>
 </body>
 </html>
