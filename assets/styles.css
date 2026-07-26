@@ -92,4 +92,21 @@ dialog{width:min(720px,calc(100% - 30px));border:0;border-radius:20px;background
 .l2-obj-list li{display:flex;gap:10px;align-items:flex-start;list-style:none}
 .l2-obj-list li::before{content:'✓';color:var(--green);font-weight:800}
 .l2-case-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
-@media(max-width:900px){.l2-cert-row,.l2-cert-head{grid-template-columns:1fr}}
+.hw-mock{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--panel);box-shadow:var(--shadow);margin:16px 0}
+.hw-mock-header{background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff;padding:9px 14px;display:flex;justify-content:space-between;align-items:center;font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:850}
+.hw-mock-dialogue{padding:14px;margin:0;background:var(--soft);border-bottom:1px solid var(--line);line-height:1.6;font-size:14px}
+.hw-mock-dialogue strong{color:var(--navy)}
+.hw-mock-role{display:inline-block;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:2px 8px;font-size:10px;font-weight:850;margin-right:6px;color:var(--blue)}
+.hw-mock-row{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:13px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.hw-mock-row strong{font-size:14px}
+.hw-mock-state-group{display:flex;gap:12px;font-size:12px;flex-wrap:wrap}
+.hw-mock-state-group label{display:flex;align-items:center;gap:5px;cursor:pointer;border:1px solid var(--line);border-radius:8px;padding:5px 9px;background:var(--panel)}
+.hw-mock-detail{padding:14px;background:var(--soft)}
+.hw-mock-columns{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.hw-mock-columns h5{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 8px}
+.hw-mock-check{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:13px;cursor:pointer}
+.hw-mock-duration{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.hw-mock-duration-label{width:100%;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px}
+.hw-mock-duration label{border:1px solid var(--line);border-radius:999px;padding:6px 11px;font-size:12px;cursor:pointer;background:var(--panel);display:flex;align-items:center;gap:5px}
+.hw-mock-actions{padding:14px;display:flex;justify-content:flex-end}
+@media(max-width:900px){.l2-cert-row,.l2-cert-head{grid-template-columns:1fr}.hw-mock-columns{grid-template-columns:1fr}}

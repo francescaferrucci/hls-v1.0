@@ -925,7 +925,7 @@ const l2Modules=[
 ];
 
 const l2Cases=[
- {id:0,title:'Bella — Wellness Ear Check',patient:'Bella',species:'Feline',signalment:'3-year-old neutered male domestic shorthair cat, indoor only',history:'Presented for wellness exam; owner reports no scratching, head shaking, odor, or discharge.',
+ {id:0,title:'Bella — Wellness Ear Check',patient:'Bella',species:'Feline',signalment:'3-year-old neutered male domestic shorthair cat, indoor only',history:'Presented for wellness exam; Member reports no scratching, head shaking, odor, or discharge.',
   stages:['Exam Findings','Documentation','Member Communication','Diagnostics Decision','Escalation Triggers'],
   content:[
    `<span class="eyebrow">Exam findings</span><h2>Review the otoscopic view</h2><p>Clean pinnae, pale pink canal entrance, minimal cerumen, no erythema, no discharge, no pain response, and an otoscopic view adequate to identify a normal-looking canal and tympanic membrane.</p>${sourceFigureL2('catears')}`,
@@ -938,9 +938,9 @@ const l2Cases=[
    l2c0s1:{opts:['"Both pinnae clean; canals appear pale pink; minimal cerumen; no discharge noted; patient tolerated exam."','"Ears look totally fine, nothing to say."','"Cat has healthy ears, no need to check again for years."'],correct:0,exp:'Objective, specific documentation supports the medical record and future comparison.'},
    l2c0s2:{opts:['"Your cat has perfect ears forever."','"The doctor did not see concerning ear findings today; if you notice head shaking, odor, discharge, or scratching, please call us."','"No further ear care is ever needed."'],correct:1,exp:'This response is accurate, non-diagnostic, and gives the Member clear next steps.'},
    l2c0s3:{opts:['Yes, cytology is required today.','Not based on the presented normal wellness findings, but the veterinarian makes final diagnostic decisions.','Cytology is never needed for cats.'],correct:1,exp:'Normal wellness findings do not indicate cytology, but the DVM always makes the final call.'},
-   l2c0s4:{opts:['Pain, sudden resistance, discharge, foreign material, bleeding, severe redness, suspected mass, or inability to safely visualize.','A slightly dusty exam room.','The owner being in a hurry.'],correct:0,exp:'These are the recognized stop-and-escalate signs for staff at this level.'}
+   l2c0s4:{opts:['Pain, sudden resistance, discharge, foreign material, bleeding, severe redness, suspected mass, or inability to safely visualize.','A slightly dusty exam room.','The Member being in a hurry.'],correct:0,exp:'These are the recognized stop-and-escalate signs for staff at this level.'}
   }},
- {id:1,title:'Cooper — Mild Otitis Externa',patient:'Cooper',species:'Canine',signalment:'5-year-old spayed female Cocker spaniel mix',history:'Two weeks of intermittent head shaking and ear rubbing; owner reports "a musty smell" and occasional brown debris; dog swims weekly.',
+ {id:1,title:'Cooper — Mild Otitis Externa',patient:'Cooper',species:'Canine',signalment:'5-year-old spayed female Cocker spaniel mix',history:'Two weeks of intermittent head shaking and ear rubbing; Member reports "a musty smell" and occasional brown debris; dog swims weekly.',
   stages:['Exam Findings','Documentation','Handoff','Scope Check','Next Steps'],
   content:[
    `<span class="eyebrow">Exam findings</span><h2>Review the otoscopic view</h2><p>Right ear with mild erythema and brown waxy debris; left ear mildly pink with less debris; dog tolerates gentle pinna handling but withdraws when the cone is advanced too quickly.</p>${sourceFigureL2('otitis')}`,
@@ -955,7 +955,7 @@ const l2Cases=[
    l2c1s3:{opts:['"I will document what I observed for the doctor to review."','"This is definitely yeast, and the doctor will prescribe antifungal drops."','"I will ask the doctor whether cytology is indicated."'],correct:1,exp:'Diagnosing yeast before cytology overstates scope at this level.'},
    l2c1s4:{opts:['Cytology collection, preparation, organism identification, and diagnostic decision-making.','Surgical suturing technique.','Radiograph positioning for the thorax.'],correct:0,exp:'The Patient Assessment and Diagnostics pathway builds directly on this case with hands-on cytology skills.'}
   }},
- {id:2,title:'Milo — Suspected Ear Mites',patient:'Milo',species:'Feline (kitten)',signalment:'14-week-old intact male domestic medium hair kitten, recently adopted from a multi-cat environment',history:'Owner reports intense scratching, head shaking, and dark crumbly material in both ears.',
+ {id:2,title:'Milo — Suspected Ear Mites',patient:'Milo',species:'Feline (kitten)',signalment:'14-week-old intact male domestic medium hair kitten, recently adopted from a multi-cat environment',history:'Member reports intense scratching, head shaking, and dark crumbly material in both ears.',
   stages:['Exam Findings','Documentation','Member Communication','Household Risk','Image ID'],
   content:[
    `<span class="eyebrow">Exam findings</span><h2>Review the otoscopic and microscope preview</h2><p>Bilateral dark granular "coffee-ground" debris, erythematous canal entrance, excoriations around the pinnae, and a microscope preview image showing an <em>Otodectes cynotis</em> adult mite in mineral oil.</p>${sourceFigureL2('mite')}`,
@@ -1016,8 +1016,8 @@ function l2OverallPercent(){
 }
 
 const level2Lessons=[
- {id:'nose-to-tail',title:'Nose-to-Tail Examination',desc:'Systematic head-to-tail physical exam sequence and normal-finding documentation.',status:'live'},
- {id:'history',title:'Patient History',desc:'Structured history-taking, owner interview technique, and chart documentation.',status:'planned'},
+ {id:'nose-to-tail',title:'Nose-to-Tail Examination',desc:'Systematic nose-to-tail physical exam sequence and normal-finding documentation.',status:'live'},
+ {id:'history',title:'Patient History',desc:'Structured history-taking, Member interview technique, and chart documentation.',status:'planned'},
  {id:'tpr',title:'TPR',desc:'Temperature, pulse, and respiration: technique, normal ranges, and red flags.',status:'planned'},
  {id:'bcs',title:'Body Condition Scoring',desc:'9-point body condition and muscle condition scoring with Member communication.',status:'planned'},
  {id:'pain',title:'Pain Assessment',desc:'Species-specific pain scales, behavioral cues, and escalation criteria.',status:'planned'},
@@ -1320,11 +1320,111 @@ function mmColorReferenceSVG(){
   </svg>`;
 }
 
+function hwCheckLabel(cfgId,prefix,label){
+ const value=prefix?`${prefix}:${label}`:label;
+ return `<label class="hw-mock-check"><input type="checkbox" data-hwfind="${cfgId}" value="${value}"> ${label}</label>`;
+}
+function hwWidgetHTML(cfg){
+ const sideCols=!!cfg.sides;
+ const stateOpts=['WNL','ABN','STA','CNA'];
+ return `<div class="hw-mock" data-hwid="${cfg.id}">
+  <div class="hw-mock-header"><span>Hannahware</span><span>Physical Exam</span></div>
+  <p class="hw-mock-dialogue"><span class="hw-mock-role">PetNurse</span>to Member: "${cfg.dialogue.nurse}"<br><span class="hw-mock-role">Member</span>"${cfg.dialogue.member}"</p>
+  <div class="hw-mock-row"><strong>${cfg.system}</strong>
+   <div class="hw-mock-state-group">${stateOpts.map(s=>`<label><input type="radio" name="hwstate-${cfg.id}" value="${s}" data-hwstate="${cfg.id}"> ${s}</label>`).join('')}</div>
+  </div>
+  <div class="hw-mock-detail" id="hwdetail-${cfg.id}" hidden>
+   ${sideCols
+     ?`<div class="hw-mock-columns"><div><h5>Left</h5>${cfg.findingsLeft.map(f=>hwCheckLabel(cfg.id,'L',f)).join('')}</div><div><h5>Right</h5>${cfg.findingsRight.map(f=>hwCheckLabel(cfg.id,'R',f)).join('')}</div></div>`
+     :(cfg.findings&&cfg.findings.length?cfg.findings.map(f=>hwCheckLabel(cfg.id,'',f)).join(''):'')}
+   ${cfg.durationOptions?`<div class="hw-mock-duration"><span class="hw-mock-duration-label">Duration</span>${cfg.durationOptions.map(d=>`<label><input type="radio" name="hwdur-${cfg.id}" value="${d}" data-hwdur="${cfg.id}"> ${d}</label>`).join('')}</div>`:''}
+  </div>
+  <div class="hw-mock-actions"><button class="secondary" data-hwsave="${cfg.id}">Save to Hannahware</button></div>
+  <div id="hwfeedback-${cfg.id}" style="padding:0 14px 14px"></div>
+ </div>`;
+}
+function wireHwWidget(cfg){
+ const root=document.querySelector(`[data-hwid="${cfg.id}"]`); if(!root)return;
+ root.querySelectorAll(`[data-hwstate="${cfg.id}"]`).forEach(r=>r.onchange=()=>{
+  const detail=root.querySelector(`#hwdetail-${cfg.id}`);
+  if(detail)detail.hidden=r.value!=='ABN';
+ });
+ const saveBtn=root.querySelector(`[data-hwsave="${cfg.id}"]`);
+ if(saveBtn)saveBtn.onclick=()=>{
+  const state=root.querySelector(`[data-hwstate="${cfg.id}"]:checked`)?.value;
+  const fb=root.querySelector(`#hwfeedback-${cfg.id}`);
+  if(!state){fb.innerHTML='<div class="feedback"><p><strong>Select a status first.</strong> Every row in Hannahware needs a WNL, ABN, STA, or CNA status before it can be saved.</p></div>';return;}
+  let ok=state===cfg.correctState;
+  if(state==='ABN'&&ok){
+   const checked=[...root.querySelectorAll(`[data-hwfind="${cfg.id}"]:checked`)].map(c=>c.value);
+   const required=cfg.correctFindings||[];
+   const missing=required.filter(f=>!checked.includes(f));
+   const extra=checked.filter(f=>!required.includes(f));
+   if(missing.length||extra.length)ok=false;
+   if(ok&&cfg.durationOptions){
+    const dur=root.querySelector(`[data-hwdur="${cfg.id}"]:checked`)?.value;
+    if(dur!==cfg.correctDuration)ok=false;
+   }
+  }
+  fb.innerHTML=`<div class="feedback"><p><strong>${ok?'Correct — saved to Hannahware.':'Not quite — review the dialogue and try again.'}</strong> ${cfg.explanation}</p></div>`;
+  root.classList.toggle('done',ok);
+  toast(ok?'Entry saved to Hannahware':'Review the entry before saving');
+ };
+}
+
+const hwFluffyDemo={
+ id:'m6fluffy',
+ dialogue:{nurse:"I notice some discharge coming from Fluffy's left eye. How long has she had that?",member:"That started about three days ago."},
+ system:'Eyes & Tearing',
+ sides:true,
+ findingsLeft:['Bleeding','Discharge','Excess Tears','Redness','Cloudy'],
+ findingsRight:['Bleeding','Discharge','Excess Tears','Redness','Cloudy'],
+ correctFindings:['L:Discharge'],
+ correctState:'ABN',
+ durationOptions:['1-2 Days','3-7 Days','Over A Week','Chronic'],
+ correctDuration:'3-7 Days',
+ explanation:"The PetNurse verbalized a finding in the left eye only, so ABN is selected for Eyes & Tearing, Discharge is checked in the Left column (not the Right, and not a different finding), and the duration matches exactly what the Member reported — 3-7 Days."
+};
+const hwRangerDemo={
+ id:'c0ranger',
+ dialogue:{nurse:"Ranger's abdomen feels soft with no pain, and his appetite has been normal — everything there looks good.",member:"Yes, he's been eating great and acting like himself."},
+ system:'Gastrointestinal',
+ sides:false,
+ findings:[],
+ correctFindings:[],
+ correctState:'WNL',
+ explanation:"When the PetNurse verbalizes a normal finding, the Nurse Aide still documents it — selecting WNL for Gastrointestinal in Hannahware confirms the system was checked and found normal, which matters just as much as flagging an abnormal one."
+};
+const hwWillowDemo={
+ id:'c1willow',
+ dialogue:{nurse:"I'm seeing some mild redness right along Willow's incision edges, but no discharge or swelling. Has she been licking or bothering it at all?",member:"No, she hasn't touched it, and she's been eating and playing normally."},
+ system:'Integumentary',
+ sides:false,
+ findings:['Redness/Erythema Along Incision','Discharge/Exudate','Swelling','Incision Opening (Dehiscence)','Pain On Palpation'],
+ correctFindings:['Redness/Erythema Along Incision'],
+ correctState:'ABN',
+ explanation:"Only what the PetNurse actually verbalized gets checked — mild redness along the incision edges — with no discharge, swelling, or dehiscence boxes checked, since those weren't observed. This objective entry is what the attending Hannah DVM reviews before the visit ends."
+};
+const hwGusDemo={
+ id:'c2gus',
+ dialogue:{nurse:"I found a small lump on Gus's left flank — it feels firm and moves easily under the skin, and he's not showing any pain there. Have you noticed it before?",member:"Actually, yes — I first felt it about two weeks ago but wasn't sure it was anything."},
+ system:'Integumentary',
+ sides:false,
+ findings:['New Mass/Growth','Redness/Erythema','Discharge/Exudate','Hair Loss (Alopecia)','Pain On Palpation'],
+ correctFindings:['New Mass/Growth'],
+ correctState:'ABN',
+ durationOptions:['1-2 Days','3-7 Days','Over A Week','Chronic'],
+ correctDuration:'Over A Week',
+ explanation:"Only New Mass/Growth is checked since that's the single finding the PetNurse described, and the duration is set to Over A Week to reflect the Member-reported two-week timeline — the record should match the conversation exactly, not round up to Chronic or guess at a shorter window."
+};
+const l2NtCaseHwWidgets={'0-2':hwRangerDemo,'1-2':hwWillowDemo,'2-2':hwGusDemo};
+
 const l2NtModules=[
  {id:1,title:'Preparation, Initial Observation & Vital Signs (TPR)',minutes:15,icon:'🩺',
   content:`<p><strong>Gather supplies</strong> before starting: thermometer, stethoscope, a watch or timer for respiratory/pulse rate, and an otoscope/ophthalmoscope if available. Approach the patient calmly and speak in a reassuring tone, moving slowly and confidently to minimize stress.</p>
    <p><strong>Initial observation</strong> happens before any hands-on contact: watch the patient's overall behavior, posture, and gait as they move in the exam room. Note any lameness, ataxia (a lack of coordination resulting in an abnormal gait — not a disease itself, but a clinical sign), or reluctance to move, and check for respiratory distress such as open-mouth breathing or excessive panting.</p>
    <p class="safety-note"><strong>Critter Clue</strong><span>Begin documentation (paper or electronic) of any observations before handling the patient.</span></p>
+   <p><strong>Two roles, one record:</strong> throughout the exam, the PetNurse examines the patient and speaks findings aloud to the Member in plain language, while the Nurse Aide enters those same findings into the Physical Exam section of Hannahware in real time on the touch-screen monitor. Module 6 covers this PetNurse-and-Nurse-Aide documentation workflow in detail, including a hands-on Hannahware entry exercise.</p>
    <p><strong>Vital signs (TPR) and weight:</strong></p>
    <ul class="l2-obj-list">
     <li>Temperature — take a rectal temperature unless another method is directed by the patient's condition.</li>
@@ -1394,37 +1494,44 @@ const l2NtModules=[
   content:`<p><strong>Tail</strong> — gently run a hand along the tail, feeling for lumps, pain, or irregularities in vertebral alignment.</p>
    <p><strong>Anus and perineal region</strong> — check for swelling, masses, or anal sac issues; anal glands should only be expressed if indicated and under supervision.</p>
    <p><strong>Documentation and follow-up</strong> — record all normal and abnormal findings thoroughly in the Physical Exam and New Findings sections of the patient's medical record in Hannahware. Enter any medications given, newly prescribed, or refilled in the medication tab. Immediately communicate any significant abnormalities to the attending Hannah DVM. Disinfect exam surfaces and tools per hospital standards, and provide the Hannah DVM or Member with any information needed as appropriate to your role. Review and print the Report Card found in the Actions tab dropdown.</p>
-   <p class="safety-note"><strong>Critter Clue</strong><span>Always prioritize safety — use proper restraint techniques and ask for help if the patient shows signs of distress or aggression. Practice gentle handling, maintain clear communication with the DVM and Traffic Controller, and keep the patient's comfort in mind: offer breaks, ensure they aren't standing on slippery surfaces, and watch for stress signals.</span></p>`,
+   <p class="safety-note"><strong>Critter Clue</strong><span>Always prioritize safety — use proper restraint techniques and ask for help if the patient shows signs of distress or aggression. Practice gentle handling, maintain clear communication with the DVM and Traffic Controller, and keep the patient's comfort in mind: offer breaks, ensure they aren't standing on slippery surfaces, and watch for stress signals.</span></p>
+   <p><strong>How the record actually gets built: PetNurse and Nurse Aide</strong></p>
+   <p>At Hannah, documentation happens live, in the room, as a two-person job. The <strong>PetNurse</strong> performs the exam and narrates each body system out loud to the Member in plain, non-diagnostic language — what she's seeing, and any follow-up question the finding raises. At the same time, the <strong>Nurse Aide</strong> works the touch-screen monitor and enters those same findings into the Physical Exam section of Hannahware as they're spoken, using the WNL / ABN / STA / CNA status for each body system (Within Normal Limit, Abnormal, Stable, Can Not Assess) and the finding-specific checkboxes, side (Left/Right), and duration or frequency options that appear underneath.</p>
+   <p>For example, while examining the eyes the PetNurse might say to the Member: <em>"I notice some discharge coming from Fluffy's left eye. How long has she had that?"</em> The Member answers that it started about three days ago. The Nurse Aide records this immediately: ABN for Eyes &amp; Tearing, Discharge checked in the Left column only, and Duration set to 3-7 Days — nothing more, nothing less than what was actually said. Try it yourself below.</p>
+   ${hwWidgetHTML(hwFluffyDemo)}
+   <p class="safety-note"><strong>Critter Clue</strong><span>Only check the boxes that match what was actually observed and reported — an accurate, spoken-word-for-spoken-word record protects the patient and the Member's trust, and gives the attending Hannah DVM exactly what they need to review before the visit ends.</span></p>`,
   quiz:[
    {q:'When should anal glands be expressed during a nose-to-tail exam?',opts:['Every time, as a routine step','Only if indicated and under supervision','Only if the Member requests it','Never, under any circumstance'],correct:1,exp:'Anal gland expression should only be performed if indicated and under supervision.'},
    {q:'True or False: Significant abnormalities can wait until the end of the shift to be reported to the veterinarian.',opts:['True','False'],correct:1,exp:'False. Significant abnormalities should be communicated to the attending Hannah DVM immediately.'},
    {q:'Where should exam findings be documented?',opts:['The Physical Exam and New Findings sections of the medical record in Hannahware','A personal notebook only','Nowhere, if the patient is normal','Only in the Member\'s chat messages'],correct:0,exp:'Findings should be recorded thoroughly in the Physical Exam and New Findings sections in Hannahware.'},
-   {q:'What should be reviewed and printed at the end of the visit, per the procedure?',opts:['The Report Card from the Actions tab dropdown','The invoice only','The vaccine history only','Nothing further is needed'],correct:0,exp:'The procedure calls for reviewing and printing the Report Card found in the Actions tab dropdown.'}
+   {q:'What should be reviewed and printed at the end of the visit, per the procedure?',opts:['The Report Card from the Actions tab dropdown','The invoice only','The vaccine history only','Nothing further is needed'],correct:0,exp:'The procedure calls for reviewing and printing the Report Card found in the Actions tab dropdown.'},
+   {q:'During the exam, who verbalizes each finding to the Member, and who enters it into Hannahware?',opts:['The PetNurse verbalizes findings while examining; the Nurse Aide enters them into Hannahware in real time','The Nurse Aide verbalizes findings; the PetNurse enters them into Hannahware','The Member enters their own findings into Hannahware','Only the attending DVM may verbalize or document exam findings'],correct:0,exp:'The PetNurse examines the patient and speaks findings aloud to the Member, while the Nurse Aide enters those same findings into the Physical Exam section of Hannahware at the same time.'},
+   {q:'In Hannahware\'s Physical Exam screen, what does selecting "ABN" for a body system mean?',opts:['Abnormal','A Body Note','Above Baseline Normal','Auto-Balanced Normal'],correct:0,exp:'ABN stands for Abnormal, one of Hannahware\'s four body-system statuses alongside WNL (Within Normal Limit), STA (Stable), and CNA (Can Not Assess).'}
   ]}
 ];
 
 const l2NtCases=[
- {id:0,title:'Ranger — Annual Wellness Exam',patient:'Ranger',species:'Canine',signalment:'4-year-old neutered male Labrador retriever',history:'Presented for annual wellness exam; owner reports no concerns, patient is active and eating normally.',
+ {id:0,title:'Ranger — Annual Wellness Exam',patient:'Ranger',species:'Canine',signalment:'4-year-old neutered male Labrador retriever',history:'Presented for annual wellness exam; Member reports no concerns, patient is active and eating normally.',
   stages:['Exam Findings','TPR Technique','Documentation','Member Communication','Next Steps'],
   content:[
-   `<span class="eyebrow">Exam findings</span><h2>Review the head-to-tail findings</h2><p>Initial observation shows a bright, alert, comfortable dog with a normal gait, no lameness or ataxia, and no respiratory distress. Head-to-tail exam: pink moist gums with CRT under 2 seconds, clear eyes, no nasal discharge, no submandibular lymph node enlargement, clean coat, normal heart and lung auscultation with no murmurs or pulse deficits, soft non-painful abdomen, full pain-free range of motion in all joints, normal mentation and proprioception, and a normal tail and perineal exam.</p>${ntBodySVG('canine')}`,
+   `<span class="eyebrow">Exam findings</span><h2>Review the nose-to-tail findings</h2><p>Initial observation shows a bright, alert, comfortable dog with a normal gait, no lameness or ataxia, and no respiratory distress. Nose-to-tail exam: pink moist gums with CRT under 2 seconds, clear eyes, no nasal discharge, no submandibular lymph node enlargement, clean coat, normal heart and lung auscultation with no murmurs or pulse deficits, soft non-painful abdomen, full pain-free range of motion in all joints, normal mentation and proprioception, and a normal tail and perineal exam.</p>${ntBodySVG('canine')}`,
    `<span class="eyebrow">TPR technique</span><h2>Ranger's pulse is counted for 15 seconds and comes to 23 beats; his breathing is counted for 15 seconds at 6 breaths. How should these be calculated and interpreted?</h2><div class="choice-grid" id="l2ntc0s1"></div>`,
-   `<span class="eyebrow">Documentation</span><h2>Which documentation is most appropriate?</h2><div class="choice-grid" id="l2ntc0s2"></div>`,
+   `<span class="eyebrow">Documentation</span><h2>Record what the PetNurse verbalized, then choose the narrative note</h2><p>As the PetNurse examines Ranger, she narrates each system to the Member while the Nurse Aide enters findings into Hannahware. Complete the Nurse Aide's entry below first.</p>${hwWidgetHTML(hwRangerDemo)}<h3 style="margin-top:20px">Which New Findings narrative note is most appropriate?</h3><div class="choice-grid" id="l2ntc0s2"></div>`,
    `<span class="eyebrow">Member communication</span><h2>What should the team say to the Member?</h2><div class="choice-grid" id="l2ntc0s3"></div>`,
    `<span class="eyebrow">Next steps</span><h2>Which upcoming Level 2 topic builds directly on this wellness exam?</h2><div class="choice-grid" id="l2ntc0s4"></div><button class="primary" id="completeL2NtCase0" style="margin-top:16px">Complete case</button>`
   ],
   decisions:{
    l2ntc0s1:{opts:['Multiply each 15-second count by four: heart rate is 92 bpm and respiratory rate is 24 breaths per minute, both within normal canine reference ranges.','Use the 15-second counts as the final per-minute values without multiplying.','Divide each 15-second count by four.'],correct:0,exp:'Per the procedure, multiply the 15-second count by four to get the per-minute rate: 23×4=92 bpm and 6×4=24 breaths/min, both within normal ranges for a dog.'},
-   l2ntc0s2:{opts:['"Head-to-tail exam performed; pink moist gums with CRT <2 sec, no lymph node or auscultation abnormalities, soft non-painful abdomen, full pain-free joint range of motion, normal mentation and gait; TPR within normal limits."','"Dog is perfectly healthy forever."','"Nothing to report, exam was quick."'],correct:0,exp:'Objective, region-by-region documentation in the Physical Exam section supports the medical record and future comparison.'},
-   l2ntc0s3:{opts:['"Everything looks great today — no concerns from the head-to-tail exam, and his vitals are all within normal range."','"Your dog is guaranteed to never get sick."','"We didn\'t really check anything today."'],correct:0,exp:'This response is accurate, plain-language, and appropriately confident for a fully normal wellness exam.'},
+   l2ntc0s2:{opts:['"Nose-to-tail exam performed; pink moist gums with CRT <2 sec, no lymph node or auscultation abnormalities, soft non-painful abdomen, full pain-free joint range of motion, normal mentation and gait; TPR within normal limits."','"Dog is perfectly healthy forever."','"Nothing to report, exam was quick."'],correct:0,exp:'Objective, region-by-region documentation in the Physical Exam section supports the medical record and future comparison.'},
+   l2ntc0s3:{opts:['"Everything looks great today — no concerns from the nose-to-tail exam, and his vitals are all within normal range."','"Your dog is guaranteed to never get sick."','"We didn\'t really check anything today."'],correct:0,exp:'This response is accurate, plain-language, and appropriately confident for a fully normal wellness exam.'},
    l2ntc0s4:{opts:['Patient History, Body Condition Scoring, and Pain Assessment modules joining Level 2.','Surgical suturing technique.','Radiograph positioning for the thorax.'],correct:0,exp:'The Patient Assessment level continues with History, Body Condition Scoring, and Pain Assessment modules next.'}
   }},
- {id:1,title:'Willow — Post-Surgical Recheck',patient:'Willow',species:'Feline',signalment:'2-year-old spayed female domestic shorthair, day 5 post-spay',history:'Presented for a routine post-surgical incision recheck 5 days after spay surgery; owner reports the cat is eating and behaving normally.',
+ {id:1,title:'Willow — Post-Surgical Recheck',patient:'Willow',species:'Feline',signalment:'2-year-old spayed female domestic shorthair, day 5 post-spay',history:'Presented for a routine post-surgical incision recheck 5 days after spay surgery; Member reports the cat is eating and behaving normally.',
   stages:['Exam Findings','Integument Findings','Documentation','Member Communication','Escalation Triggers'],
   content:[
-   `<span class="eyebrow">Exam findings</span><h2>Review the head-to-tail findings</h2><p>Initial observation shows a bright, alert, comfortable cat with normal gait and no respiratory distress. TPR is within normal limits, gums are pink with CRT under 2 seconds, and the remainder of the head-to-tail exam is unremarkable.</p>`,
+   `<span class="eyebrow">Exam findings</span><h2>Review the nose-to-tail findings</h2><p>Initial observation shows a bright, alert, comfortable cat with normal gait and no respiratory distress. TPR is within normal limits, gums are pink with CRT under 2 seconds, and the remainder of the nose-to-tail exam is unremarkable.</p>`,
    `<span class="eyebrow">Integument findings</span><h2>During the integument exam, mild redness is noted along the incision edges, with no discharge, swelling, or pain response on gentle palpation near the site. Which action is correct?</h2><div class="choice-grid" id="l2ntc1s1"></div>`,
-   `<span class="eyebrow">Documentation</span><h2>Which documentation is most appropriate?</h2><div class="choice-grid" id="l2ntc1s2"></div>`,
+   `<span class="eyebrow">Documentation</span><h2>Record what the PetNurse verbalized, then choose the narrative note</h2><p>As the PetNurse checks Willow's incision, she narrates the finding to the Member while the Nurse Aide enters it into Hannahware. Complete the Nurse Aide's entry below first.</p>${hwWidgetHTML(hwWillowDemo)}<h3 style="margin-top:20px">Which New Findings narrative note is most appropriate?</h3><div class="choice-grid" id="l2ntc1s2"></div>`,
    `<span class="eyebrow">Member communication</span><h2>What should the team say to the Member about the incision?</h2><div class="choice-grid" id="l2ntc1s3"></div>`,
    `<span class="eyebrow">Escalation triggers</span><h2>Which change at a future recheck would require immediately reporting to the attending Hannah DVM?</h2><div class="choice-grid" id="l2ntc1s4"></div><button class="primary" id="completeL2NtCase1" style="margin-top:16px">Complete case</button>`
   ],
@@ -1432,31 +1539,32 @@ const l2NtCases=[
    l2ntc1s1:{opts:['Note the finding and report it to the attending Hannah DVM so they can examine the incision before the visit ends.','Declare the incision fully healed and skip mentioning it.','Apply a topical treatment without veterinary input.'],correct:0,exp:'Per the procedure, significant abnormalities — including new integument findings — should be reported to the attending DVM immediately, who then examines and decides next steps.'},
    l2ntc1s2:{opts:['"Incision edges mildly red, no discharge, no swelling, no pain response on palpation; remainder of exam normal; reported to attending DVM for review."','"Incision looks perfect, totally healed."','"Nothing unusual with the incision."'],correct:0,exp:'Objective, specific documentation of the incision in the Physical Exam/New Findings sections supports accurate veterinary review.'},
    l2ntc1s3:{opts:['"There\'s some mild redness at the incision edges; the doctor will take a quick look before you head out."','"Everything is 100% perfect, no need to check again."','"We didn\'t look at the incision today."'],correct:0,exp:'This response is accurate, non-diagnostic, and sets an appropriate next step for veterinarian review.'},
-   l2ntc1s4:{opts:['Increasing redness, swelling, discharge, an opening incision, or new pain','The cat purring during the exam','A slightly dusty exam room','The owner arriving a few minutes late'],correct:0,exp:'Increasing redness, swelling, discharge, incision opening, or new pain at the surgical site are findings that require immediate DVM notification.'}
+   l2ntc1s4:{opts:['Increasing redness, swelling, discharge, an opening incision, or new pain','The cat purring during the exam','A slightly dusty exam room','The Member arriving a few minutes late'],correct:0,exp:'Increasing redness, swelling, discharge, incision opening, or new pain at the surgical site are findings that require immediate DVM notification.'}
   }},
- {id:2,title:'Gus — Senior Wellness with a New Lump',patient:'Gus',species:'Canine',signalment:'10-year-old neutered male beagle mix',history:'Presented for senior wellness exam; owner mentions a new lump on the left flank first noticed about two weeks ago.',
+ {id:2,title:'Gus — Senior Wellness with a New Lump',patient:'Gus',species:'Canine',signalment:'10-year-old neutered male beagle mix',history:'Presented for senior wellness exam; Member mentions a new lump on the left flank first noticed about two weeks ago.',
   stages:['Exam Findings','Integument Findings','Documentation','Member Communication','Escalation Triggers'],
   content:[
-   `<span class="eyebrow">Exam findings</span><h2>Review the head-to-tail findings</h2><p>Initial observation shows a bright, alert senior dog with a normal gait, no lameness or ataxia. TPR is within normal limits, heart and lung auscultation are unremarkable, and abdominal palpation reveals no masses or discomfort.</p>${ntBodySVG('canine')}`,
+   `<span class="eyebrow">Exam findings</span><h2>Review the nose-to-tail findings</h2><p>Initial observation shows a bright, alert senior dog with a normal gait, no lameness or ataxia. TPR is within normal limits, heart and lung auscultation are unremarkable, and abdominal palpation reveals no masses or discomfort.</p>${ntBodySVG('canine')}`,
    `<span class="eyebrow">Integument findings</span><h2>During the integument exam, a firm, freely movable, dime-sized subcutaneous mass is found on the left flank, non-painful on palpation, reportedly present for about two weeks. What is the correct next action?</h2><div class="choice-grid" id="l2ntc2s1"></div>`,
-   `<span class="eyebrow">Documentation</span><h2>Which documentation of the mass is most appropriate?</h2><div class="choice-grid" id="l2ntc2s2"></div>`,
+   `<span class="eyebrow">Documentation</span><h2>Record what the PetNurse verbalized, then choose the narrative note</h2><p>As the PetNurse describes the new lump, she narrates the finding to the Member while the Nurse Aide enters it into Hannahware. Complete the Nurse Aide's entry below first.</p>${hwWidgetHTML(hwGusDemo)}<h3 style="margin-top:20px">Which New Findings narrative note of the mass is most appropriate?</h3><div class="choice-grid" id="l2ntc2s2"></div>`,
    `<span class="eyebrow">Member communication</span><h2>What should the team say to the Member about the new lump?</h2><div class="choice-grid" id="l2ntc2s3"></div>`,
    `<span class="eyebrow">Escalation triggers</span><h2>Which change would require immediately reporting to the attending Hannah DVM rather than waiting for the next scheduled recheck?</h2><div class="choice-grid" id="l2ntc2s4"></div><button class="primary" id="completeL2NtCase2" style="margin-top:16px">Complete case</button>`
   ],
   decisions:{
-   l2ntc2s1:{opts:['Document the objective findings in the New Findings section and report the mass to the attending Hannah DVM before the visit ends.','Tell the owner it is definitely a benign fatty lump.','Ignore it since the dog isn\'t painful.'],correct:0,exp:'New masses found during the integument exam should be documented objectively and reported to the attending DVM immediately, per the procedure.'},
+   l2ntc2s1:{opts:['Document the objective findings in the New Findings section and report the mass to the attending Hannah DVM before the visit ends.','Tell the Member it is definitely a benign fatty lump.','Ignore it since the dog isn\'t painful.'],correct:0,exp:'New masses found during the integument exam should be documented objectively and reported to the attending DVM immediately, per the procedure.'},
    l2ntc2s2:{opts:['"Firm, freely movable, dime-sized subcutaneous mass on left flank, non-painful, reportedly present ~2 weeks; reported to attending DVM."','"Definitely a benign fatty lump, nothing to worry about."','"Small bump, probably fine."'],correct:0,exp:'Objective description — location, size, texture, mobility, pain response, and duration — supports veterinary evaluation without overdiagnosing.'},
    l2ntc2s3:{opts:['"The doctor found a small lump and will want to take a closer look, possibly with a quick needle sample, to see what it is."','"It\'s definitely just a fatty lump, no need to worry."','"It\'s probably cancer, you should be very worried."'],correct:0,exp:'This response is accurate, non-diagnostic, and previews the likely next diagnostic step without overpromising or alarming the Member.'},
-   l2ntc2s4:{opts:['Rapid growth, texture change, ulceration, bleeding, or new pain in the mass','The mass staying the same size and texture','The dog eating normally','The owner asking general questions about lumps'],correct:0,exp:'Rapid growth, texture change, ulceration, bleeding, or new pain are recognized triggers to report to the DVM right away rather than waiting.'}
+   l2ntc2s4:{opts:['Rapid growth, texture change, ulceration, bleeding, or new pain in the mass','The mass staying the same size and texture','The dog eating normally','The Member asking general questions about lumps'],correct:0,exp:'Rapid growth, texture change, ulceration, bleeding, or new pain are recognized triggers to report to the DVM right away rather than waiting.'}
   }}
 ];
 
 const l2NtStations=[
  {icon:'🧘',title:'Station 1: Calm Approach & Restraint',time:'18 min',desc:'Practice a calm introduction, proper restraint, and body-language reading for the full nose-to-tail sequence on an approved calm patient or teaching model.'},
  {icon:'🩺',title:'Station 2: TPR Technique Practice',time:'18 min',desc:'Practice taking a rectal temperature, palpating the femoral pulse, and counting respiratory rate using the 15-second × 4 method, then record results in Hannahware.'},
- {icon:'🔁',title:'Station 3: Head-to-Tail Sequence Practice',time:'18 min',desc:'Run the full 12-section sequence in order — preparation and observation through documentation — without skipping a section.'},
+ {icon:'🔁',title:'Station 3: Nose-to-Tail Sequence Practice',time:'18 min',desc:'Run the full 12-section sequence in order — preparation and observation through documentation — without skipping a section.'},
  {icon:'🖼️',title:'Station 4: Image ID Gallery',time:'18 min',desc:'Sort body-region and mucous-membrane-color images into normal, flag-for-review, and escalate-immediately categories using observable language.'},
- {icon:'🗣️',title:'Station 5: Member Roleplay',time:'18 min',desc:'Narrate a wellness exam and explain both a normal finding and a flagged finding to a "Member" using plain, non-diagnostic language.'}
+ {icon:'🗣️',title:'Station 5: Member Roleplay',time:'18 min',desc:'Narrate a wellness exam and explain both a normal finding and a flagged finding to a "Member" using plain, non-diagnostic language.'},
+ {icon:'\uD83D\uDCF2',title:'Station 6: PetNurse\u2013Nurse Aide Documentation Practice',time:'20 min',desc:'Partner up: one learner plays PetNurse, examining a teaching model and verbalizing findings to a "Member" for at least three body systems; the other plays Nurse Aide, selecting the correct WNL/ABN/STA/CNA status and checkboxes in the Hannahware Physical Exam mock for each finding in real time. Switch roles and repeat.'}
 ];
 
 const l2NtChecklistItems=[
@@ -1471,7 +1579,8 @@ const l2NtChecklistItems=[
  {t:'Palpates all four abdominal quadrants and notes pain, masses, or fluid.',critical:true},
  {t:'Completes musculoskeletal, urogenital, and basic neurological screening as directed.',critical:true},
  {t:'Checks tail and perineal area and follows supervision requirements for anal gland expression.',critical:true},
- {t:'Documents all findings in the Physical Exam/New Findings sections and reports concerns to the attending DVM immediately.',critical:true}
+ {t:'Documents all findings in the Physical Exam/New Findings sections and reports concerns to the attending DVM immediately.',critical:true},
+ {t:'As Nurse Aide, correctly enters the PetNurse\'s verbalized findings into Hannahware\'s Physical Exam checkboxes \u2014 right status (WNL/ABN/STA/CNA), correct side, and correct duration \u2014 for at least three body systems.',critical:true}
 ];
 
 const l2NtCertRows=[
@@ -1509,7 +1618,7 @@ function renderLevel2Nt(){
     <h2>A consistent sequence prevents missed findings</h2>
     <p>This course follows the approved Hannah Nose-to-Tail Exam procedure: preparation and initial observation, vital signs (TPR) and weight, head and face, neck and throat, integument and coat, thoracic and abdominal examination, urogenital and musculoskeletal screening, a basic neurological quick check, tail and perineal area, and documentation and follow-up. Following the same sequence every time — and reporting significant findings to the attending Hannah DVM immediately — keeps patients safe and the medical record complete.</p>
     <ul class="l2-obj-list">
-     <li>Follow the full 12-section head-to-tail exam sequence in order.</li>
+     <li>Follow the full 12-section nose-to-tail exam sequence in order.</li>
      <li>Correctly perform TPR technique (rectal temperature, 15-second × 4 pulse and respiration counts) and record weight/BCS.</li>
      <li>Recognize normal findings and observable red flags across each body region.</li>
      <li>Use low-stress handling and proper restraint throughout the exam.</li>
@@ -1613,6 +1722,7 @@ function renderL2NtModuleModal(){
    <div id="l2NtQuizResult" style="margin-top:16px"></div>
   </div>`);
  document.querySelectorAll('#l2NtQuizContainer .decision-option').forEach(btn=>btn.onclick=()=>l2NtAnswerQuestion(+btn.dataset.qi,+btn.dataset.oi));
+ if(m.id===6)wireHwWidget(hwFluffyDemo);
  if(answeredCount===m.quiz.length)renderL2NtQuizResult();
 }
 function l2NtAnswerQuestion(qi,oi){
@@ -1673,6 +1783,7 @@ function renderL2NtCase(){
  document.querySelector('#l2NtCaseHistory').textContent=c.history;
  document.querySelector('#l2NtCaseStepName').textContent=c.stages[l2NtState.caseStep];
  document.querySelector('#l2NtCaseStageContent').innerHTML=c.content[l2NtState.caseStep];
+ const hwCfg=l2NtCaseHwWidgets[`${c.id}-${l2NtState.caseStep}`]; if(hwCfg)wireHwWidget(hwCfg);
  document.querySelectorAll('[data-l2nt-case-step]').forEach(b=>b.onclick=()=>{l2NtState.caseStep=+b.dataset.l2ntCaseStep;persistL2Nt();renderL2NtCase()});
  Object.keys(c.decisions).forEach(hostId=>{
   const el=document.querySelector('#'+hostId);
