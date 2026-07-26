@@ -215,7 +215,7 @@ function renderDashboard(){
  $("#dashboardAcademies").innerHTML=academies.slice(0,3).map(a=>`<button class="mini-academy dashboard-academy" data-academy="${a.id}"><strong>${a.title}</strong><span>${a.progress}% complete</span><div class="progress"><span style="width:${a.progress}%"></span></div></button>`).join("");
  $$(".dashboard-academy").forEach(b=>b.onclick=()=>b.dataset.academy==="foundations"?switchView("foundationsAcademy"):switchView("academies"));
 }
-$("#resumeCourseBtn").addEventListener("click",()=>openCourse(roleProfiles[state.role].continue));
+$("#resumeLessonBtn").addEventListener("click",()=>openCourse(roleProfiles[state.role].continue));
 
 function renderCourses(){
  const tab=state.learningTab;
@@ -681,7 +681,7 @@ document.addEventListener('click',e=>{
  const academy=e.target.closest('.academy-open');
  if(academy&&academy.dataset.title==='Medical Academy'){e.preventDefault();e.stopImmediatePropagation();openMedicalAcademy()}
 },true);
-document.querySelector('#resumeCourseBtn')?.addEventListener('click',e=>{e.stopImmediatePropagation();openMedicalAcademy()},true);
+document.querySelector('#resumeLessonBtn')?.addEventListener('click',e=>{e.stopImmediatePropagation();openMedicalAcademy()},true);
 document.querySelector('#openLevel5Btn')?.addEventListener('click',()=>openLevel5());
 document.querySelector('#backToMedicalAcademy')?.addEventListener('click',openMedicalAcademy);
 document.querySelector('#resumeBellaBtn')?.addEventListener('click',openBellaCase);
