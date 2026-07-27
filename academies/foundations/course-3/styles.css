@@ -72,6 +72,23 @@ body{background:var(--bg)}
 .org-branch::before{content:'';width:1px;height:20px;background:var(--line);margin:0 auto}
 .org-branch-children{display:flex;flex-direction:column;align-items:stretch;gap:0}
 .org-branch-children .org-connector{height:14px}
+
+/* Executive peer row — Francesca Ferrucci & Nathan Bressel both solid-line to Scott Campbell,
+   with a dotted coordination link directly between the two peer boxes. */
+.org-exec-row{display:flex;justify-content:center;align-items:flex-end;gap:0;position:relative}
+.org-exec-row::before{content:'';position:absolute;top:-20px;left:24%;right:24%;height:1px;background:var(--line)}
+.org-exec-peer{display:flex;flex-direction:column;align-items:center;position:relative}
+.org-exec-peer::before{content:'';width:1px;height:20px;background:var(--line);margin:0 auto;display:block}
+.org-dotted-link{display:flex;align-items:center;justify-content:center;width:104px;margin:0 4px;position:relative;align-self:center}
+.org-dotted-link::before{content:'';position:absolute;left:0;right:0;top:50%;border-top:2px dashed var(--muted)}
+.org-dotted-link span{position:relative;z-index:1;background:var(--bg);padding:3px 8px;border-radius:6px;font-size:9px;font-weight:850;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);white-space:nowrap}
+.org-exec-children{display:grid;grid-template-columns:4fr 1.1fr;gap:18px;margin-top:0;align-items:start}
+.org-exec-child-col{display:flex;flex-direction:column;align-items:stretch}
+.org-exec-child-col-solo{align-items:center}
+.org-exec-child-col-solo .org-box{min-width:170px}
+.org-legend{margin-top:18px;font-size:11.5px;color:var(--muted);text-align:center;display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
+.legend-line{display:inline-block;width:22px;height:0;border-top:2px solid var(--line);margin-right:2px}
+.legend-line.dotted{border-top:2px dashed var(--muted);margin-left:10px}
 .org-columns{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-top:10px}
 .org-column h4{margin:0 0 12px;font-size:15px;color:var(--navy2)}
 .org-column .org-branches{grid-template-columns:1fr 1fr}
@@ -121,6 +138,12 @@ body{background:var(--bg)}
   .org-branch::before{display:none}
   .org-columns{grid-template-columns:1fr}
   .signoff-grid{grid-template-columns:1fr}
+  .org-exec-row{flex-direction:column;align-items:center;gap:0}
+  .org-exec-row::before{display:none}
+  .org-exec-peer:first-child::before{display:none}
+  .org-exec-peer:last-child::before{content:'';width:1px;height:10px;background:var(--line);margin:0 auto;display:block}
+  .org-dotted-link{width:150px;height:28px;margin:2px 0}
+  .org-exec-children{grid-template-columns:1fr}
 }
 @media(max-width:600px){
   .org-branches{grid-template-columns:1fr}
