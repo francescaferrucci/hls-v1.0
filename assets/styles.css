@@ -85,6 +85,11 @@ dialog{width:min(720px,calc(100% - 30px));border:0;border-radius:20px;background
 .l2-source-figure img{width:100%;display:block;max-height:260px;object-fit:cover;background:#0b1a24}
 .l2-source-figure figcaption{padding:12px 14px;color:var(--muted);font-size:12px;line-height:1.5}
 .l2-source-figure figcaption a{color:var(--blue)}
+.academy-video{width:min(100%,620px);margin:1.2rem auto;padding:14px;border:1px solid var(--line);border-radius:16px;background:var(--panel);box-shadow:var(--shadow)}
+.academy-video-label{margin-bottom:10px;color:var(--orange);font-size:11px;font-weight:850;letter-spacing:.12em;text-transform:uppercase}
+.video-frame{position:relative;aspect-ratio:16/9;overflow:hidden;border-radius:12px;background:#001f31}
+.video-frame video{position:absolute;inset:0;width:100%;height:100%;border:0;background:#001f31}
+.video-fallback{display:inline-block;margin-top:10px;color:var(--blue);font-weight:700}
 .l2-quiz-question{border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:14px;background:var(--soft)}
 .l2-quiz-question h4{margin:0 0 10px;font-size:14px}
 .l2-quiz-score{font-weight:800;color:var(--navy)}
