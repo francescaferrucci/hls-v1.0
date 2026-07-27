@@ -1,0 +1,360 @@
+/* Foundations Academy · Lesson 3 — One Hannah: Locations & Teams
+   Uses the Hannah Learning System shared design tokens (../../../assets/styles.css).
+   This file only adds the components this lesson needs; no "book" reader styling. */
+
+body{background:var(--bg)}
+
+.l3-header{position:sticky;top:0;z-index:40;background:var(--panel);border-bottom:1px solid var(--line);padding:14px 26px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.l3-header .brand-block{display:flex;align-items:center;gap:11px}
+.l3-header .brand-logo{width:38px;height:38px;object-fit:contain}
+.l3-header .brand-copy{display:flex;flex-direction:column;line-height:1.2}
+.l3-header .brand-copy span{font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:var(--blue)}
+.l3-header .brand-copy strong{font-size:14px}
+.l3-back{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:10px;padding:9px 13px;font-weight:800;text-decoration:none;font-size:13px}
+.l3-back:hover{border-color:var(--blue)}
+
+.l3-shell{max-width:1180px;margin:0 auto;padding:26px 26px 80px}
+
+.l3-nav{position:sticky;top:65px;z-index:30;display:flex;gap:8px;flex-wrap:wrap;background:var(--bg);padding:14px 0;margin-bottom:6px}
+.l3-nav a{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:8px 13px;font-size:12.5px;font-weight:750;text-decoration:none;white-space:nowrap}
+.l3-nav a:hover{border-color:var(--blue);color:var(--blue)}
+
+.l3-section{scroll-margin-top:132px;margin-bottom:26px}
+.l3-section-inner{padding:26px}
+.l3-module-kicker{text-transform:uppercase;letter-spacing:.1em;font-size:11px;font-weight:850;color:var(--blue)}
+.l3-section h2{margin:6px 0 4px;font-size:26px}
+.l3-section > .l3-section-inner > p.l3-lede{color:var(--muted);font-size:15px;max-width:760px;margin-top:0}
+
+.truth-block{background:var(--soft);border-left:4px solid var(--orange);border-radius:12px;padding:16px 18px;margin:14px 0}
+.truth-block span{display:block;text-transform:uppercase;letter-spacing:.08em;font-size:10px;font-weight:850;color:var(--navy2);margin-bottom:6px}
+.truth-block blockquote{margin:0;font-size:18px;line-height:1.45;font-weight:650;color:var(--ink)}
+
+/* Location cards — Module 1 */
+.location-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-top:14px}
+.location-card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
+.location-tag{display:inline-block;background:var(--soft);color:var(--blue);border-radius:999px;padding:4px 10px;font-size:10px;font-weight:850;letter-spacing:.04em}
+.location-card h3{margin:10px 0 6px;font-size:17px}
+.location-card p{margin:0;color:var(--muted);line-height:1.5;font-size:13.5px}
+
+.chain-flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:16px 0;font-size:13px}
+.chain-flow span{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
+.chain-flow b{color:var(--orange);font-weight:900}
+
+/* Department cards — Module 2 */
+.department-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-top:14px}
+.department-card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:var(--shadow)}
+.department-card h3{margin:0 0 10px;font-size:19px;color:var(--navy2)}
+.department-card h4{margin:14px 0 6px;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.department-card p{margin:0;color:var(--ink);line-height:1.5;font-size:13.5px}
+.department-card ul{margin:6px 0 0;padding-left:18px;color:var(--ink);line-height:1.55;font-size:13.5px}
+.department-card .refer-when{background:var(--soft);border-radius:10px;padding:10px 12px;margin-top:12px;font-size:13px}
+
+.info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:14px}
+.info-card{background:var(--soft2);border:1px solid var(--line);border-radius:14px;padding:15px}
+.info-card strong{display:block;margin-bottom:5px;font-size:13.5px}
+.info-card p{margin:0;color:var(--muted);font-size:12.5px;line-height:1.5}
+
+/* Org chart — Module 3 */
+.org-chart-block{margin-top:18px}
+.org-chart-block h3{font-size:16px;margin:0 0 4px}
+.org-chart-block .org-caption{color:var(--muted);font-size:12.5px;margin:0 0 16px}
+.org-top{display:flex;justify-content:center}
+.org-connector{width:2px;height:20px;background:var(--line);margin:0 auto}
+.org-box{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:11px 13px;text-align:center;box-shadow:var(--shadow);min-width:150px}
+.org-box strong{display:block;font-size:13px;line-height:1.3}
+.org-box span{display:block;font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.35}
+.org-box.exec{background:linear-gradient(135deg,var(--navy),var(--navy2));border-color:var(--navy);color:#fff}
+.org-box.exec span{color:#cfe4ef}
+.org-box.lead{background:var(--soft);border-color:var(--blue)}
+.org-branches{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:0;position:relative}
+.org-branches::before{content:'';position:absolute;top:-20px;left:10%;right:10%;height:1px;background:var(--line)}
+.org-branch{display:flex;flex-direction:column;align-items:stretch;gap:0;position:relative}
+.org-branch::before{content:'';width:1px;height:20px;background:var(--line);margin:0 auto}
+.org-branch-children{display:flex;flex-direction:column;align-items:stretch;gap:0}
+.org-branch-children .org-connector{height:14px}
+
+/* Executive top block — Scott Campbell solid-line to Francesca Ferrucci (straight down),
+   plus a separate solid "bypass" connector that runs from Scott Campbell down past
+   Francesca's box to Nathan Bressel's position in the leads row below. */
+.org-exec-top{position:relative}
+.org-solo{display:flex;justify-content:center}
+.org-bypass-h{position:absolute;left:9.6%;right:50%;top:60px;height:2px;background:var(--line)}
+.org-bypass-v{position:absolute;left:9.6%;top:60px;bottom:0;width:2px;margin-left:-1px;background:var(--line)}
+.org-bypass-label{position:absolute;left:9.6%;top:60px;transform:translate(-50%,-100%);background:var(--bg);padding:2px 7px;border-radius:6px;font-size:9px;font-weight:850;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);white-space:nowrap}
+.org-branch-dotted::before{background:none;border-left:2px dashed var(--muted);width:0}
+.org-branch-dotted{position:relative}
+.org-dotted-tag{position:absolute;top:9px;left:50%;transform:translate(-50%,-50%);background:var(--bg);padding:2px 7px;border-radius:6px;font-size:9px;font-weight:850;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);white-space:nowrap;z-index:1}
+.org-legend{margin-top:18px;font-size:11.5px;color:var(--muted);text-align:center;display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
+.legend-line{display:inline-block;width:22px;height:0;border-top:2px solid var(--line);margin-right:2px}
+.legend-line.dotted{border-top:2px dashed var(--muted);margin-left:10px}
+.org-columns{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-top:10px}
+.org-column h4{margin:0 0 12px;font-size:15px;color:var(--navy2)}
+.org-column .org-branches{grid-template-columns:1fr 1fr}
+.one-hannah-note{background:var(--soft);border-radius:12px;padding:14px 16px;margin-top:22px;font-size:13.5px;text-align:center}
+.one-hannah-note strong{display:block;color:var(--navy2);letter-spacing:.06em;text-transform:uppercase;font-size:11px;margin-bottom:4px}
+
+.callout-box{background:var(--soft);border-radius:12px;padding:14px 16px;margin-top:14px;font-size:13.5px;line-height:1.55}
+.callout-box strong{color:var(--navy2)}
+
+/* Knowledge checks — reuse .choice-grid / .decision-option from shared stylesheet */
+.check-prompt{font-weight:700;font-size:15.5px;margin:16px 0 12px}
+.choice-status{margin-top:10px;font-size:13px;font-weight:700;min-height:18px}
+.choice-status.correct{color:#08705c}
+.choice-status.wrong{color:#963d3d}
+
+/* Reflection — Module 4 */
+.reflection-box{display:grid;gap:14px;margin-top:14px}
+.reflection-box label{font-weight:700;font-size:13.5px}
+.reflection-box textarea{width:100%;border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--panel);color:var(--ink);font:inherit;resize:vertical}
+.reflection-status{font-size:12.5px;color:var(--muted)}
+
+/* Final assessment quiz */
+.quiz-form{display:grid;gap:14px;margin-top:14px}
+.l3-quiz-question{border:1px solid var(--line);border-radius:14px;padding:16px;background:var(--soft)}
+.l3-quiz-question legend{font-weight:700;font-size:14px;padding:0;margin-bottom:10px}
+.l3-quiz-question label{display:flex;gap:9px;align-items:flex-start;padding:7px 0;font-size:13.5px;cursor:pointer}
+.l3-quiz-question input{margin-top:3px}
+.quiz-result{font-weight:800;font-size:15px;margin-top:6px}
+.quiz-result.pass{color:#08705c}
+.quiz-result.fail{color:#963d3d}
+
+/* Sign-off & completion */
+.l3-checklist{display:grid;gap:10px;margin-top:16px}
+.l3-check-row{display:flex;gap:11px;align-items:flex-start;padding:13px 14px;border:1px solid var(--line);border-radius:12px;background:var(--soft2);font-size:13.5px;cursor:pointer}
+.l3-check-row input{margin-top:2px;transform:scale(1.1)}
+.signoff-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+.signoff-grid label{font-size:12.5px;font-weight:700}
+.signoff-grid input{display:block;width:100%;margin-top:5px;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--panel);color:var(--ink);font:inherit}
+.complete-box{text-align:center;padding:36px 20px}
+.complete-box img{width:52px;height:52px;margin-bottom:14px}
+.complete-box h2{margin:0 0 8px}
+.complete-box p{color:var(--muted);max-width:520px;margin:0 auto 20px}
+
+/* ===================================================================
+   Lesson 4 components (l4-*)
+   =================================================================== */
+
+/* Module 1 — value flip cards */
+.l4-flip-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:14px;margin-top:14px}
+.l4-flip-card{position:relative;display:block;width:100%;min-height:150px;text-align:left;border:1px solid var(--line);border-radius:16px;padding:0;background:var(--panel);box-shadow:var(--shadow);cursor:pointer;font:inherit;color:var(--ink);overflow:hidden}
+.l4-flip-card:hover{border-color:var(--blue)}
+.l4-flip-card:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.l4-flip-front,.l4-flip-back{display:block;padding:18px}
+.l4-flip-front{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:8px;min-height:150px;background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff;border-radius:15px}
+.l4-flip-label{font-size:19px;font-weight:850;letter-spacing:.01em}
+.l4-flip-hint{font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.1em;color:#bfe0f2}
+.l4-flip-back{display:none;font-size:13px;line-height:1.55;color:var(--ink);background:var(--soft)}
+.l4-flip-card.flipped .l4-flip-front{display:none}
+.l4-flip-card.flipped .l4-flip-back{display:block}
+.l4-flip-card.flipped{border-color:var(--blue);background:var(--soft)}
+.l4-flip-progress{margin:14px 0 0;font-size:12.5px;font-weight:700;color:var(--muted);min-height:18px}
+
+/* Module 2 — sort / categorize */
+.l4-sorter{margin-top:16px}
+.l4-sort-pool-label{margin:0 0 8px;font-size:11px;font-weight:850;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.l4-sort-pool{display:flex;flex-wrap:wrap;gap:9px;min-height:52px;padding:12px;border:1px dashed var(--line);border-radius:14px;background:var(--soft2)}
+.l4-sort-item{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:9px 14px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.l4-sort-item:hover{border-color:var(--blue);color:var(--blue)}
+.l4-sort-item:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.l4-sort-item.selected{border-color:var(--orange);box-shadow:0 0 0 3px rgba(239,118,34,.18)}
+.l4-sort-item.placed{cursor:default}
+.l4-sort-item.placed:hover{border-color:var(--line);color:var(--ink)}
+.l4-sort-item.correct{border-color:var(--green);background:#e8f7f3;color:#08705c}
+.l4-sort-item.wrong{border-color:var(--red);background:#fbeded;color:#963d3d}
+.l4-sort-zones{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+.l4-sort-zone{border:1px solid var(--line);border-radius:16px;padding:16px;background:var(--panel);min-height:130px;cursor:pointer}
+.l4-sort-zone strong{display:block;font-size:13.5px;color:var(--navy2);margin-bottom:10px}
+.l4-sort-zone.armed{border-color:var(--blue);background:var(--soft)}
+.l4-sort-zone:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.l4-sort-zone-items{display:flex;flex-wrap:wrap;gap:9px}
+.l4-sort-status{margin:12px 0 10px;font-size:13px;font-weight:700;min-height:18px;color:var(--muted)}
+.l4-sort-status.correct{color:#08705c}
+.l4-sort-status.wrong{color:#963d3d}
+
+/* Module 3 — terminology tables & glossary */
+.l4-term-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:10px;margin-top:12px}
+.l4-term-card{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;padding:11px 13px;background:var(--panel);font-size:13px}
+.l4-term-old{color:var(--muted);text-decoration:line-through;flex:1}
+.l4-term-arrow{color:var(--orange);font-weight:900}
+.l4-term-new{color:var(--navy2);font-weight:800;flex:1.15}
+.l4-glossary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(225px,1fr));gap:12px;margin-top:12px}
+.l4-glossary-card{border:1px solid var(--line);border-left:3px solid var(--blue);border-radius:12px;padding:14px;background:var(--soft2)}
+.l4-glossary-card h4{margin:0 0 6px;font-size:13.5px;color:var(--navy2)}
+.l4-glossary-card p{margin:0;font-size:12.5px;line-height:1.5;color:var(--muted)}
+
+/* Module 3 — Hannah Translator game */
+.l4-translator{margin-top:14px;border:1px solid var(--line);border-radius:16px;padding:20px;background:var(--soft2);box-shadow:var(--shadow)}
+.l4-translator-progress{margin:0 0 12px;font-size:11px;font-weight:850;text-transform:uppercase;letter-spacing:.08em;color:var(--blue)}
+.l4-translator-phrase{margin:0 0 14px;font-size:19px;font-weight:700;line-height:1.4;color:var(--ink)}
+.l4-translator-options{display:grid;gap:10px}
+.l4-translator-option{text-align:left;border:1px solid var(--line);border-radius:12px;padding:13px 15px;background:var(--panel);color:var(--ink);font:inherit;font-size:13.5px;cursor:pointer}
+.l4-translator-option:hover:not(:disabled){border-color:var(--blue);color:var(--blue)}
+.l4-translator-option:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.l4-translator-option:disabled{cursor:default}
+.l4-translator-option.correct{border-color:var(--green);background:#e8f7f3;color:#08705c;font-weight:750}
+.l4-translator-option.wrong{border-color:var(--red);background:#fbeded;color:#963d3d}
+.l4-translator-feedback{margin:14px 0 0;font-size:13px;line-height:1.55;font-weight:650;min-height:18px}
+.l4-translator-feedback.correct{color:#08705c}
+.l4-translator-feedback.wrong{color:#963d3d}
+.l4-translator-actions{display:flex;gap:10px;margin-top:14px}
+
+/* Module 4 — role-based uniform guide */
+.l4-role-guide{margin-top:16px}
+.l4-role-tabs{display:flex;flex-wrap:wrap;gap:8px}
+.l4-role-tab{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:9px 14px;font:inherit;font-size:12.5px;font-weight:750;cursor:pointer}
+.l4-role-tab:hover{border-color:var(--blue);color:var(--blue)}
+.l4-role-tab:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.l4-role-tab.active{background:var(--navy2);border-color:var(--navy2);color:#fff}
+.l4-role-panel{display:grid;grid-template-columns:170px 1fr;gap:22px;align-items:center;margin-top:16px;border:1px solid var(--line);border-radius:16px;padding:20px;background:var(--panel);box-shadow:var(--shadow)}
+.l4-role-panel[hidden]{display:none}
+.l4-uniform-badge{text-align:center;background:var(--soft);border-radius:14px;padding:14px 10px}
+.l4-uniform-badge svg{width:100%;max-width:110px;height:auto;display:block;margin:0 auto}
+.l4-uniform-badge span{display:block;margin-top:8px;font-size:11px;font-weight:850;text-transform:uppercase;letter-spacing:.07em;color:var(--navy2)}
+.l4-uniform-list{margin:0;padding-left:20px;font-size:14px;line-height:1.85;color:var(--ink)}
+
+/* Module 4 — appearance classification activity */
+.l4-classify{margin-top:16px}
+.l4-classify-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:14px}
+.l4-classify-card{border:1px solid var(--line);border-radius:16px;padding:16px;background:var(--panel);box-shadow:var(--shadow);display:flex;flex-direction:column}
+.l4-classify-card.correct{border-color:var(--green)}
+.l4-classify-card.wrong{border-color:var(--red)}
+.l4-classify-icon svg{width:56px;height:56px;display:block}
+.l4-classify-icon-bg{fill:var(--soft)}
+.l4-classify-icon-glyph{fill:var(--navy2)}
+.l4-classify-label{margin:10px 0 12px;font-size:13.5px;font-weight:700;line-height:1.45;flex:1}
+.l4-classify-buttons{display:grid;gap:8px}
+.l4-classify-choice{border:1px solid var(--line);background:var(--soft2);color:var(--ink);border-radius:10px;padding:9px 11px;font:inherit;font-size:12.5px;font-weight:750;cursor:pointer}
+.l4-classify-choice:hover:not(:disabled){border-color:var(--blue);color:var(--blue)}
+.l4-classify-choice:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.l4-classify-choice:disabled{cursor:default;opacity:.6}
+.l4-classify-choice.correct{border-color:var(--green);background:#e8f7f3;color:#08705c;opacity:1}
+.l4-classify-choice.wrong{border-color:var(--red);background:#fbeded;color:#963d3d;opacity:1}
+.l4-classify-note{display:none;margin:11px 0 0;font-size:12.5px;line-height:1.5;color:var(--muted)}
+.l4-classify-note.shown{display:block}
+.l4-classify-status{margin:14px 0 10px;font-size:13px;font-weight:700;min-height:18px;color:var(--muted)}
+.l4-classify-status.correct{color:#08705c}
+
+/* Module 5 — scenario coaching feedback */
+.l4-coach{display:none;margin-top:4px}
+.l4-coach.revealed{display:block}
+.l4-coach p{display:none;margin:0;background:var(--soft);border-left:3px solid var(--blue);border-radius:10px;padding:13px 15px;font-size:13.5px;line-height:1.55}
+.l4-coach p.shown{display:block}
+
+/* ===================================================================
+   Lesson 5 components (l5-*)
+   =================================================================== */
+
+/* Shared inline-SVG icon badge */
+.l5-icon{display:block;width:46px;height:46px;flex:0 0 auto}
+.l5-icon svg{width:100%;height:100%;display:block}
+.l5-icon-bg{fill:var(--soft)}
+.l5-icon-glyph{fill:var(--navy2)}
+
+/* Modules 2 & 7 — hazard-spotting grids */
+.l5-hazard-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-top:14px}
+.l5-hazard{display:flex;flex-direction:column;align-items:flex-start;gap:9px;text-align:left;border:1px solid var(--line);border-radius:16px;padding:16px;background:var(--panel);box-shadow:var(--shadow);font:inherit;color:var(--ink);cursor:pointer}
+.l5-hazard:hover{border-color:var(--blue)}
+.l5-hazard:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.l5-hazard strong{font-size:14px;line-height:1.35}
+.l5-hazard small{font-size:11px;font-weight:850;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.l5-hazard.found{border-color:var(--green);background:#e8f7f3}
+.l5-hazard.found small{color:#08705c}
+.l5-hazard.found .l5-icon-bg{fill:#d3efe7}
+.l5-hazard.found .l5-icon-glyph{fill:#08705c}
+.l5-hazard-status{margin:14px 0 0;font-size:13px;font-weight:700;min-height:18px;color:var(--muted)}
+.l5-hazard-status.correct{color:#08705c}
+
+/* Module 3 — PPE selection */
+.l5-ppe{margin-top:14px}
+.l5-ppe-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.l5-ppe-item{display:flex;flex-direction:column;align-items:center;gap:9px;border:1px solid var(--line);border-radius:16px;padding:16px 12px;background:var(--panel);box-shadow:var(--shadow);font:inherit;color:var(--ink);cursor:pointer}
+.l5-ppe-item:hover{border-color:var(--blue)}
+.l5-ppe-item:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.l5-ppe-label{font-size:13.5px;font-weight:750;text-align:center}
+.l5-ppe-item.selected{border-color:var(--orange);background:var(--soft);box-shadow:0 0 0 3px rgba(239,118,34,.18)}
+.l5-ppe-item.selected .l5-icon-glyph{fill:var(--orange)}
+.l5-ppe-status{margin:12px 0 0;font-size:13px;font-weight:700;min-height:18px;color:var(--muted)}
+.l5-ppe-status.correct{color:#08705c}
+.l5-ppe-status.wrong{color:#963d3d}
+
+/* Modules 4 & 8 — toggle rows */
+.l5-toggle-list{display:grid;gap:10px;margin-top:14px}
+.l5-toggle-row{display:flex;align-items:center;gap:14px;border:1px solid var(--line);border-radius:14px;padding:12px 15px;background:var(--soft2)}
+.l5-toggle-row .l5-icon{width:36px;height:36px}
+.l5-toggle-label{flex:1;font-size:13.5px;font-weight:700;line-height:1.4}
+.l5-switch{position:relative;flex:0 0 auto;width:48px;height:27px;border:1px solid var(--line);border-radius:999px;background:var(--panel);padding:0;cursor:pointer}
+.l5-switch::after{content:'';position:absolute;top:3px;left:3px;width:19px;height:19px;border-radius:50%;background:var(--muted);transition:left .15s ease,background .15s ease}
+.l5-switch:hover{border-color:var(--blue)}
+.l5-switch:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.l5-switch.on{background:var(--soft);border-color:var(--green)}
+.l5-switch.on::after{left:23px;background:var(--green)}
+.l5-toggle-status{margin:14px 0 0;font-size:13px;font-weight:700;min-height:18px;color:var(--muted)}
+.l5-toggle-status.correct{color:#08705c}
+.l5-toggle-status.wrong{color:#963d3d}
+
+/* Module 5 — waste sorting */
+.l5-waste{margin-top:14px}
+.l5-waste-tokens{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+.l5-waste-item{display:flex;flex-direction:column;align-items:center;gap:9px;border:1px solid var(--line);border-radius:16px;padding:16px 12px;background:var(--panel);box-shadow:var(--shadow);font:inherit;color:var(--ink);cursor:pointer}
+.l5-waste-item:hover:not(:disabled){border-color:var(--blue)}
+.l5-waste-item:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.l5-waste-item:disabled{cursor:default;opacity:.45}
+.l5-waste-label{font-size:13px;font-weight:750;text-align:center;line-height:1.35}
+.l5-waste-item.selected{border-color:var(--orange);background:var(--soft);box-shadow:0 0 0 3px rgba(239,118,34,.18)}
+.l5-waste-zones{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-top:16px}
+.l5-waste-zone{display:flex;flex-direction:column;align-items:flex-start;gap:8px;border:1px dashed var(--line);border-radius:16px;padding:16px;background:var(--soft2);min-height:150px;cursor:pointer}
+.l5-waste-zone:hover{border-color:var(--blue)}
+.l5-waste-zone:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.l5-waste-zone strong{font-size:13.5px;color:var(--navy2)}
+.l5-waste-zone small{font-size:11px;color:var(--muted)}
+.l5-waste-zone-items{display:flex;flex-wrap:wrap;gap:7px;margin-top:2px}
+.l5-waste-chip{border:1px solid var(--green);background:#e8f7f3;color:#08705c;border-radius:999px;padding:5px 11px;font-size:11.5px;font-weight:800}
+.l5-waste-status{margin:14px 0 0;font-size:13px;font-weight:700;min-height:18px;color:var(--muted)}
+.l5-waste-status.correct{color:#08705c}
+.l5-waste-status.wrong{color:#963d3d}
+
+/* Module 6 — emergency practice cards */
+.l5-emergency-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:14px;margin-top:14px}
+.l5-emergency-card{border:1px solid var(--line);border-radius:16px;background:var(--panel);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column}
+.l5-emergency-btn{display:flex;flex-direction:column;align-items:flex-start;gap:9px;width:100%;text-align:left;border:0;border-radius:0;padding:16px;background:transparent;font:inherit;color:var(--ink);cursor:pointer}
+.l5-emergency-btn:hover{background:var(--soft2)}
+.l5-emergency-btn:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
+.l5-emergency-btn strong{font-size:15px}
+.l5-emergency-btn small{font-size:11px;font-weight:850;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.l5-emergency-response{display:none;margin:0;padding:14px 16px;background:var(--soft);border-top:1px solid var(--line);font-size:13px;line-height:1.55;color:var(--ink)}
+.l5-emergency-card.revealed{border-color:var(--blue)}
+.l5-emergency-card.revealed .l5-emergency-response{display:block}
+.l5-emergency-card.revealed .l5-emergency-btn small{color:var(--blue)}
+
+/* Reflection & completion */
+.reflection-status.correct{color:#08705c;font-weight:700}
+.reflection-status.wrong{color:#963d3d;font-weight:700}
+
+@media(max-width:900px){
+  .l5-waste-zones{grid-template-columns:1fr 1fr}
+  .l4-sort-zones{grid-template-columns:1fr}
+  .l4-role-panel{grid-template-columns:1fr;justify-items:start}
+  .l4-uniform-badge{width:150px}
+  .org-branches{grid-template-columns:1fr 1fr}
+  .org-branches::before{display:none}
+  .org-branch::before{display:none}
+  .org-columns{grid-template-columns:1fr}
+  .signoff-grid{grid-template-columns:1fr}
+  .org-bypass-h,.org-bypass-v,.org-bypass-label{display:none}
+  .org-branch-dotted::before{display:block;border-left:2px dashed var(--muted);width:0;height:14px;margin:0 auto 4px}
+}
+@media(max-width:600px){
+  .l5-hazard-grid{grid-template-columns:1fr}
+  .l5-emergency-grid{grid-template-columns:1fr}
+  .l5-waste-zones{grid-template-columns:1fr}
+  .l5-toggle-row{gap:10px;padding:11px 12px}
+  .l5-toggle-label{font-size:13px}
+  .org-branches{grid-template-columns:1fr}
+  .l4-flip-grid{grid-template-columns:1fr}
+  .l4-classify-grid{grid-template-columns:1fr}
+  .l4-translator{padding:16px}
+  .l4-translator-phrase{font-size:17px}
+  .l3-header{padding:12px 14px}
+  .l3-shell{padding:18px 14px 60px}
+  .l3-nav{top:61px}
+}
