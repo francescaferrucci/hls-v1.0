@@ -1552,6 +1552,15 @@ const plannedLessonsBySlug={
   {id:'mobility',title:'Mobility Evaluation',desc:'Gait analysis, orthopedic screening, and lameness grading fundamentals.'},
   {id:'ophthalmic',title:'Ophthalmic Basics',desc:'External eye exam, pupillary light reflex, and common abnormality recognition.'},
   {id:'derm',title:'Dermatologic Examination',desc:'Skin and coat exam technique, lesion recognition, and cytology preview.'}
+ ],
+ 'medical-foundations':[
+  {id:'medical-terminology',title:'Medical Terminology',desc:'Word roots, prefixes, and suffixes used to build and decode veterinary medical terms.'},
+  {id:'medical-calculations',title:'Medical Calculations',desc:'Dosage, conversion, and rate calculations used in daily clinical work.'},
+  {id:'patient-safety',title:'Patient Safety',desc:'Identification checks, error-prevention habits, and safe patient-handling protocols.'},
+  {id:'pet-handling',title:'Pet Handling',desc:'Low-stress restraint, species-specific handling technique, and reading patient body language.'},
+  {id:'infection-prevention',title:'Infection Prevention & Biosecurity',desc:'Hand hygiene, PPE, isolation protocol, and cleaning/disinfection standards.'},
+  {id:'osha-radiation',title:'OSHA & Radiation Safety',desc:'Workplace safety standards, radiation exposure limits, and required protective practices.'},
+  {id:'controlled-substances',title:'Controlled Substance Awareness',desc:'Scheduling, documentation, storage, and accountability requirements for controlled substances.'}
  ]
 };
 function plannedLessonsFor(slug){return plannedLessonsBySlug[slug]||[]}
