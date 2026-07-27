@@ -1564,6 +1564,17 @@ const plannedLessonsBySlug={
  ]
 };
 function plannedLessonsFor(slug){return plannedLessonsBySlug[slug]||[]}
+/* Optional fixed display order per course (mixes live + planned lesson slugs/ids). Falls back to live-then-planned order when a course has no entry here. */
+const courseOrderBySlug={
+ 'medical-foundations':['medical-terminology','reproductive-anatomy','medical-calculations','patient-safety','pet-handling','infection-prevention','osha-radiation','controlled-substances']
+};
+function applyCourseOrder(slug,tiles){
+ const order=courseOrderBySlug[slug]; if(!order)return tiles;
+ return [...tiles].sort((a,b)=>{
+  const ia=order.indexOf(a.slug), ib=order.indexOf(b.slug);
+  return (ia===-1?999:ia)-(ib===-1?999:ib);
+ });
+}
 
 /* ---- Hannahware documentation widget (config now travels inside lesson content) ---- */
 function wireHwWidget(cfg){
@@ -1711,7 +1722,8 @@ async function renderLevel2Hub(){
  catch(e){grid.innerHTML=`<section class="panel"><span class="eyebrow">${escapeHtml(currentCourse.label)}</span><h2>We couldn't load this course</h2><p>${escapeHtml(e.message||'Unknown error')}</p></section>`;return}
  for(const l of lessons){const st=stateFor(l.slug);if(!st.loaded){st.loaded=true;await loadRemoteState(l,st)}}
  const planned=plannedLessonsFor(currentCourse.slug);
- const tiles=lessons.map(l=>({live:true,slug:l.slug,title:l.title,desc:l.summary||'',pct:lessonPercent(l,stateFor(l.slug))})).concat(planned.map(l=>({live:false,slug:l.id,title:l.title,desc:l.desc,pct:0})));
+ let tiles=lessons.map(l=>({live:true,slug:l.slug,title:l.title,desc:l.summary||'',pct:lessonPercent(l,stateFor(l.slug))})).concat(planned.map(l=>({live:false,slug:l.id,title:l.title,desc:l.desc,pct:0})));
+ tiles=applyCourseOrder(currentCourse.slug,tiles);
  const livePct=tiles.filter(t=>t.live).reduce((a,t)=>a+t.pct,0);
  const hubPct=tiles.length?Math.round(livePct/tiles.length):0;
  const ring=document.querySelector('#level2HubProgressRing'); if(ring)ring.innerHTML=`<strong>${hubPct}%</strong><span>Course progress</span>`;
