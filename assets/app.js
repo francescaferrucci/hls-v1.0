@@ -159,6 +159,10 @@ function switchView(id){
  const n=$(`.nav[data-view="${id}"]`);$("#pageLabel").textContent=n?n.textContent.trim():"Simulation";
  $("#sidebar").classList.remove("open");window.scrollTo(0,0);
 }
+/* switchView's reset runs before awaited content paints, and html{scroll-behavior:smooth} makes it an
+   animation that the later layout change interrupts. Views that fetch before painting re-reset here.
+   'instant' is required: 'auto' defers to the CSS value and would animate again. */
+function scrollViewTop(){window.scrollTo({top:0,left:0,behavior:"instant"})}
 $$(".nav").forEach(n=>n.addEventListener("click",()=>switchView(n.dataset.view)));
 $$("[data-jump]").forEach(b=>b.addEventListener("click",()=>switchView(b.dataset.jump)));
 $("#menuBtn").addEventListener("click",()=>$("#sidebar").classList.toggle("open"));
@@ -1554,7 +1558,6 @@ const plannedLessonsBySlug={
   {id:'derm',title:'Dermatologic Examination',desc:'Skin and coat exam technique, lesion recognition, and cytology preview.'}
  ],
  'medical-foundations':[
-  {id:'medical-terminology',title:'Medical Terminology',desc:'Word roots, prefixes, and suffixes used to build and decode veterinary medical terms.'},
   {id:'medical-calculations',title:'Medical Calculations',desc:'Dosage, conversion, and rate calculations used in daily clinical work.'},
   {id:'patient-safety',title:'Patient Safety',desc:'Identification checks, error-prevention habits, and safe patient-handling protocols.'},
   {id:'pet-handling',title:'Pet Handling',desc:'Low-stress restraint, species-specific handling technique, and reading patient body language.'},
@@ -1612,6 +1615,16 @@ const lessonStates={};
 let courseLessons=[];
 let activeSlug=null;
 
+/* A published row may omit optional content sections; fill them in once here so every render path
+   can treat them as present. Mirrors the defaults in the Content Studio normalizer. */
+function normalizeLessonRow(row){
+ if(!row)return row;
+ if(!row.content||typeof row.content!=='object')row.content={};
+ const c=row.content;
+ ['modules','cases','stations','checklistItems','certRows'].forEach(k=>{if(!Array.isArray(c[k]))c[k]=[]});
+ return row;
+}
+
 function stateFor(slug){
  if(!lessonStates[slug])lessonStates[slug]={tab:'overview',moduleProgress:{},moduleScores:{},caseId:null,caseStep:0,casesCompleted:[],checklist:{},attested:false,signoff:null,progressRow:null,loaded:false};
  return lessonStates[slug];
@@ -1625,15 +1638,15 @@ async function fetchCourseLessons(){
  const {data,error}=await sb.from('lessons').select('*').eq('course_id',course.id).eq('status','published').order('sort_order',{ascending:true});
  if(error)throw error;
  courseLessons=data||[];
- courseLessons.forEach(l=>{lessonCache[l.slug]=l});
+ courseLessons.forEach(l=>{lessonCache[l.slug]=normalizeLessonRow(l)});
  return courseLessons;
 }
 async function fetchLesson(slug){
  if(lessonCache[slug])return lessonCache[slug];
  const {data,error}=await sb.from('lessons').select('*').eq('slug',slug).single();
  if(error)throw error;
- lessonCache[slug]=data;
- return data;
+ lessonCache[slug]=normalizeLessonRow(data);
+ return lessonCache[slug];
 }
 
 function allRequirementsMet(lesson,st){
@@ -1713,7 +1726,7 @@ function paintCourseHubHeader(){
  set('#courseHubHeroEyebrow','Course progress');
  set('#backToAcademiesL2','← '+currentCourse.label);
 }
-async function openCourseHub(slug,label){currentCourse={slug,label};paintCourseHubHeader();switchView('level2Hub');await renderLevel2Hub()}
+async function openCourseHub(slug,label){currentCourse={slug,label};paintCourseHubHeader();switchView('level2Hub');await renderLevel2Hub();scrollViewTop()}
 async function openLevel2Hub(){return openCourseHub('patient-assessment','Patient Assessment')}
 async function renderLevel2Hub(){
  const grid=document.querySelector('#level2LessonGrid'); if(!grid)return;
@@ -1768,9 +1781,10 @@ async function renderLessonPlayer(lessonSlug,tab){
  const host=document.querySelector('#level2Content'); if(!host)return;
  let lesson;
  try{lesson=await fetchLesson(lessonSlug)}
- catch(e){host.innerHTML=`<section class="panel"><span class="eyebrow">Lesson unavailable</span><h2>We couldn't load this lesson</h2><p>${escapeHtml(e.message||'Unknown error')}</p></section>`;return}
+ catch(e){host.innerHTML=`<section class="panel"><span class="eyebrow">Lesson unavailable</span><h2>We couldn't load this lesson</h2><p>${escapeHtml(e.message||'Unknown error')}</p></section>`;scrollViewTop();return}
  if(!st.loaded){st.loaded=true;await loadRemoteState(lesson,st)}
  paintLesson();
+ scrollViewTop();
 }
 window.renderLessonPlayer=renderLessonPlayer;
 // Content Studio edits a lesson out from under the player's cache; let it drop stale copies.
@@ -1788,12 +1802,27 @@ function paintLessonHeader(lesson){
  set('#backToAcademiesL2','← '+currentCourse.label);
 }
 
+/* The tab strip is static markup shared by every lesson, so visibility is recomputed on each paint
+   rather than set once — otherwise one lesson's hidden tabs leak into the next. */
+function lessonTabVisible(c,tab){
+ if(tab==='cases')return c.cases.length>0;
+ if(tab==='skillslab')return c.stations.length>0||c.checklistItems.length>0||hasText(c.skillsLab);
+ if(tab==='certification')return c.certRows.length>0||hasText(c.certification);
+ return true;
+}
+function hasText(o){return !!o&&Object.values(o).some(v=>typeof v==='string'&&v.trim())}
+
 function paintLesson(){
  const lesson=activeLesson(),st=activeState();
  if(!lesson)return;
  const c=lesson.content;
  paintLessonHeader(lesson);
- document.querySelectorAll('[data-l2tab]').forEach(b=>b.classList.toggle('active',b.dataset.l2tab===st.tab));
+ if(!lessonTabVisible(c,st.tab))st.tab='overview';
+ document.querySelectorAll('[data-l2tab]').forEach(b=>{
+  const visible=lessonTabVisible(c,b.dataset.l2tab);
+  b.hidden=!visible;
+  b.classList.toggle('active',visible&&b.dataset.l2tab===st.tab);
+ });
  const host=document.querySelector('#level2Content'); if(!host)return;
  const pct=lessonPercent(lesson,st);
  const ring=document.querySelector('#l2ProgressRing'); if(ring)ring.innerHTML=`<strong>${pct}%</strong><span>Complete</span>`;
@@ -1815,8 +1844,8 @@ function paintLesson(){
     <h2>${pct}% complete</h2>
     <div class="progress"><span style="width:${pct}%"></span></div>
     <div class="list-item"><span>Modules complete</span><strong>${Object.values(st.moduleProgress).filter(Boolean).length} of ${c.modules.length}</strong></div>
-    <div class="list-item"><span>Case studies complete</span><strong>${st.casesCompleted.length} of ${c.cases.length}</strong></div>
-    <div class="list-item"><span>Skills checklist</span><strong>${Object.values(st.checklist).filter(Boolean).length} of ${c.checklistItems.length}</strong></div>
+    ${c.cases.length?`<div class="list-item"><span>Case studies complete</span><strong>${st.casesCompleted.length} of ${c.cases.length}</strong></div>`:''}
+    ${c.checklistItems.length?`<div class="list-item"><span>Skills checklist</span><strong>${Object.values(st.checklist).filter(Boolean).length} of ${c.checklistItems.length}</strong></div>`:''}
     <div class="card-footer"><button class="primary l2-jump" data-tab="curriculum">Continue curriculum</button></div>
    </section>
   </div>`;
@@ -1841,7 +1870,7 @@ function paintLesson(){
    <div class="l2-station-grid">${c.stations.map(s=>`<article class="l2-station-card"><div class="l2-station-icon">${s.icon}</div><h3>${s.title}</h3><p>${s.desc}</p><span class="badge neutral">${s.time}</span></article>`).join('')}</div>
   </section>
   <section class="panel" style="margin-top:18px">
-   <div class="section-head"><div><span class="eyebrow">Skills checklist / rubric</span><h2>Facilitator sign-off — ${checkedCount}/${c.checklistItems.length} complete (${Math.round((checkedCount/c.checklistItems.length)*100)}%)</h2></div></div>
+   <div class="section-head"><div><span class="eyebrow">Skills checklist / rubric</span><h2>Facilitator sign-off — ${checkedCount}/${c.checklistItems.length} complete (${c.checklistItems.length?Math.round((checkedCount/c.checklistItems.length)*100):0}%)</h2></div></div>
    <div class="checklist-grid">${c.checklistItems.map((item,i)=>`<label class="l2-check-row ${st.checklist[i]?'done':''}"><input type="checkbox" data-l2-check="${i}" ${st.checklist[i]?'checked':''}><span>${item.t} ${item.critical?'<span class=\\"badge risk\\">Critical</span>':'<span class=\\"badge neutral\\">Non-critical</span>'}</span></label>`).join('')}</div>
    <p class="safety-note" style="margin-top:14px"><strong>Pass standard</strong><span>All critical items must be marked complete, and no safety-critical item may be missed.</span></p>
   </section>`;
