@@ -1752,14 +1752,15 @@ function wireAnatomyWidgets(root){
 }
 
 /* ---- Data access ---- */
-const localCourseLessons={
+const bundledCourseLessonFallbacks={
  'medical-foundations':[
   {slug:'medical-terminology',title:'Medical Terminology',summary:'Word roots, prefixes, and suffixes used to build and decode veterinary medical terms, organized by body system and ending with a completion-based mastery review.',sort_order:1,path:'assets/data/medical-foundations/medical-terminology.json'},
   {slug:'reproductive-anatomy',title:'Reproductive Anatomy',summary:'Female and male reproductive anatomy in dogs and cats, the four-phase estrous cycle, and clinical connections to breeding soundness, pregnancy, and reproductive health examinations.',sort_order:2,path:'assets/data/medical-foundations/reproductive-anatomy.json'},
   {slug:'anatomy-and-physiology',title:'Anatomy & Physiology',summary:'Foundational animal anatomy and physiology: levels of biological organization from cells to organ systems, directional terminology and body planes, the major organ systems, and animal classification, applied in a guided clinical scenario.',sort_order:3,path:'assets/data/medical-foundations/anatomy-and-physiology.json'}
  ]
 };
-const localLessonBySlug=Object.fromEntries(Object.values(localCourseLessons).flat().map(def=>[def.slug,def]));
+const bundledLessonFallbackBySlug=Object.fromEntries(Object.values(bundledCourseLessonFallbacks).flat().map(def=>[def.slug,def]));
+const bundledLessonFallbackCourseBySlug=Object.fromEntries(Object.entries(bundledCourseLessonFallbacks).flatMap(([courseSlug,defs])=>defs.map(def=>[def.slug,courseSlug])));
 const lessonCache={};
 const lessonStates={};
 let courseLessons=[];
@@ -1778,52 +1779,49 @@ function normalizeLessonRow(row){
  return row;
 }
 
-function isLocalLesson(lessonOrSlug){
- const slug=typeof lessonOrSlug==='string'?lessonOrSlug:lessonOrSlug&&lessonOrSlug.slug;
- return !!(slug&&localLessonBySlug[slug]);
+function allowedCourseLessonsFor(slug){return courseOrderBySlug[slug]||null}
+function filterCourseLessons(slug,lessons){
+ const allow=allowedCourseLessonsFor(slug);
+ return allow?lessons.filter(lesson=>allow.includes(lesson.slug)):lessons;
 }
+function isSupabaseUnavailable(error){
+ if(typeof error?.status==='number'&&error.status>=500)return true;
+ const msg=[error?.message,error?.details,error?.hint,typeof error==='string'?error:''].filter(Boolean).join(' ');
+ return /Failed to fetch|Load failed|NetworkError|network request failed|timed out|timeout|temporarily unavailable|Service Unavailable|502|503|504/i.test(msg);
+}
+function fallbackCourseForLesson(slug){return bundledLessonFallbackCourseBySlug[slug]||null}
+function shouldUseBundledFallback(courseSlug,error){
+ const defs=courseSlug&&bundledCourseLessonFallbacks[courseSlug];
+ return !!(defs&&defs.length&&isSupabaseUnavailable(error));
+}
+function isBundledFallbackLesson(lesson){return !!lesson?.fallbackOnly}
 
-async function fetchLocalLesson(def){
+async function fetchBundledFallbackLesson(def){
  const res=await fetch(def.path,{cache:'no-store'});
- if(!res.ok)throw new Error(`Local lesson bundle missing: ${def.path}`);
+ if(!res.ok)throw new Error(`Bundled lesson fallback missing: ${def.path}`);
  const content=await res.json();
  return normalizeLessonRow({
-  id:`local:${def.slug}`,
+  id:`fallback:${def.slug}`,
   slug:def.slug,
   title:def.title,
   summary:def.summary,
   sort_order:def.sort_order,
   status:'published',
   requires_signoff:false,
-  localOnly:true,
+  fallbackOnly:true,
   content
  });
 }
-
-function localLessonStateKey(slug){return `hls.localLesson.${slug}`}
-function readLocalLessonState(slug){
- try{return JSON.parse(authStorage.getItem(localLessonStateKey(slug))||'null')}
- catch(e){return null}
-}
-function writeLocalLessonState(slug,data){
- authStorage.setItem(localLessonStateKey(slug),JSON.stringify(data));
-}
-function hydrateLocalLessonState(stored,st,lesson){
- if(!stored)return;
- const detail=stored.detail||stored.progressRow?.detail||stored;
- if(detail&&(detail.moduleProgress||detail.moduleScores||detail.casesCompleted||detail.checklist)){
-  Object.assign(st.moduleProgress,detail.moduleProgress||{});
-  Object.assign(st.moduleScores,detail.moduleScores||{});
-  (detail.casesCompleted||[]).forEach(id=>{if(!st.casesCompleted.includes(id))st.casesCompleted.push(id)});
-  Object.assign(st.checklist,detail.checklist||{});
-  if(detail.attested)st.attested=true;
- }else if(stored.progressRow?.status==='completed'){
-  lesson.content.modules.forEach(m=>{st.moduleProgress[m.id]=true;if(m.mode!=='review'&&st.moduleScores[m.id]==null)st.moduleScores[m.id]=stored.progressRow.quiz_score??100});
-  lesson.content.cases.forEach(c=>{if(!st.casesCompleted.includes(c.id))st.casesCompleted.push(c.id)});
-  lesson.content.checklistItems.forEach((_,i)=>{st.checklist[i]=true});
+async function fetchBundledFallbackCourseLessons(slug){
+ const defs=bundledCourseLessonFallbacks[slug]||[];
+ const lessons=[];
+ for(const def of defs){
+  const lesson=lessonCache[def.slug]||await fetchBundledFallbackLesson(def);
+  lessonCache[def.slug]=lesson;
+  lessons.push(lesson);
  }
- st.progressRow=stored.progressRow||st.progressRow;
- st.signoff=stored.signoff||st.signoff;
+ courseLessons=applyCourseOrder(slug,filterCourseLessons(slug,lessons));
+ return courseLessons;
 }
 
 function stateFor(slug){
@@ -1834,35 +1832,32 @@ function activeLesson(){return lessonCache[activeSlug]}
 function activeState(){return stateFor(activeSlug)}
 
 async function fetchCourseLessons(){
- if(localCourseLessons[currentCourse.slug]){
-  const lessons=[];
-  for(const def of localCourseLessons[currentCourse.slug]){
-   const lesson=lessonCache[def.slug]||await fetchLocalLesson(def);
-   lessonCache[def.slug]=lesson;
-   lessons.push(lesson);
-  }
-  courseLessons=lessons;
-  return lessons;
+ try{
+  const {data:course,error:cErr}=await sb.from('courses').select('id,slug,title').eq('slug',currentCourse.slug).single();
+  if(cErr)throw cErr;
+  const {data,error}=await sb.from('lessons').select('*').eq('course_id',course.id).eq('status','published').order('sort_order',{ascending:true});
+  if(error)throw error;
+  courseLessons=applyCourseOrder(currentCourse.slug,filterCourseLessons(currentCourse.slug,(data||[]).map(normalizeLessonRow)));
+  courseLessons.forEach(l=>{lessonCache[l.slug]=l});
+  return courseLessons;
+ }catch(error){
+  if(!shouldUseBundledFallback(currentCourse.slug,error))throw error;
+  return fetchBundledFallbackCourseLessons(currentCourse.slug);
  }
- const {data:course,error:cErr}=await sb.from('courses').select('id,slug,title').eq('slug',currentCourse.slug).single();
- if(cErr)throw cErr;
- const {data,error}=await sb.from('lessons').select('*').eq('course_id',course.id).eq('status','published').order('sort_order',{ascending:true});
- if(error)throw error;
- courseLessons=data||[];
- courseLessons.forEach(l=>{lessonCache[l.slug]=normalizeLessonRow(l)});
- return courseLessons;
 }
 async function fetchLesson(slug){
- if(lessonCache[slug])return lessonCache[slug];
- const def=localLessonBySlug[slug];
- if(def){
-  lessonCache[slug]=await fetchLocalLesson(def);
+ if(lessonCache[slug]&&!isBundledFallbackLesson(lessonCache[slug]))return lessonCache[slug];
+ try{
+  const {data,error}=await sb.from('lessons').select('*').eq('slug',slug).single();
+  if(error)throw error;
+  lessonCache[slug]=normalizeLessonRow(data);
+  return lessonCache[slug];
+ }catch(error){
+  const def=bundledLessonFallbackBySlug[slug];
+  if(!def||!shouldUseBundledFallback(fallbackCourseForLesson(slug),error))throw error;
+  lessonCache[slug]=lessonCache[slug]&&isBundledFallbackLesson(lessonCache[slug])?lessonCache[slug]:await fetchBundledFallbackLesson(def);
   return lessonCache[slug];
  }
- const {data,error}=await sb.from('lessons').select('*').eq('slug',slug).single();
- if(error)throw error;
- lessonCache[slug]=normalizeLessonRow(data);
- return lessonCache[slug];
 }
 
 function allRequirementsMet(lesson,st){
@@ -1880,11 +1875,8 @@ function lessonPercent(lesson,st){
 }
 
 async function loadRemoteState(lesson,st){
- if(isLocalLesson(lesson)){
-  hydrateLocalLessonState(readLocalLessonState(lesson.slug),st,lesson);
-  return;
- }
- const uid=hlsAuth.user?.id; if(!uid)return;
+ if(isBundledFallbackLesson(lesson))return false;
+ const uid=hlsAuth.user?.id; if(!uid)return false;
  const {data:prog}=await sb.from('lesson_progress').select('*').eq('user_id',uid).eq('lesson_id',lesson.id).maybeSingle();
  if(prog){
   st.progressRow=prog;
@@ -1905,33 +1897,10 @@ async function loadRemoteState(lesson,st){
  }
  const {data:so}=await sb.from('sign_offs').select('*').eq('user_id',uid).eq('lesson_id',lesson.id).order('requested_at',{ascending:false}).limit(1);
  st.signoff=so&&so.length?so[0]:null;
+ return true;
 }
 async function saveProgress(lesson,st,opts={}){
- if(isLocalLesson(lesson)){
-  const scores=Object.values(st.moduleScores);
-  const avg=scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length):0;
-  const done=allRequirementsMet(lesson,st);
-  const detail={
-   moduleProgress:st.moduleProgress,
-   moduleScores:st.moduleScores,
-   casesCompleted:st.casesCompleted,
-   checklist:st.checklist,
-   attested:!!st.attested
-  };
-  const row={
-   user_id:'local',
-   lesson_id:lesson.id,
-   status:done?'completed':'in_progress',
-   quiz_score:avg,
-   quiz_attempts:(st.progressRow?.quiz_attempts||0)+(opts.attempt?1:0),
-   completed_at:st.progressRow?.completed_at||(done?new Date().toISOString():null),
-   detail,
-   localOnly:true
-  };
-  st.progressRow=row;
-  writeLocalLessonState(lesson.slug,{progressRow:row,signoff:st.signoff});
-  return;
- }
+ if(isBundledFallbackLesson(lesson)){toast('Progress sync is unavailable while live lesson data is offline');return}
  const uid=hlsAuth.user?.id; if(!uid)return;
  const scores=Object.values(st.moduleScores);
  const avg=scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length):0;
@@ -1956,12 +1925,7 @@ async function saveProgress(lesson,st,opts={}){
  st.progressRow=data;
 }
 async function requestSignoff(lesson,st){
- if(isLocalLesson(lesson)){
-  const row={status:'pending',requested_at:new Date().toISOString(),localOnly:true};
-  st.signoff=row;
-  writeLocalLessonState(lesson.slug,{progressRow:st.progressRow,signoff:row});
-  return row;
- }
+ if(isBundledFallbackLesson(lesson)){toast('Sign-off requests are unavailable while live lesson data is offline');return null}
  const uid=hlsAuth.user?.id; if(!uid)return null;
  const {data,error}=await sb.from('sign_offs').insert({user_id:uid,lesson_id:lesson.id,status:'pending'}).select().single();
  if(error){toast('Sign-off request could not be submitted');return null}
@@ -1984,7 +1948,7 @@ async function renderLevel2Hub(){
  let lessons=[];
  try{lessons=await fetchCourseLessons()}
  catch(e){grid.innerHTML=`<section class="panel"><span class="eyebrow">${escapeHtml(currentCourse.label)}</span><h2>We couldn't load this course</h2><p>${escapeHtml(e.message||'Unknown error')}</p></section>`;return}
- for(const l of lessons){const st=stateFor(l.slug);if(!st.loaded){st.loaded=true;await loadRemoteState(l,st)}}
+ for(const l of lessons){const st=stateFor(l.slug);if(!st.loaded)st.loaded=await loadRemoteState(l,st)}
  const planned=plannedLessonsFor(currentCourse.slug);
  let tiles=lessons.map(l=>({live:true,slug:l.slug,title:l.title,desc:l.summary||'',pct:lessonPercent(l,stateFor(l.slug))})).concat(planned.map(l=>({live:false,slug:l.id,title:l.title,desc:l.desc,pct:0})));
  tiles=applyCourseOrder(currentCourse.slug,tiles);
@@ -2033,7 +1997,7 @@ async function renderLessonPlayer(lessonSlug,tab){
  let lesson;
  try{lesson=await fetchLesson(lessonSlug)}
  catch(e){host.innerHTML=`<section class="panel"><span class="eyebrow">Lesson unavailable</span><h2>We couldn't load this lesson</h2><p>${escapeHtml(e.message||'Unknown error')}</p></section>`;scrollViewTop();return}
- if(!st.loaded){st.loaded=true;await loadRemoteState(lesson,st)}
+ if(!st.loaded)st.loaded=await loadRemoteState(lesson,st)
  paintLesson();
  scrollViewTop();
 }
