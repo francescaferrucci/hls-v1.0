@@ -1678,7 +1678,7 @@ async function loadRemoteState(lesson,st){
   }else if(prog.status==='completed'){
    // Legacy rows saved before the detail column existed: reconstruct a fully-complete
    // state so previously completed lessons don't regress to "not started".
-   lesson.content.modules.forEach(m=>{st.moduleProgress[m.id]=true;if(st.moduleScores[m.id]==null)st.moduleScores[m.id]=prog.quiz_score??100});
+   lesson.content.modules.forEach(m=>{st.moduleProgress[m.id]=true;if(m.mode!=='review'&&st.moduleScores[m.id]==null)st.moduleScores[m.id]=prog.quiz_score??100});
    lesson.content.cases.forEach(c=>{if(!st.casesCompleted.includes(c.id))st.casesCompleted.push(c.id)});
    lesson.content.checklistItems.forEach((_,i)=>{st.checklist[i]=true});
   }
@@ -1703,7 +1703,7 @@ async function saveProgress(lesson,st,opts={}){
   status:done?'completed':'in_progress',
   quiz_score:avg,
   quiz_attempts:(st.progressRow?.quiz_attempts||0)+(opts.attempt?1:0),
-  completed_at:done?new Date().toISOString():null,
+  completed_at:st.progressRow?.completed_at||(done?new Date().toISOString():null),
   detail
  };
  const {data,error}=await sb.from('lesson_progress').upsert(row,{onConflict:'user_id,lesson_id'}).select().single();
@@ -1928,7 +1928,7 @@ function wireLessonPlayer(){
   const modAvgOk=modScores.length&&Math.round(modScores.reduce((a,b)=>a+b,0)/modScores.length)>=85;
   const criticalDone=c2.checklistItems.every((item,i)=>!item.critical||st.checklist[i]);
   if(!modulesComplete||!modAvgOk||!criticalDone||!st.attested){
-   openModal(`<span class="eyebrow">Competency validation</span><h1>Request sign-off</h1><p>Complete all six knowledge-check modules (85% average or higher), every critical skills-lab checklist item, and sign the attestation before requesting facilitator sign-off.</p><button class="primary" onclick="document.querySelector('#modal').close()">Close</button>`);
+   openModal(`<span class="eyebrow">Competency validation</span><h1>Request sign-off</h1><p>Complete every knowledge-check module (85% average or higher), every critical skills-lab checklist item, and sign the attestation before requesting facilitator sign-off.</p><button class="primary" onclick="document.querySelector('#modal').close()">Close</button>`);
    return;
   }
   const row=await requestSignoff(lesson,st);
@@ -1953,8 +1953,10 @@ function renderModuleModal(){
   <h1 class="modal-title">${m.title}</h1>
   ${m.content}
   <div style="margin-top:22px;border-top:1px solid var(--line);padding-top:18px">
-   <div class="section-head"><div><span class="eyebrow">Knowledge check</span><h2>Answer all ${m.quiz.length} questions</h2></div><span class="l2-quiz-score" id="l2QuizScoreLabel">${answeredCount}/${m.quiz.length} answered</span></div>
+   <div class="section-head"><div><span class="eyebrow">${m.mode==='review'?'Mastery review':'Knowledge check'}</span><h2>${m.mode==='review'?`Work through all ${m.quiz.length} items`:`Answer all ${m.quiz.length} questions`}</h2></div><span class="l2-quiz-score" id="l2QuizScoreLabel">${answeredCount}/${m.quiz.length} answered</span></div>
+   ${m.mode==='review'?`<div class="progress"><span id="l2QuizProgressBar" style="width:${Math.round(answeredCount/m.quiz.length*100)}%"></span></div>`:''}
    <div id="l2QuizContainer">${m.quiz.map((q,qi)=>`
+    ${q.section&&q.section!==(m.quiz[qi-1]||{}).section?`<h3 class="l2-quiz-section">${q.section}</h3>`:''}
     <div class="l2-quiz-question">
      <h4>${qi+1}. ${q.q}</h4>
      <div id="l2q-${qi}">${q.opts.map((o,oi)=>`<button class="decision-option" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('')}</div>
@@ -1982,23 +1984,32 @@ function answerQuizQuestion(qi,oi){
  document.querySelector(`#l2fb-${qi}`).innerHTML=`<div class="feedback"><p><strong>${isCorrect?'Correct.':'Not quite.'}</strong> ${q.exp}</p></div>`;
  const label=document.querySelector('#l2QuizScoreLabel');
  if(label)label.textContent=`${Object.keys(quizAnswers).length}/${m.quiz.length} answered`;
+ const bar=document.querySelector('#l2QuizProgressBar');
+ if(bar)bar.style.width=Math.round(Object.keys(quizAnswers).length/m.quiz.length*100)+'%';
  if(Object.keys(quizAnswers).length===m.quiz.length)renderQuizResult();
 }
 async function renderQuizResult(){
  const m=activeModule,lesson=activeLesson(),st=activeState();
  const correctCount=Object.values(quizAnswers).filter(a=>a.correct).length;
  const pct=Math.round((correctCount/m.quiz.length)*100);
- const passed=pct>=75;
- st.moduleScores[m.id]=pct;
+ const review=m.mode==='review';
+ const passed=review?true:pct>=75;
+ if(!review)st.moduleScores[m.id]=pct;
  if(passed)st.moduleProgress[m.id]=true;
- document.querySelector('#l2QuizResult').innerHTML=`<div class="feedback-box"><strong>Score: ${pct}%</strong> (${correctCount} of ${m.quiz.length} correct) — ${passed?'Module marked complete.':'Retake recommended (75% needed to mark complete).'}</div>
+ document.querySelector('#l2QuizResult').innerHTML=review
+  ?`<div class="feedback-box"><strong>Review complete.</strong> You answered ${correctCount} of ${m.quiz.length} correctly. There is no pass mark for this review — its purpose is to show you which areas to revisit. Reopen any module from the curriculum to re-read the terms behind the items you missed.</div>
+  <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
+   <button class="secondary" id="l2RetakeQuiz">Start the review again</button>
+   <button class="primary" id="l2CloseModuleModal">Return to curriculum</button>
+  </div>`
+  :`<div class="feedback-box"><strong>Score: ${pct}%</strong> (${correctCount} of ${m.quiz.length} correct) — ${passed?'Module marked complete.':'Retake recommended (75% needed to mark complete).'}</div>
   <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
    ${!passed?'<button class="secondary" id="l2RetakeQuiz">Retake knowledge check</button>':''}
    <button class="primary" id="l2CloseModuleModal">Return to curriculum</button>
   </div>`;
  document.querySelector('#l2RetakeQuiz')?.addEventListener('click',()=>{quizAnswers={};renderModuleModal()});
  document.querySelector('#l2CloseModuleModal')?.addEventListener('click',()=>{document.querySelector('#modal').close();paintLesson()});
- if(passed)toast(`${m.title} module complete — ${pct}%`);
+ if(passed)toast(review?`${m.title} complete`:`${m.title} module complete — ${pct}%`);
  await saveProgress(lesson,st,{attempt:true});
 }
 
