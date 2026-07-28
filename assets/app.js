@@ -1551,25 +1551,18 @@ const plannedLessonsBySlug={
   {id:'tpr',title:'TPR',desc:'Temperature, pulse, and respiration: technique, normal ranges, and red flags.'},
   {id:'bcs',title:'Body Condition Scoring',desc:'9-point body condition and muscle condition scoring with Member communication.'},
   {id:'pain',title:'Pain Assessment',desc:'Species-specific pain scales, behavioral cues, and escalation criteria.'},
-  {id:'hydration',title:'Hydration Assessment',desc:'Skin turgor, mucous membranes, and dehydration percentage estimation.'},
-  {id:'neuro',title:'Neurologic Screening',desc:'Cranial nerve checks, gait, proprioception, and reflex screening basics.'},
-  {id:'mobility',title:'Mobility Evaluation',desc:'Gait analysis, orthopedic screening, and lameness grading fundamentals.'},
-  {id:'ophthalmic',title:'Ophthalmic Basics',desc:'External eye exam, pupillary light reflex, and common abnormality recognition.'},
-  {id:'derm',title:'Dermatologic Examination',desc:'Skin and coat exam technique, lesion recognition, and cytology preview.'}
+ {id:'hydration',title:'Hydration Assessment',desc:'Skin turgor, mucous membranes, and dehydration percentage estimation.'},
+ {id:'neuro',title:'Neurologic Screening',desc:'Cranial nerve checks, gait, proprioception, and reflex screening basics.'},
+ {id:'mobility',title:'Mobility Evaluation',desc:'Gait analysis, orthopedic screening, and lameness grading fundamentals.'},
+ {id:'ophthalmic',title:'Ophthalmic Basics',desc:'External eye exam, pupillary light reflex, and common abnormality recognition.'},
+ {id:'derm',title:'Dermatologic Examination',desc:'Skin and coat exam technique, lesion recognition, and cytology preview.'}
  ],
- 'medical-foundations':[
-  {id:'medical-calculations',title:'Medical Calculations',desc:'Dosage, conversion, and rate calculations used in daily clinical work.'},
-  {id:'patient-safety',title:'Patient Safety',desc:'Identification checks, error-prevention habits, and safe patient-handling protocols.'},
-  {id:'pet-handling',title:'Pet Handling',desc:'Low-stress restraint, species-specific handling technique, and reading patient body language.'},
-  {id:'infection-prevention',title:'Infection Prevention & Biosecurity',desc:'Hand hygiene, PPE, isolation protocol, and cleaning/disinfection standards.'},
-  {id:'osha-radiation',title:'OSHA & Radiation Safety',desc:'Workplace safety standards, radiation exposure limits, and required protective practices.'},
-  {id:'controlled-substances',title:'Controlled Substance Awareness',desc:'Scheduling, documentation, storage, and accountability requirements for controlled substances.'}
- ]
+ 'medical-foundations':[]
 };
 function plannedLessonsFor(slug){return plannedLessonsBySlug[slug]||[]}
 /* Optional fixed display order per course (mixes live + planned lesson slugs/ids). Falls back to live-then-planned order when a course has no entry here. */
 const courseOrderBySlug={
- 'medical-foundations':['medical-terminology','reproductive-anatomy','medical-calculations','patient-safety','pet-handling','infection-prevention','osha-radiation','controlled-substances']
+ 'medical-foundations':['medical-terminology','reproductive-anatomy','anatomy-and-physiology']
 };
 function applyCourseOrder(slug,tiles){
  const order=courseOrderBySlug[slug]; if(!order)return tiles;
@@ -1609,7 +1602,164 @@ function wireHwWidget(cfg){
  };
 }
 
+/* ---- Anatomy & Physiology widgets (all markup and copy travel inside lesson content) ---- */
+function anatReduced(){return !!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)}
+function anatSay(el,state,text){if(!el)return;el.className='anat-feedback'+(state?' is-'+state:'');el.textContent=text||''}
+function wireAnatomyWidgets(root){
+ if(!root)return;
+
+ root.querySelectorAll('[data-anat-flip] .anat-flip-card').forEach(card=>{
+  card.onclick=()=>card.setAttribute('aria-pressed',card.classList.toggle('is-flipped')?'true':'false');
+ });
+
+ root.querySelectorAll('[data-anat-tabs]').forEach(w=>{
+  const tabs=[...w.querySelectorAll('[data-anat-tab]')];
+  const panels=[...w.querySelectorAll('[data-anat-panel]')];
+  const select=key=>{
+   tabs.forEach(t=>{const on=t.dataset.anatTab===key;t.classList.toggle('is-active',on);t.setAttribute('aria-selected',on?'true':'false');t.tabIndex=on?0:-1});
+   panels.forEach(p=>{p.hidden=p.dataset.anatPanel!==key});
+  };
+  tabs.forEach((t,i)=>{
+   t.onclick=()=>select(t.dataset.anatTab);
+   t.onkeydown=e=>{
+    let n=-1;
+    if(e.key==='ArrowRight')n=(i+1)%tabs.length;
+    else if(e.key==='ArrowLeft')n=(i-1+tabs.length)%tabs.length;
+    else if(e.key==='Home')n=0;
+    else if(e.key==='End')n=tabs.length-1;
+    if(n<0)return;
+    e.preventDefault();select(tabs[n].dataset.anatTab);tabs[n].focus();
+   };
+  });
+ });
+
+ root.querySelectorAll('[data-anat-spinner]').forEach(w=>{
+  const wheel=w.querySelector('[data-anat-wheel]'),spin=w.querySelector('[data-anat-spin]');
+  const rem=w.querySelector('[data-anat-remaining]'),reset=w.querySelector('[data-anat-spin-reset]');
+  const ready=w.querySelector('[data-anat-plane-result="ready"]');
+  const all=[...w.querySelectorAll('[data-anat-plane-result][data-anat-angle]')];
+  if(!wheel||!spin||!all.length)return;
+  let pool=all.slice(),rotation=0,busy=false;
+  const show=el=>[ready,...all].forEach(r=>{if(r)r.hidden=r!==el});
+  const paint=()=>{
+   if(rem)rem.textContent=pool.length
+    ?(w.dataset.anatRemainingTpl||'').replace('{n}',pool.length).replace('{s}',pool.length===1?'':'s')
+    :(w.dataset.anatRemainingDone||'');
+   spin.disabled=!pool.length;
+   spin.textContent=pool.length?(w.dataset.anatSpinLabel||spin.textContent):(w.dataset.anatSpinDone||spin.textContent);
+  };
+  spin.onclick=()=>{
+   if(busy||!pool.length)return;
+   busy=true;spin.disabled=true;
+   const pick=pool.splice(Math.floor(Math.random()*pool.length),1)[0];
+   const quick=anatReduced();
+   rotation+=1080+(360-(+pick.dataset.anatAngle||0));
+   wheel.style.transition=quick?'none':'';
+   wheel.style.transform='rotate('+rotation+'deg)';
+   setTimeout(()=>{show(pick);busy=false;paint()},quick?0:1050);
+  };
+  if(reset)reset.onclick=()=>{
+   pool=all.slice();rotation=0;busy=false;
+   wheel.style.transition=anatReduced()?'none':'';
+   wheel.style.transform='rotate(0deg)';
+   show(ready);paint();
+  };
+  show(ready);paint();
+ });
+
+ root.querySelectorAll('[data-anat-match]').forEach(w=>{
+  const cards=[...w.querySelectorAll('.anat-match-card')];
+  const zones=[...w.querySelectorAll('.anat-match-zone')];
+  const fb=w.querySelector('[data-anat-match-feedback]');
+  if(!cards.length||!zones.length)return;
+  const blank=new Map();
+  zones.forEach(z=>blank.set(z,z.querySelector('[data-anat-slot]').textContent));
+  let picked=null;
+  const deselect=()=>{cards.forEach(c=>{c.classList.remove('is-selected');c.setAttribute('aria-pressed','false')});picked=null};
+  const cardIn=z=>cards.find(c=>c.dataset.anatIn===z.dataset.anatZone);
+  const empty=z=>{z.querySelector('[data-anat-slot]').textContent=blank.get(z);z.classList.remove('is-filled','is-correct','is-wrong')};
+  const free=c=>{delete c.dataset.anatIn;c.classList.remove('is-assigned')};
+  const place=(card,zone)=>{
+   const prev=cardIn(zone); if(prev&&prev!==card)free(prev);
+   if(card.dataset.anatIn){const pz=zones.find(z=>z.dataset.anatZone===card.dataset.anatIn); if(pz)empty(pz)}
+   card.dataset.anatIn=zone.dataset.anatZone;card.classList.add('is-assigned');
+   zone.querySelector('[data-anat-slot]').textContent=card.textContent;
+   zone.classList.add('is-filled');zone.classList.remove('is-correct','is-wrong');
+   deselect();
+  };
+  cards.forEach(c=>{
+   c.onclick=()=>{const was=c.classList.contains('is-selected');deselect();if(!was){c.classList.add('is-selected');c.setAttribute('aria-pressed','true');picked=c}};
+   c.ondragstart=e=>{e.dataTransfer.setData('text/plain',c.dataset.anatKey);c.classList.add('is-dragging')};
+   c.ondragend=()=>c.classList.remove('is-dragging');
+  });
+  zones.forEach(z=>{
+   z.onclick=()=>{if(picked){place(picked,z);return}const c=cardIn(z);if(c){free(c);empty(z)}};
+   z.ondragover=e=>{e.preventDefault();z.classList.add('is-over')};
+   z.ondragleave=()=>z.classList.remove('is-over');
+   z.ondrop=e=>{e.preventDefault();z.classList.remove('is-over');const c=cards.find(x=>x.dataset.anatKey===e.dataTransfer.getData('text/plain'));if(c)place(c,z)};
+  });
+  const check=w.querySelector('[data-anat-match-check]');
+  if(check)check.onclick=()=>{
+   let placed=0,ok=0;
+   zones.forEach(z=>{
+    z.classList.remove('is-correct','is-wrong');
+    const c=cardIn(z); if(!c)return;
+    placed++;
+    if(c.dataset.anatKey===z.dataset.anatZone){ok++;z.classList.add('is-correct')}else z.classList.add('is-wrong');
+   });
+   if(placed<zones.length)anatSay(fb,'bad',fb&&fb.dataset.msgIncomplete);
+   else if(ok===zones.length)anatSay(fb,'good',fb&&fb.dataset.msgAll);
+   else anatSay(fb,'bad',fb&&(fb.dataset.msgPartial||'').replace('{n}',ok));
+  };
+  const rst=w.querySelector('[data-anat-match-reset]');
+  if(rst)rst.onclick=()=>{cards.forEach(free);zones.forEach(empty);deselect();anatSay(fb,'','')};
+ });
+
+ root.querySelectorAll('[data-anat-sequence]').forEach(w=>{
+  const bank=w.querySelector('[data-anat-seq-bank]'),zone=w.querySelector('[data-anat-seq-zone]');
+  const fb=w.querySelector('[data-anat-seq-feedback]'),chips=[...w.querySelectorAll('.anat-chip')];
+  if(!bank||!zone||!chips.length)return;
+  const total=chips.length;
+  const paint=()=>zone.classList.toggle('is-empty',!zone.querySelector('.anat-chip'));
+  chips.forEach(chip=>{
+   chip.onclick=()=>{
+    if(chip.parentElement===zone)return;
+    zone.appendChild(chip);paint();
+    const ranks=[...zone.children].map(x=>+x.dataset.anatRank);
+    if(!ranks.every((r,i)=>r===i))anatSay(fb,'bad',fb&&fb.dataset.msgWrong);
+    else if(ranks.length===total)anatSay(fb,'good',fb&&fb.dataset.msgDone);
+    else anatSay(fb,'good',fb&&(fb.dataset.msgPartial||'').replace('{n}',total-ranks.length));
+   };
+  });
+  const rst=w.querySelector('[data-anat-seq-reset]');
+  if(rst)rst.onclick=()=>{chips.forEach(c=>bank.appendChild(c));paint();anatSay(fb,'','')};
+  paint();
+ });
+
+ root.querySelectorAll('[data-anat-hotspots]').forEach(w=>{
+  const spots=[...w.querySelectorAll('[data-anat-region]')];
+  const fb=w.querySelector('[data-anat-hotspot-feedback]'),target=w.dataset.anatTarget;
+  spots.forEach(b=>{
+   b.onclick=()=>{
+    const ok=b.dataset.anatRegion===target;
+    b.classList.add(ok?'is-correct':'is-wrong');
+    anatSay(fb,ok?'good':'bad',ok?w.dataset.msgCorrect:w.dataset.msgWrong);
+    if(ok){spots.forEach(x=>{x.disabled=true});w.classList.add('is-done')}
+    else setTimeout(()=>b.classList.remove('is-wrong'),800);
+   };
+  });
+ });
+}
+
 /* ---- Data access ---- */
+const localCourseLessons={
+ 'medical-foundations':[
+  {slug:'medical-terminology',title:'Medical Terminology',summary:'Word roots, prefixes, and suffixes used to build and decode veterinary medical terms, organized by body system and ending with a completion-based mastery review.',sort_order:1,path:'assets/data/medical-foundations/medical-terminology.json'},
+  {slug:'reproductive-anatomy',title:'Reproductive Anatomy',summary:'Female and male reproductive anatomy in dogs and cats, the four-phase estrous cycle, and clinical connections to breeding soundness, pregnancy, and reproductive health examinations.',sort_order:2,path:'assets/data/medical-foundations/reproductive-anatomy.json'},
+  {slug:'anatomy-and-physiology',title:'Anatomy & Physiology',summary:'Foundational animal anatomy and physiology: levels of biological organization from cells to organ systems, directional terminology and body planes, the major organ systems, and animal classification, applied in a guided clinical scenario.',sort_order:3,path:'assets/data/medical-foundations/anatomy-and-physiology.json'}
+ ]
+};
+const localLessonBySlug=Object.fromEntries(Object.values(localCourseLessons).flat().map(def=>[def.slug,def]));
 const lessonCache={};
 const lessonStates={};
 let courseLessons=[];
@@ -1619,10 +1769,61 @@ let activeSlug=null;
    can treat them as present. Mirrors the defaults in the Content Studio normalizer. */
 function normalizeLessonRow(row){
  if(!row)return row;
+ if(typeof row.content==='string'){
+  try{row.content=JSON.parse(row.content)}catch(e){}
+ }
  if(!row.content||typeof row.content!=='object')row.content={};
  const c=row.content;
  ['modules','cases','stations','checklistItems','certRows'].forEach(k=>{if(!Array.isArray(c[k]))c[k]=[]});
  return row;
+}
+
+function isLocalLesson(lessonOrSlug){
+ const slug=typeof lessonOrSlug==='string'?lessonOrSlug:lessonOrSlug&&lessonOrSlug.slug;
+ return !!(slug&&localLessonBySlug[slug]);
+}
+
+async function fetchLocalLesson(def){
+ const res=await fetch(def.path,{cache:'no-store'});
+ if(!res.ok)throw new Error(`Local lesson bundle missing: ${def.path}`);
+ const content=await res.json();
+ return normalizeLessonRow({
+  id:`local:${def.slug}`,
+  slug:def.slug,
+  title:def.title,
+  summary:def.summary,
+  sort_order:def.sort_order,
+  status:'published',
+  requires_signoff:false,
+  localOnly:true,
+  content
+ });
+}
+
+function localLessonStateKey(slug){return `hls.localLesson.${slug}`}
+function readLocalLessonState(slug){
+ try{return JSON.parse(authStorage.getItem(localLessonStateKey(slug))||'null')}
+ catch(e){return null}
+}
+function writeLocalLessonState(slug,data){
+ authStorage.setItem(localLessonStateKey(slug),JSON.stringify(data));
+}
+function hydrateLocalLessonState(stored,st,lesson){
+ if(!stored)return;
+ const detail=stored.detail||stored.progressRow?.detail||stored;
+ if(detail&&(detail.moduleProgress||detail.moduleScores||detail.casesCompleted||detail.checklist)){
+  Object.assign(st.moduleProgress,detail.moduleProgress||{});
+  Object.assign(st.moduleScores,detail.moduleScores||{});
+  (detail.casesCompleted||[]).forEach(id=>{if(!st.casesCompleted.includes(id))st.casesCompleted.push(id)});
+  Object.assign(st.checklist,detail.checklist||{});
+  if(detail.attested)st.attested=true;
+ }else if(stored.progressRow?.status==='completed'){
+  lesson.content.modules.forEach(m=>{st.moduleProgress[m.id]=true;if(m.mode!=='review'&&st.moduleScores[m.id]==null)st.moduleScores[m.id]=stored.progressRow.quiz_score??100});
+  lesson.content.cases.forEach(c=>{if(!st.casesCompleted.includes(c.id))st.casesCompleted.push(c.id)});
+  lesson.content.checklistItems.forEach((_,i)=>{st.checklist[i]=true});
+ }
+ st.progressRow=stored.progressRow||st.progressRow;
+ st.signoff=stored.signoff||st.signoff;
 }
 
 function stateFor(slug){
@@ -1633,6 +1834,16 @@ function activeLesson(){return lessonCache[activeSlug]}
 function activeState(){return stateFor(activeSlug)}
 
 async function fetchCourseLessons(){
+ if(localCourseLessons[currentCourse.slug]){
+  const lessons=[];
+  for(const def of localCourseLessons[currentCourse.slug]){
+   const lesson=lessonCache[def.slug]||await fetchLocalLesson(def);
+   lessonCache[def.slug]=lesson;
+   lessons.push(lesson);
+  }
+  courseLessons=lessons;
+  return lessons;
+ }
  const {data:course,error:cErr}=await sb.from('courses').select('id,slug,title').eq('slug',currentCourse.slug).single();
  if(cErr)throw cErr;
  const {data,error}=await sb.from('lessons').select('*').eq('course_id',course.id).eq('status','published').order('sort_order',{ascending:true});
@@ -1643,6 +1854,11 @@ async function fetchCourseLessons(){
 }
 async function fetchLesson(slug){
  if(lessonCache[slug])return lessonCache[slug];
+ const def=localLessonBySlug[slug];
+ if(def){
+  lessonCache[slug]=await fetchLocalLesson(def);
+  return lessonCache[slug];
+ }
  const {data,error}=await sb.from('lessons').select('*').eq('slug',slug).single();
  if(error)throw error;
  lessonCache[slug]=normalizeLessonRow(data);
@@ -1664,6 +1880,10 @@ function lessonPercent(lesson,st){
 }
 
 async function loadRemoteState(lesson,st){
+ if(isLocalLesson(lesson)){
+  hydrateLocalLessonState(readLocalLessonState(lesson.slug),st,lesson);
+  return;
+ }
  const uid=hlsAuth.user?.id; if(!uid)return;
  const {data:prog}=await sb.from('lesson_progress').select('*').eq('user_id',uid).eq('lesson_id',lesson.id).maybeSingle();
  if(prog){
@@ -1687,6 +1907,31 @@ async function loadRemoteState(lesson,st){
  st.signoff=so&&so.length?so[0]:null;
 }
 async function saveProgress(lesson,st,opts={}){
+ if(isLocalLesson(lesson)){
+  const scores=Object.values(st.moduleScores);
+  const avg=scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length):0;
+  const done=allRequirementsMet(lesson,st);
+  const detail={
+   moduleProgress:st.moduleProgress,
+   moduleScores:st.moduleScores,
+   casesCompleted:st.casesCompleted,
+   checklist:st.checklist,
+   attested:!!st.attested
+  };
+  const row={
+   user_id:'local',
+   lesson_id:lesson.id,
+   status:done?'completed':'in_progress',
+   quiz_score:avg,
+   quiz_attempts:(st.progressRow?.quiz_attempts||0)+(opts.attempt?1:0),
+   completed_at:st.progressRow?.completed_at||(done?new Date().toISOString():null),
+   detail,
+   localOnly:true
+  };
+  st.progressRow=row;
+  writeLocalLessonState(lesson.slug,{progressRow:row,signoff:st.signoff});
+  return;
+ }
  const uid=hlsAuth.user?.id; if(!uid)return;
  const scores=Object.values(st.moduleScores);
  const avg=scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length):0;
@@ -1711,6 +1956,12 @@ async function saveProgress(lesson,st,opts={}){
  st.progressRow=data;
 }
 async function requestSignoff(lesson,st){
+ if(isLocalLesson(lesson)){
+  const row={status:'pending',requested_at:new Date().toISOString(),localOnly:true};
+  st.signoff=row;
+  writeLocalLessonState(lesson.slug,{progressRow:st.progressRow,signoff:row});
+  return row;
+ }
  const uid=hlsAuth.user?.id; if(!uid)return null;
  const {data,error}=await sb.from('sign_offs').insert({user_id:uid,lesson_id:lesson.id,status:'pending'}).select().single();
  if(error){toast('Sign-off request could not be submitted');return null}
@@ -1967,6 +2218,7 @@ function renderModuleModal(){
   </div>`);
  document.querySelectorAll('#l2QuizContainer .decision-option').forEach(btn=>btn.onclick=()=>answerQuizQuestion(+btn.dataset.qi,+btn.dataset.oi));
  if(m.hwWidget)wireHwWidget(m.hwWidget);
+ wireAnatomyWidgets(document.querySelector('#modalContent'));
  if(answeredCount===m.quiz.length)renderQuizResult();
 }
 function answerQuizQuestion(qi,oi){
@@ -2034,6 +2286,7 @@ function renderLessonCase(){
  document.querySelector('#l2CaseStepName').textContent=c.stages[st.caseStep];
  document.querySelector('#l2CaseStageContent').innerHTML=c.content[st.caseStep];
  const hwCfg=c.hwWidgets&&c.hwWidgets[String(st.caseStep)]; if(hwCfg)wireHwWidget(hwCfg);
+ wireAnatomyWidgets(document.querySelector('#l2CaseStageContent'));
  document.querySelectorAll('[data-l2-case-step]').forEach(b=>b.onclick=()=>{st.caseStep=+b.dataset.l2CaseStep;renderLessonCase()});
  Object.keys(c.decisions).forEach(hostId=>{
   const el=document.querySelector('#'+hostId);

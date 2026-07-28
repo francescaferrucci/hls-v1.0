@@ -1,0 +1,932 @@
+{
+  "header": {
+    "title": "Medical Terminology",
+    "eyebrow": "Hannah Medical Academy • Medical Foundations",
+    "subtitle": "Word roots, prefixes, and suffixes used to build and decode veterinary medical terms, organized by body system: musculoskeletal, integumentary, cardiovascular, respiratory, gastrointestinal, endocrine, and nervous, plus vaccines and medications, closing with a completion-based mastery review. This lesson currently does not cover urinary, reproductive, or sensory organ terminology — reproductive anatomy is covered separately in the Reproductive Anatomy lesson, and urinary/sensory organ terminology modules will be added as future content once source material is available.",
+    "askPrompt": "What is the approved Hannah terminology and structure list for veterinary medical terminology?",
+    "resourcesBody": "Approved Hannah medical terminology references, abbreviation lists, and Member-communication scripts will appear here after clinical review.",
+    "resourcesNote": "This build is a text-only migration of existing terminology content; production content requires Hannah-approved clinical review.",
+    "resourcesTitle": "Medical Terminology resource library"
+  },
+  "overview": {
+    "eyebrow": "Hannah Medical Academy • Medical Foundations",
+    "heading": "Build a shared veterinary vocabulary",
+    "intro": "Veterinary medicine relies on word roots, prefixes, suffixes, abbreviations, and body-system terminology. This lesson develops a consistent vocabulary for reading, verbalizing, and documenting common medical terms.",
+    "objectives": [
+      "Recognize how prefixes, root words, and suffixes contribute to the meaning of medical terms.",
+      "Use standardized veterinary abbreviations and understand why practice-specific abbreviations can create confusion in transferred records.",
+      "Identify foundational terminology for the musculoskeletal, integumentary, cardiovascular, respiratory, gastrointestinal, endocrine, and nervous systems.",
+      "Support accurate Hannahware documentation by using shared terminology when the PetNurse verbalizes findings and the Nurse Aide enters data."
+    ],
+    "connectsForwardTitle": "Connects forward",
+    "connectsForward": "This vocabulary supports later Medical Foundations lessons and helps clinical team members communicate consistently when discussing anatomy, examination findings, body systems, and patient records."
+  },
+  "modules": [
+    {
+      "id": 1,
+      "icon": "▶",
+      "title": "Terminology Basics",
+      "minutes": 25,
+      "content": "<p>This opening module introduces the building blocks of veterinary medical terminology and the role of standardized abbreviations. All four videos from the original source are embedded below. The source also references an audio lesson that was not available; its transcript is included in place of the recording.</p><h4>Medical Terminology Videos</h4><figure class=\"academy-video\"><figcaption class=\"academy-video-label\">Video: Basic Understanding of Medical Terminology</figcaption><div class=\"video-frame\"><video controls playsinline preload=\"metadata\" width=\"1280\" height=\"720\" title=\"Basic Understanding of Medical Terminology\"><source src=\"assets/media/medical-terminology/basic-understanding.mp4\" type=\"video/mp4\">Your browser does not support the video tag. <a class=\"video-fallback\" href=\"assets/media/medical-terminology/basic-understanding.mp4\">Download the video (2 min 42 sec)</a>.</video></div></figure><figure class=\"academy-video\"><figcaption class=\"academy-video-label\">Video: Using Prefixes</figcaption><div class=\"video-frame\"><video controls playsinline preload=\"metadata\" width=\"1280\" height=\"720\" title=\"Using Prefixes\"><source src=\"assets/media/medical-terminology/using-prefixes.mp4\" type=\"video/mp4\">Your browser does not support the video tag. <a class=\"video-fallback\" href=\"assets/media/medical-terminology/using-prefixes.mp4\">Download the video (3 min 30 sec)</a>.</video></div></figure><figure class=\"academy-video\"><figcaption class=\"academy-video-label\">Video: Using Root Words</figcaption><div class=\"video-frame\"><video controls playsinline preload=\"metadata\" width=\"1280\" height=\"720\" title=\"Using Root Words\"><source src=\"assets/media/medical-terminology/root-words.mp4\" type=\"video/mp4\">Your browser does not support the video tag. <a class=\"video-fallback\" href=\"assets/media/medical-terminology/root-words.mp4\">Download the video (9 min 25 sec)</a>.</video></div></figure><figure class=\"academy-video\"><figcaption class=\"academy-video-label\">Video: Using Suffixes</figcaption><div class=\"video-frame\"><video controls playsinline preload=\"metadata\" width=\"1280\" height=\"720\" title=\"Using Suffixes\"><source src=\"assets/media/medical-terminology/suffixes.mp4\" type=\"video/mp4\">Your browser does not support the video tag. <a class=\"video-fallback\" href=\"assets/media/medical-terminology/suffixes.mp4\">Download the video (4 min 1 sec)</a>.</video></div></figure><h4>Abbreviations Overview</h4><figure class=\"academy-video\"><figcaption class=\"academy-video-label\">Audio: Abbreviations Overview</figcaption><img class=\"academy-image\" src=\"assets/media/medical-terminology/abbreviations-overview.jpg\" alt=\"Wooden letter tiles scattered face-up on a game board.\" width=\"532\" height=\"424\"><audio class=\"academy-audio\" controls preload=\"metadata\" title=\"Abbreviations Overview audio\"><source src=\"assets/media/medical-terminology/abbreviations-overview.mp3\" type=\"audio/mpeg\">Your browser does not support the audio element. <a class=\"video-fallback\" href=\"assets/media/medical-terminology/abbreviations-overview.mp3\">Download the audio (38 sec)</a>.</audio></figure><p><em class=\"academy-transcript-label\">Audio transcript:</em> Veterinary medicine, like many fields, is full of abbreviations and acronyms. Understanding these abbreviations is as essential as understanding medical terms. You will find that most abbreviations are universal, although some practices may have added some of their own to the list. When using these practice-specific abbreviations, the critical thing to remember is to keep them out of the medical records whenever possible. If you have a patient referred to a specialist or that needs records transferred to a new practice for any reason, those abbreviations made by the practice can be confusing and may result in altered care of that patient.</p><h4>Anatomy and Directional Terminology</h4><p>Anatomy is the study of biological structures and systems. This course covers introductory anatomy and directional terminology. Directional terminology, like much of medical terminology, requires a basic understanding of veterinary anatomy. Anatomy and directional terminology support communication with the medical team and the Member, are an important part of what is written in a patient's record, and inform how an animal is restrained. This foundational knowledge helps put everyone in the practice on the same page and makes communication more efficient.</p><p>In this lesson, we cover fundamental terms and abbreviations associated with the musculoskeletal, integumentary, cardiovascular, respiratory, gastrointestinal, endocrine, and nervous systems. Each body-system module includes an overview, terms that are not easily broken down, terms that can be broken down, must-know abbreviations when present in the source, and other relevant terminology.</p><p><strong>Clinical connection:</strong> A shared vocabulary helps the PetNurse verbalize findings clearly while the Nurse Aide performs Hannahware data entry.</p>",
+      "quiz": [
+        {
+          "q": "Why should practice-specific abbreviations generally be kept out of medical records?",
+          "exp": "Practice-specific abbreviations may be confusing when records are transferred or reviewed outside the practice and may contribute to altered care.",
+          "opts": [
+            "They make records too short",
+            "They may confuse people outside the practice",
+            "They cannot be entered in Hannahware",
+            "They are always misspelled"
+          ],
+          "correct": 1
+        },
+        {
+          "q": "What is anatomy?",
+          "exp": "Anatomy is the study of biological structures and systems.",
+          "opts": [
+            "The study of medications",
+            "The study of biological structures and systems",
+            "The study of microorganisms only",
+            "The process of documenting appointments"
+          ],
+          "correct": 1
+        },
+        {
+          "q": "Why does directional terminology require a basic understanding of veterinary anatomy?",
+          "exp": "Directional terminology describes locations and relationships among biological structures, so understanding the anatomy supports accurate use of those terms.",
+          "opts": [
+            "It replaces the medical record",
+            "It describes locations and relationships among structures",
+            "It is used only for medication labels",
+            "It removes the need for team communication"
+          ],
+          "correct": 1
+        },
+        {
+          "q": "Which workflow reflects the established Hannah documentation roles?",
+          "exp": "The PetNurse examines and verbalizes findings while the Nurse Aide performs Hannahware data entry.",
+          "opts": [
+            "The Nurse Aide examines while the PetNurse enters data",
+            "The PetNurse examines and verbalizes while the Nurse Aide enters data",
+            "The Member enters all clinical findings",
+            "Both roles avoid standardized terminology"
+          ],
+          "correct": 1
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "icon": "🦴",
+      "title": "Musculoskeletal System",
+      "minutes": 8,
+      "content": "<p><strong>Musculoskeletal</strong> breaks down to: <strong>muscul/o</strong> (muscle) + <strong>skelet/o</strong> (skeleton) + <strong>-al</strong> (pertaining to) = pertaining to the skeleton and muscles.</p><p>The musculoskeletal system is what gives an organism its structure, protects internal body structures, and is responsible for movement. This system includes muscles, bones, joints, ligaments, and tendons.</p><figure class=\"academy-figure\"><img class=\"academy-image\" src=\"assets/media/medical-terminology/musculoskeletal-overview.jpg\" alt=\"Diagram showing muscle, tendon, and ligament connections around a joint.\" width=\"1100\" height=\"1080\" loading=\"lazy\" decoding=\"async\"></figure>\n<h4>Anatomy — Common Terms That Aren't Easily Broken Down</h4><p><strong>Ligament</strong> — A ligament is a type of connective tissue that connects bone to bone.</p><p><strong>Tendon</strong> — A tendon is a type of connective tissue that connects bone to muscle.</p><p><strong>Clinical connection:</strong> PetNurses use precise musculoskeletal terms — distinguishing a ligament from a tendon, for example — when verbalizing exam findings so the Nurse Aide can document them accurately in Hannahware.</p><p class=\"safety-note\"><strong>Module note</strong><span>The source training material for this module only covers Ligament and Tendon in depth. This module is intentionally short and is a candidate for future expansion (e.g. bones, joints, common orthopedic conditions and abbreviations) once additional source content is available.</span></p>",
+      "quiz": [
+        {
+          "q": "What does the word part \"skelet/o\" refer to in the term musculoskeletal?",
+          "exp": "\"Skelet/o\" refers to the skeleton; combined with \"muscul/o\" (muscle) and the suffix \"-al\" (pertaining to), musculoskeletal means pertaining to the skeleton and muscles.",
+          "opts": [
+            "Muscle",
+            "Skeleton",
+            "Joint",
+            "Nerve"
+          ],
+          "correct": 1
+        },
+        {
+          "q": "Which structure connects bone to bone?",
+          "exp": "A ligament is the connective tissue that connects bone to bone.",
+          "opts": [
+            "Tendon",
+            "Ligament",
+            "Cartilage",
+            "Meniscus"
+          ],
+          "correct": 1
+        },
+        {
+          "q": "Which structure connects bone to muscle?",
+          "exp": "A tendon is the connective tissue that connects bone to muscle.",
+          "opts": [
+            "Ligament",
+            "Tendon",
+            "Fascia",
+            "Periosteum"
+          ],
+          "correct": 1
+        },
+        {
+          "q": "True or False: The musculoskeletal system is responsible only for protecting internal organs, not for movement.",
+          "exp": "False. The musculoskeletal system gives an organism its structure, protects internal body structures, AND is responsible for movement.",
+          "opts": [
+            "True",
+            "False"
+          ],
+          "correct": 1
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "icon": "🩹",
+      "title": "Integumentary System",
+      "minutes": 20,
+      "content": "<p>The <strong>integumentary system</strong> is the body system named for the integument &mdash; the medical name for the skin. It includes the skin and its associated structures: skin, fur, nails, and glands. The skin is considered the largest organ in the body, and the integumentary system is responsible for protecting internal structures, maintaining body temperature, allowing for touch sensations, and more.</p>\n<p>This module covers the anatomy, disease condition, procedure terms, and abbreviations associated with structures in the integumentary system, organized the way the source training material groups them: common terms that aren't easily broken down into word parts, common terms that can be broken down, and must-know abbreviations.</p>\n<h4>Common Terms That Aren't Easily Broken Down</h4>\n<figure class=\"academy-figure\"><img class=\"academy-image\" src=\"assets/media/medical-terminology/integumentary-skin-example.jpg\" alt=\"Cat with visible irritated skin on the neck, used as an integumentary-system example.\" width=\"936\" height=\"624\" loading=\"lazy\" decoding=\"async\"></figure>\n<p><strong>Pore</strong> &mdash; A pore is a small opening found in the skin.</p>\n<p><strong>Abrasion</strong> &mdash; An abrasion is an injury caused by scraping the skin or mucous membrane.</p>\n<p><strong>Abscess</strong> &mdash; An abscess is a collection of pus in an area of the body where it cannot drain.</p>\n<p><strong>Acne</strong> &mdash; Acne is a collection of small pustules and blackheads caused by blocked sebaceous glands. Chin acne is common in cats and dogs.</p>\n<p><strong>Albino</strong> &mdash; Albinism is a condition of no skin, hair, or eye pigment. Albinism is more common in laboratory animals (rats, mice, and rabbits) than dogs and cats.</p>\n<p><strong>Alopecia</strong> &mdash; Alopecia is a lack of fur growth where fur should be.</p>\n<p><strong>Atopy</strong> &mdash; Atopy refers to a genetic predisposition to allergies.</p>\n<p><strong>Cauterization</strong> &mdash; Cauterization is the process of destroying tissue using heat, chemicals, or electricity.</p>\n<p><strong>Contusion</strong> &mdash; Contusion is the medical term for a bruise. A bruise is caused by an injury that breaks/damages blood vessels but does not break the skin, resulting in a black/blue/purple area of the skin.</p>\n<p><strong>Culture</strong> &mdash; A culture is a procedure where a sample is collected from somewhere in/on the animal and media is used to try to grow a microorganism &mdash; bacteria or less commonly a virus.</p>\n<p><strong>Cyst</strong> &mdash; A cyst is a sac of fluid found somewhere in the body.</p>\n<p><strong>Debridement</strong> &mdash; Debridement is a procedure where infected, necrotic, or unhealthy tissue is removed exposing healthy tissue. This procedure will help the tissue heal.</p>\n<p><strong>Decubitus Ulcer</strong> &mdash; Decubitus ulcer is the medical term for bed sores or pressure sores. These are ulcerations (breaks in the skin) that are caused by pressure on a specific area of the body when an animal is not able to change positions for extended time frames.</p>\n<p><strong>Degloving</strong> &mdash; Degloving is a type of injury where the skin is removed exposing the muscle layer below.</p>\n<p><strong>Dehiscence</strong> &mdash; Dehiscence is the separation of all layers of a surgical wound. This process can happen after a surgery opening the incision.</p>\n<p><strong>Fissure</strong> &mdash; A fissure is a deep crack(s) in the skin.</p>\n<p><strong>Fistula</strong> &mdash; A fistula is an abnormal tube-like structure formed in the body by a foreign body, infection, or parasite.</p>\n<p><strong>Flea Allergy Dermatitis</strong> &mdash; Flea allergy dermatitis is an inflammation of the skin in dogs and cats caused by an allergy to flea bites.</p>\n<p><strong>Flystrike</strong> &mdash; Flystrike is the wounds left behind by flies that have been biting an animal. It is most commonly seen on the ears of animals that spend a lot of time outdoors, and/or are not able to move easily.</p>\n<p><strong>Frostbite</strong> &mdash; Frostbite is the skin damage or death caused by exposure to extremely low temperatures.</p>\n<p><strong>Gangrene</strong> &mdash; Gangrene is tissue death caused by a lack of blood flow to the tissues.</p>\n<p><strong>Infestation</strong> &mdash; Infestation is the term used when an animal has an established parasite.</p>\n<p><strong>Laceration</strong> &mdash; Laceration is the medical term for a cut. It is an injury caused by tearing or cutting.</p>\n<p><strong>Lance</strong> &mdash; Lance means to cut open.</p>\n<p><strong>Lesion</strong> &mdash; A lesion is any break in the skin or change to tissues. Examples of lesions include a wound, a sore, and a tumor.</p>\n<p><strong>Mange</strong> &mdash; Mange is an infestation of mites. Most commonly animals with mange will lose fur and have skin changes.</p>\n<p><strong>Melanin</strong> &mdash; Melanin is a black pigment found in skin and mucous membranes.</p>\n<p><strong>Petechia</strong> &mdash; Petechiae (plural) are small pin-point hemorrhages caused by bleeding under the skin and often a sign of a disease process.</p>\n<p><strong>Pruritus</strong> &mdash; Pruritus is the medical term for itching.</p>\n<p><strong>Purulent</strong> &mdash; Purulent means full of or containing pus. This term should always be used to refer to a condition of pus, as other terms are not appropriate.</p>\n<p><strong>Scar</strong> &mdash; A scar is a thickened area of tissue where a wound once was.</p>\n<p><strong>Sebum</strong> &mdash; Sebum is an oily substance secreted by glands in the skin.</p>\n<p><strong>Ulcer</strong> &mdash; An ulcer is an area where the skin or mucous membranes have been eroded.</p>\n<figure class=\"academy-figure\"><img class=\"academy-image academy-image--portrait\" src=\"assets/media/medical-terminology/integumentary-ulcer.jpg\" alt=\"Microscope view of tissue layers, illustrating skin or mucous membrane erosion/ulcer context.\" width=\"570\" height=\"760\" loading=\"lazy\" decoding=\"async\"></figure>\n<h4>Common Terms That Can Be Broken Down</h4>\n<p><strong>Adipose</strong> &mdash; Full of fat. Adipose is used to refer to fat cells.</p>\n<p><strong>Carcinoma</strong> &mdash; A tumor that arises in cells that compose the skin.</p>\n<p><strong>Cryosurgery</strong> &mdash; Cold surgery. Cryosurgery is most often used when freezing off small skin masses.</p>\n<p><strong>Epidermis</strong> &mdash; Above/upon the skin. The epidermis is the first layer of the skin.</p>\n<p><strong>Dermatitis</strong> &mdash; Inflammation of the skin.</p>\n<p><strong>Dermis</strong> &mdash; Skin. The dermis is the second layer of the skin (under the epidermis) and is the true layer of the skin.</p>\n<p><strong>Erythema</strong> &mdash; A condition of red. Erythema is the medical term for red skin.</p>\n<p><strong>Lipoma</strong> &mdash; Tumor of fat. A lipoma is a tumor composed of fat cells.</p>\n<p><strong>Melanocyte</strong> &mdash; Cell of black or a black cell. Melanocytes are cells that produce melanin, a black pigment found in skin and mucous membranes.</p>\n<p><strong>Metastasis</strong> &mdash; Controlling beyond change, or to spread beyond control. Metastasis is a term used meaning a tumor that has spread beyond the site of tumor origin.</p>\n<p><strong>Onychectomy</strong> &mdash; Surgical removal of the nail. Onychectomy is the medical term for declawing.</p>\n<p><strong>Piloerection</strong> &mdash; The condition of fur being raised. Piloerection is usually associated with alertness, fear, or aggression, but may also be done as a temperature regulation mechanism in a cold animal.</p>\n<p><strong>Pyoderma</strong> &mdash; Condition of purulent matter on the skin.</p>\n<p><strong>Sebaceous Glands</strong> &mdash; Sebaceous &ndash; pertaining to sebum. Sebaceous glands are the glands in the skin that produce sebum.</p>\n<p><strong>Seborrhea</strong> &mdash; Discharge/flow of sebum. Seborrhea is the condition of excess sebum on the skin, making the animal oily or waxy.</p>\n<p><strong>Subcutaneous Tissue</strong> &mdash; Subcutaneous &ndash; pertaining to under the skin. Subcutaneous tissue is the tissue layer under the skin and above the muscle.</p>\n<p><strong>Trichobezoar</strong> &mdash; Pertaining to a hair ball. Trichobezoar is the medical term for a hairball.</p>\n<figure class=\"academy-figure\"><img class=\"academy-image\" src=\"assets/media/medical-terminology/integumentary-abbreviations-intro.jpg\" alt=\"Cat chin and muzzle with visible dark lesions, introducing integumentary abbreviations.\" width=\"936\" height=\"694\" loading=\"lazy\" decoding=\"async\"></figure>\n<h4>Must-Know Abbreviations</h4>\n<p><strong>SC, SQ, Sub Q</strong> &mdash; Subcutaneous: Subcutaneous breaks down to pertaining to below the skin. Subcutaneous tissues are the tissues below the skin, between the skin and muscle.</p>\n<p><strong>CA</strong> &mdash; Cancer: CA is the generic abbreviation for cancer. If the cancer type and origin are known, the abbreviations for the specific type will commonly be used.</p>\n<p><strong>CBA</strong> &mdash; Cat Bite Abscess: An abscess is a collection of pus in the tissues of the body. A CBA is an abscess caused by a cat bite. When a cat bites another animal (or person) the tooth will allow bacteria to get deep into the tissues. The top surface wound will heal over leaving the infection trapped. This is when the abscess or collection of infection material will collect in one area. These abscesses will either open on their own as the collected materials have nowhere else to go or be opened by the veterinary team. Once the abscess is open the pus can be drained and antibiotics are often started. Watch the spelling of abscess &mdash; it is one of the more commonly misspelled words in veterinary medicine.</p>\n<p><strong>FAD</strong> &mdash; Flea Allergy Dermatitis: When a flea bites an animal, the animal is exposed to the saliva of the flea. Many animals are allergic to flea saliva and dermatitis will result. FAD is the most common dermatological condition diagnosed in dogs in the US and seen in cats as well.</p>\n<figure class=\"academy-figure\"><img class=\"academy-image\" src=\"assets/media/medical-terminology/integumentary-fad.jpg\" alt=\"Cat with irritated neck skin, supporting the Flea Allergy Dermatitis abbreviation example.\" width=\"936\" height=\"624\" loading=\"lazy\" decoding=\"async\"></figure>\n<p><strong>FNA</strong> &mdash; Fine Needle Aspirate: A fine needle aspirate is a laboratory diagnostic test where a needle is used to collect cells from a mass in/on an animal. The cells are put on a slide and examined (cytology).</p>\n<figure class=\"academy-figure\"><img class=\"academy-image\" src=\"assets/media/medical-terminology/integumentary-fna.jpg\" alt=\"Microscope examining a slide, illustrating fine needle aspirate cytology.\" width=\"936\" height=\"622\" loading=\"lazy\" decoding=\"async\"></figure>\n<p><strong>ID</strong> &mdash; Intradermal: Intradermal is a form of injection where the needle injects the liquid between the layers of the skin. This is a very superficial injection.</p>\n<p><strong>Derm</strong> &mdash; Dermatology: Derm is a common abbreviation used for dermatology, used very generically. Example: This patient is here for a derm consult.</p>\n<p><strong>DLH</strong> &mdash; Domestic Long Hair: Domestic cats are broken into three categories based on the length of their fur. A DLH has long fur.</p>\n<p><strong>DMH</strong> &mdash; Domestic Medium Hair: Domestic cats are broken into three categories based on the length of their fur. A DMH has medium fur.</p>\n<p><strong>DSH</strong> &mdash; Domestic Short Hair: Domestic cats are broken into three categories based on the length of their fur. A DSH has short fur.</p>\n<figure class=\"academy-figure\"><img class=\"academy-image academy-image--portrait\" src=\"assets/media/medical-terminology/integumentary-dsh.jpg\" alt=\"Long-haired domestic cat, reinforcing domestic cat coat-length abbreviations.\" width=\"936\" height=\"1170\" loading=\"lazy\" decoding=\"async\"></figure>\n<p><strong>Clinical connection:</strong> These are the terms a PetNurse uses when verbalizing skin, fur, nail, and gland findings during a Nose-to-Tail exam &mdash; for example, describing a pore, abscess, or area of erythema &mdash; while the Nurse Aide enters the corresponding documentation into Hannahware.</p>",
+      "quiz": [
+        {
+          "q": "What is the medical term for a bruise caused by an injury that breaks blood vessels but does not break the skin?",
+          "exp": "Contusion is the medical term for a bruise, resulting in a black/blue/purple area of the skin without breaking the skin itself.",
+          "opts": [
+            "Contusion",
+            "Laceration",
+            "Abrasion",
+            "Fissure"
+          ],
+          "correct": 0
+        },
+        {
+          "q": "A Pet presents with a wound where the skin has been removed, exposing the muscle layer below. What is this injury called?",
+          "exp": "Degloving is a type of injury where the skin is removed, exposing the muscle layer below.",
+          "opts": [
+            "Dehiscence",
+            "Debridement",
+            "Degloving",
+            "Decubitus ulcer"
+          ],
+          "correct": 2
+        },
+        {
+          "q": "Which term describes the second, true layer of the skin, found under the epidermis?",
+          "exp": "The dermis is the second layer of the skin, under the epidermis, and is considered the true layer of the skin.",
+          "opts": [
+            "Epidermis",
+            "Dermis",
+            "Subcutaneous tissue",
+            "Sebaceous gland layer"
+          ],
+          "correct": 1
+        },
+        {
+          "q": "What does the abbreviation CBA stand for?",
+          "exp": "CBA stands for Cat Bite Abscess, an abscess caused when a cat's bite traps bacteria deep in the tissue.",
+          "opts": [
+            "Cat Bite Abscess",
+            "Chronic Bacterial Allergy",
+            "Cancerous Bite Abscess",
+            "Cat Bite Alopecia"
+          ],
+          "correct": 0
+        },
+        {
+          "q": "Which cells produce melanin, the black pigment found in skin and mucous membranes?",
+          "exp": "Melanocytes are cells that produce melanin, a black pigment found in skin and mucous membranes.",
+          "opts": [
+            "Sebaceous glands",
+            "Melanocytes",
+            "Adipose cells",
+            "Keratinocytes"
+          ],
+          "correct": 1
+        },
+        {
+          "q": "A cat's medical record lists 'DSH.' What does this abbreviation mean?",
+          "exp": "DSH stands for Domestic Short Hair, one of three categories domestic cats are grouped into based on fur length (along with DMH and DLH).",
+          "opts": [
+            "Domestic Short Hair",
+            "Dermatologic Skin Hazard",
+            "Dorsal Skin Herniation",
+            "Domestic Senior Health"
+          ],
+          "correct": 0
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "icon": "🫀",
+      "title": "Cardiovascular System",
+      "minutes": 18,
+      "content": "<p>The cardiovascular system breaks down to: <strong>cardi/o</strong> + <strong>vascul/o</strong> + <strong>-ar</strong> = pertaining to the heart and blood vessels. The cardiovascular system includes the heart, arteries, veins, capillaries, and blood. (Immunity is covered under blood, since the two are related.)</p><p>The cardiovascular system is responsible for circulating blood through the body. Blood is necessary for healing, protection, moving nutrients and other products essential for life, and detoxifying the body of waste products. This lesson covers anatomy, disease condition, and procedure terms and abbreviations associated with structures and components of the cardiovascular system. Refer back to the anatomy section of this course and your dictionary and abbreviation tools if needed.</p><figure class=\"academy-figure\"><img class=\"academy-image\" src=\"assets/media/medical-terminology/cardiovascular-overview.jpg\" alt=\"Anatomical heart model representing the cardiovascular system.\" width=\"1020\" height=\"678\" loading=\"lazy\" decoding=\"async\"></figure>\n<h4>Cardiovascular Common Terms That Aren't Easily Broken Down</h4><h4>Anatomy Terms</h4>\n<figure class=\"academy-figure\"><img class=\"academy-image\" src=\"assets/media/medical-terminology/cardiovascular-anatomy.jpg\" alt=\"Heart model in a clinical teaching setting, introducing cardiovascular anatomy terms.\" width=\"1028\" height=\"682\" loading=\"lazy\" decoding=\"async\"></figure><dl><dt><strong>Aorta</strong></dt><dd>The aorta is the largest artery in the body. It takes oxygenated blood from the heart to the body's organs.</dd><dt><strong>Artery</strong></dt><dd>Arteries are vessels that leave the heart. Most arteries carry oxygenated blood.</dd><dt><strong>Atrium (Atria)</strong></dt><dd>The atria are the two upper chambers of the heart.</dd><dt><strong>Capillaries</strong></dt><dd>Capillaries are small blood vessels that connect arteries with veins.</dd><dt><strong>Deoxygenated Blood</strong></dt><dd>Deoxygenated blood is blood without oxygen.</dd><dt><strong>Oxygenated Blood</strong></dt><dd>Oxygenated blood is blood with oxygen.</dd><dt><strong>Pulse</strong></dt><dd>A pulse is the heartbeat felt through the arteries. The pulse and heart rate are not the same thing, so when monitoring an animal (TPR) it is important to note whether it is a pulse rate or heart rate that has been counted. The unit of measure used for both pulse rate and heart rate is BPM (Beats per Minute).</dd><dt><strong>Septum</strong></dt><dd>The septum is the tissue that divides the two sides of the heart (right and left). There is also a septum in the nose that divides the right and left nostrils.</dd><dt><strong>Vein</strong></dt><dd>A vein is a blood vessel coming to the heart from the body. In most cases veins carry deoxygenated blood.</dd><dt><strong>Vena Cava</strong></dt><dd>The vena cava is the largest vein in the body, coming directly into the heart.</dd><dt><strong>Ventricles</strong></dt><dd>The ventricles are the two lower chambers of the heart.</dd></dl><h4>Other Terms</h4><dl><dt><strong>Heartworm Disease</strong></dt><dd>Heartworm disease is caused by a parasite. Worms develop in the animal's bloodstream and make their way to the heart. This is fatal if not treated.</dd>\n<dd><figure class=\"academy-figure\"><img class=\"academy-image\" src=\"assets/media/medical-terminology/cardiovascular-heartworm.jpg\" alt=\"Heart and lung tissue with adult heartworms, illustrating heartworm disease.\" width=\"994\" height=\"676\" loading=\"lazy\" decoding=\"async\"></figure></dd><dt><strong>Ischemia</strong></dt><dd>A blood condition of holding back. Ischemia is the medical term for the lack of blood flow to tissues.</dd><dt><strong>Murmur</strong></dt><dd>A murmur is an extra heart sound.</dd><dt><strong>Occlusion</strong></dt><dd>Process of blockage/closing. Occlusion means blocked or closed.</dd><dt><strong>Patent</strong></dt><dd>Patent is the opposite of occlusion. It means open or unblocked.</dd><dt><strong>Shock</strong></dt><dd>Shock is a lack of blood flow to tissues. This is a condition that occurs when there has been a trauma to the animal and the body is not getting adequate blood flow to the vital organs. Shock is a life-threatening condition if not addressed quickly.</dd></dl><p><strong>Clinical connection:</strong> A PetNurse uses these cardiovascular terms to accurately describe findings such as pulse quality, murmurs, or signs of shock while the Nurse Aide performs Hannahware data entry. Clear, consistent terminology helps ensure that observations like an abnormal pulse rate, a heart murmur, or signs of poor blood flow are documented precisely for the attending DVM to review.</p>",
+      "quiz": [
+        {
+          "q": "Which vessel is described as the largest artery in the body, carrying oxygenated blood from the heart to the body's organs?",
+          "exp": "The aorta is the largest artery in the body and takes oxygenated blood from the heart to the body's organs.",
+          "opts": [
+            "Vena Cava",
+            "Aorta",
+            "Capillaries",
+            "Septum"
+          ],
+          "correct": 1
+        },
+        {
+          "q": "What is the tissue called that divides the two sides of the heart into right and left?",
+          "exp": "The septum is the tissue that divides the two sides of the heart (right and left). A septum also exists in the nose, dividing the right and left nostrils.",
+          "opts": [
+            "Atrium",
+            "Ventricle",
+            "Septum",
+            "Vena Cava"
+          ],
+          "correct": 2
+        },
+        {
+          "q": "A PetNurse counts an animal's heartbeat as felt through the arteries. What term describes this?",
+          "exp": "A pulse is the heartbeat felt through the arteries. Pulse rate and heart rate are not the same thing, and both are measured in BPM (Beats per Minute).",
+          "opts": [
+            "Murmur",
+            "Pulse",
+            "Occlusion",
+            "Ischemia"
+          ],
+          "correct": 1
+        },
+        {
+          "q": "Which term describes the medical condition of a lack of blood flow to tissues due to blockage or holding back of blood?",
+          "exp": "Ischemia is the medical term for the lack of blood flow to tissues; it describes a blood condition of holding back.",
+          "opts": [
+            "Ischemia",
+            "Patent",
+            "Murmur",
+            "Heartworm Disease"
+          ],
+          "correct": 0
+        },
+        {
+          "q": "What does the term 'Patent' mean in cardiovascular terminology?",
+          "exp": "Patent is the opposite of occlusion. It means open or unblocked.",
+          "opts": [
+            "Blocked or closed",
+            "An extra heart sound",
+            "Open or unblocked",
+            "A life-threatening trauma condition"
+          ],
+          "correct": 2
+        },
+        {
+          "q": "Which condition is caused by a parasite that develops in an animal's bloodstream and travels to the heart, and is fatal if untreated?",
+          "exp": "Heartworm disease is caused by a parasite. Worms develop in the animal's bloodstream and make their way to the heart, and it is fatal if not treated.",
+          "opts": [
+            "Shock",
+            "Murmur",
+            "Heartworm Disease",
+            "Occlusion"
+          ],
+          "correct": 2
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "icon": "🫁",
+      "title": "Respiratory System",
+      "minutes": 22,
+      "content": "<p><strong>Respire</strong> + <strong>-ory</strong> = pertaining to breathing. The respiratory system is what brings oxygen into the body and, inversely, removes carbon dioxide. Oxygen is delivered to the cells, where it is needed for energy; when the cells use oxygen, carbon dioxide is created as a byproduct that needs to be removed from the body. The respiratory system works in conjunction with the cardiovascular system to transport these gasses.</p>\n<p>This system includes the nose/nasal cavities, larynx, pharynx, trachea, bronchi, bronchioles, and lungs. The respiratory system is divided into the upper respiratory tract (nasal cavities, larynx, pharynx, trachea, and bronchi) and the lower respiratory tract (bronchioles and lungs). This lesson covers anatomy, disease condition, procedure terms, and abbreviations associated with structures in the respiratory system.</p>\n\n<figure class=\"academy-figure\"><img class=\"academy-image\" src=\"assets/media/medical-terminology/respiratory-overview.jpg\" alt=\"Anatomical lung model representing respiratory-system structures.\" width=\"1004\" height=\"554\" loading=\"lazy\" decoding=\"async\"></figure>\n<h4>Respiratory System Common Terms That Can Be Broken Down</h4>\n<dl>\n  <dt><strong>Anoxia</strong></dt><dd>Condition without oxygen.</dd>\n  <dt><strong>Antitussive</strong></dt><dd>Against coughing. Antitussive is the medical name for cough medicine.</dd>\n  <dt><strong>Apnea</strong></dt><dd>Condition without breathing.</dd>\n  <dt><strong>Asphyxia</strong></dt><dd>Condition without pulse. Asphyxia is used to mean blockage of breathing which leads to hypoxia and eventually no pulse.</dd>\n  <dt><strong>Auscultation</strong></dt><dd>The process of listening. Auscultation is used when using a stethoscope to listen to sounds within the body.</dd>\n  <dt><strong>Bradypnea</strong></dt><dd>Condition of slow breathing.</dd>\n  <dt><strong>Bronchitis</strong></dt><dd>Inflammation of the bronchi.</dd>\n  <dt><strong>Capnograph</strong></dt><dd>An instrument used to record carbon dioxide (CO2). A capnograph is used to test the air an animal is exhaling for levels of CO2.</dd>\n  <dt><strong>Cardiopulmonary Resuscitation (CPR)</strong></dt><dd>The process of re-establishment of the heart and lung activity after cardiopulmonary arrest.</dd>\n  <dt><strong>Cyanosis</strong></dt><dd>Condition of blueness.</dd>\n</dl>\n\n<h4>Respiratory System Common Terms That Aren't Easily Broken Down — Anatomy</h4>\n<dl>\n  <dt><strong>Diaphragm</strong></dt><dd>A thin muscular partition between the thoracic cavity and the abdominal cavity. Watch your spelling of this word — it is one of the more commonly misspelled terms.</dd>\n  <dt><strong>Epiglottis</strong></dt><dd>The epiglottis is a thin piece of connective tissue behind the tongue that covers the trachea. The epiglottis protects the trachea from food, fluids, or other objects making their way into the windpipe and into the lungs. Since the pharynx is a shared space for what goes into the esophagus and the trachea, it is important to keep solids or liquids from going into the trachea.</dd>\n  <dt><strong>Larynx</strong></dt><dd>Larynx is the medical term for the voicebox.</dd>\n  <dt><strong>Mucous Membrane</strong></dt><dd>Mucous Membranes are tissues found in different places in the body that produce mucus. Watch your spelling — Mucus is a thick viscous fluid found in the body; Mucous is pertaining to mucus.</dd>\n  <dt><strong>Nasal Cavity</strong></dt><dd><em>Nasal</em> — pertaining to the nose. The nasal cavity is the space within the nose.</dd>\n<dd><figure class=\"academy-figure\"><img class=\"academy-image academy-image--portrait\" src=\"assets/media/medical-terminology/respiratory-nasal-cavity.jpg\" alt=\"Close-up of a dog nose, illustrating nasal cavity and nose terminology.\" width=\"278\" height=\"408\" loading=\"lazy\" decoding=\"async\"></figure></dd>\n  <dt><strong>Pleural Cavity</strong></dt><dd><em>Pleural</em> — pertaining to the pleura (the membrane surrounding each lung). The pleural cavity is the space between the outside of the lungs and the chest wall, also called the pleural space.</dd>\n  <dt><strong>Trachea</strong></dt><dd>Trachea is the medical name for the windpipe. The trachea takes air from the throat towards the lungs.</dd>\n  <dt><strong>Vocal Cords (Vocal Folds)</strong></dt><dd>The vocal cords or folds are membranes in the larynx that vibrate to make sounds. When intubating an animal it is important to get the tube between the vocal folds. Endotracheal intubation is a common way to establish an airway when placing an animal under anesthesia or delivering oxygen into the trachea, such as during CPR.</dd>\n</dl>\n\n<h4>Respiratory System Disease, Condition, and Procedure Terms</h4>\n<dl>\n  <dt><strong>Hemoptysis</strong></dt><dd>Literal breakdown: spitting blood. Hemoptysis is the term used for blood in the saliva.</dd>\n  <dt><strong>Hemothorax</strong></dt><dd>Blood in the thorax.</dd>\n  <dt><strong>Hypercapnia</strong></dt><dd>A condition of excessive/increased carbon dioxide.</dd>\n  <dt><strong>Hyperpnea</strong></dt><dd>Condition of excessive/increased breathing.</dd>\n  <dt><strong>Hyperventilation</strong></dt><dd>The process of excessive exposure to air. Hyperventilation is excessive breathing — with hyperventilation, you exhale more than you can inhale.</dd>\n  <dt><strong>Hypocapnia</strong></dt><dd>Condition of deficient carbon dioxide.</dd>\n  <dt><strong>Hypopnea</strong></dt><dd>Condition of deficient/decreased breathing.</dd>\n  <dt><strong>Hypoxia</strong></dt><dd>Condition of deficient oxygen.</dd>\n  <dt><strong>Laryngeal</strong></dt><dd>Pertaining to the larynx.</dd>\n  <dt><strong>Laryngitis</strong></dt><dd>Inflammation of the larynx.</dd>\n  <dt><strong>Laryngoscope</strong></dt><dd>An instrument used to visually examine the larynx. A laryngoscope is a common tool used in endotracheal intubation.</dd>\n  <dt><strong>Nasogastric</strong></dt><dd>Pertaining to the nose and the stomach. Nasogastric tubes are commonly placed through the nose and lead to the esophagus/stomach to deliver nutrients to a patient that is not eating on their own.</dd>\n  <dt><strong>Pharyngeal</strong></dt><dd>Pertaining to the pharynx.</dd>\n  <dt><strong>Pleural</strong></dt><dd>Pertaining to the pleura.</dd>\n  <dt><strong>Pneumonia</strong></dt><dd>Condition of lungs. Pneumonia is an infection where fluid builds up in the lungs due to a microorganism or foreign material.</dd>\n  <dt><strong>Pneumothorax</strong></dt><dd>Condition of air in the thorax. A pneumothorax is when air builds up in the thorax outside the lungs, which will result in a collapsed lung.</dd>\n  <dt><strong>Pulmonary</strong></dt><dd>Pertaining to air, gas, or lungs.</dd>\n  <dt><strong>Pulse Oximeter</strong></dt><dd><em>Oximeter</em> — an instrument to measure oxygen. A pulse oximeter is an instrument for measuring the amount of oxygen in the blood.</dd>\n  <dt><strong>Pyothorax</strong></dt><dd>A condition of pus in the thorax.</dd>\n  <dt><strong>Rhinitis</strong></dt><dd>Inflammation of the nose.</dd>\n  <dt><strong>Rhinorrhea</strong></dt><dd>Discharge from the nose. Rhinorrhea is the medical term for a runny nose.</dd>\n  <dt><strong>Sinusitis</strong></dt><dd>Inflammation of the sinuses.</dd>\n  <dt><strong>Tachypnea</strong></dt><dd>A condition of fast breathing.</dd>\n  <dt><strong>Thoracic</strong></dt><dd>Pertaining to the thorax.</dd>\n  <dt><strong>Thoracocentesis</strong></dt><dd>A surgical puncture to remove fluid from the thorax. Also called a thoracentesis.</dd>\n  <dt><strong>Tracheal Stenosis</strong></dt><dd><em>Tracheal</em> — pertaining to the trachea. <em>Stenosis</em> — a condition of narrowing. A condition of the trachea narrowing.</dd>\n  <dt><strong>Transtracheal</strong></dt><dd>Pertaining to across/through the trachea. A transtracheal wash is when fluid is sent through the trachea to the lungs and pulled back out for examination.</dd>\n</dl>\n\n<h4>Respiratory System Must-Know Abbreviations</h4>\n<p><strong>Cardiopulmonary Arrest (CPA)</strong> — <em>Cardiopulmonary</em> means pertaining to the heart and lungs. Cardiopulmonary arrest, also called cardiac arrest, is a sudden loss of heart and lung function.</p>\n<dl>\n  <dt><strong>CPA</strong></dt><dd>Cardiopulmonary Arrest — a sudden loss of heart and lung function, also called cardiac arrest.</dd>\n<dd><figure class=\"academy-figure\"><img class=\"academy-image\" src=\"assets/media/medical-terminology/respiratory-cpa.jpg\" alt=\"Blue ECG-style waveform on a monitor, representing cardiopulmonary arrest monitoring.\" width=\"1036\" height=\"688\" loading=\"lazy\" decoding=\"async\"></figure></dd>\n  <dt><strong>CPR</strong></dt><dd>Cardiopulmonary Resuscitation — the process of re-establishment of the heart and lung activity after cardiopulmonary arrest.</dd>\n  <dt><strong>O2 Sat</strong></dt><dd>Oxygen Saturation — the percentage of oxygen in the bloodstream.</dd>\n  <dt><strong>Pulse Ox</strong></dt><dd>Pulse Oximeter — an instrument that measures O2 Sat.</dd>\n  <dt><strong>CO2</strong></dt><dd>Carbon Dioxide — waste gas breathed off by expiration.</dd>\n  <dt><strong>O2</strong></dt><dd>Oxygen — a gas necessary for life that is breathed in.</dd>\n<dd><figure class=\"academy-figure\"><img class=\"academy-image academy-image--portrait\" src=\"assets/media/medical-terminology/respiratory-oxygen.jpg\" alt=\"Oxygen mask and tubing, illustrating oxygen support terminology.\" width=\"456\" height=\"674\" loading=\"lazy\" decoding=\"async\"></figure></dd>\n  <dt><strong>RR</strong></dt><dd>Respiratory Rate — the number of respirations per period of time. The unit of measure for respiratory rate is respirations per minute (RPM). Do not use the abbreviation for breaths per minute (BPM), as this is used to indicate beats per minute with the heart rate.</dd>\n</dl>\n\n<p><strong>Clinical connection:</strong> A PetNurse relies on respiratory terminology every shift — describing a Pet's breathing as tachypneic, dyspneic, or within normal RR, noting cyanosis or abnormal auscultation findings, and reporting O2 Sat from the pulse oximeter — so the Nurse Aide can accurately enter these findings into Hannahware in real time. Precise use of these terms helps the whole care team recognize respiratory distress quickly and communicate it consistently across shifts.</p>",
+      "quiz": [
+        {
+          "q": "What does the word part breakdown \"Respire + -ory\" mean?",
+          "exp": "The respiratory system's name breaks down to \"pertaining to breathing\": respire (to breathe) plus the suffix -ory (pertaining to).",
+          "opts": [
+            "Pertaining to the heart",
+            "Pertaining to breathing",
+            "Pertaining to the lungs only",
+            "Pertaining to blood flow"
+          ],
+          "correct": 1
+        },
+        {
+          "q": "A Pet presents with no pulse due to a blocked airway. Which term describes this condition?",
+          "exp": "Asphyxia means condition without pulse, and is used to describe blockage of breathing that leads to hypoxia and eventually no pulse.",
+          "opts": [
+            "Apnea",
+            "Asphyxia",
+            "Anoxia",
+            "Cyanosis"
+          ],
+          "correct": 1
+        },
+        {
+          "q": "Which term describes a condition of air building up in the thorax outside the lungs, resulting in a collapsed lung?",
+          "exp": "Pneumothorax is the condition of air in the thorax; the buildup of air outside the lungs causes lung collapse.",
+          "opts": [
+            "Hemothorax",
+            "Pyothorax",
+            "Pneumothorax",
+            "Pneumonia"
+          ],
+          "correct": 2
+        },
+        {
+          "q": "What instrument is used to record carbon dioxide levels in an animal's exhaled air?",
+          "exp": "A capnograph is an instrument used to record carbon dioxide (CO2) and is used to test exhaled air for CO2 levels.",
+          "opts": [
+            "Laryngoscope",
+            "Pulse oximeter",
+            "Capnograph",
+            "Stethoscope"
+          ],
+          "correct": 2
+        },
+        {
+          "q": "What does the abbreviation RR stand for, and what unit should be used with it?",
+          "exp": "RR stands for Respiratory Rate, the number of respirations per period of time. The correct unit is respirations per minute (RPM), not BPM, which is reserved for heart rate (beats per minute).",
+          "opts": [
+            "Respiratory Rate, measured in BPM",
+            "Respiratory Rate, measured in RPM",
+            "Resuscitation Rate, measured in RPM",
+            "Respiratory Rhythm, measured in BPM"
+          ],
+          "correct": 1
+        },
+        {
+          "q": "Which pair correctly matches a term with its meaning: Hypercapnia and Hypocapnia?",
+          "exp": "Hypercapnia is a condition of excessive/increased carbon dioxide, while Hypocapnia is a condition of deficient carbon dioxide — opposite conditions involving CO2 levels in the blood.",
+          "opts": [
+            "Hypercapnia = low oxygen; Hypocapnia = high oxygen",
+            "Hypercapnia = increased carbon dioxide; Hypocapnia = deficient carbon dioxide",
+            "Hypercapnia = fast breathing; Hypocapnia = slow breathing",
+            "Hypercapnia = blueness; Hypocapnia = pallor"
+          ],
+          "correct": 1
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "icon": "🍽️",
+      "title": "Gastrointestinal System",
+      "minutes": 25,
+      "content": "<p>The <strong>Gastrointestinal System</strong>, also known as the <strong>Digestive System</strong>, is responsible for bringing food into the body, moving it through the digestive process, absorbing the nutrients the body needs, and removing waste products. Gastrointestinal breaks down to: <strong>gastr/o</strong> + <strong>intestin/o</strong> + <strong>-al</strong> = pertaining to the stomach and intestines.</p>\n<p>The gastrointestinal system includes the oral cavity, pharynx, esophagus, stomach, small intestine, large intestine, rectum, and anus. This lesson covers anatomy, disease condition, and procedure terms, plus abbreviations associated with structures in the digestive system.</p>\n\n<figure class=\"academy-figure\"><img class=\"academy-image academy-image--portrait\" src=\"assets/media/medical-terminology/gastrointestinal-overview.jpg\" alt=\"Line illustration of the gastrointestinal tract and intestines.\" width=\"626\" height=\"648\" loading=\"lazy\" decoding=\"async\"></figure>\n<h4>Anatomy Terms</h4>\n<p><strong>Abdominal Cavity</strong> — Abdominal means pertaining to the abdomen. The abdominal cavity is the space below the diaphragm, also called the abdomen.</p>\n<p><strong>Alimentary Tract</strong> — The organs associated with the passage of food from it entering the mouth to waste exiting the anus.</p>\n<p><strong>Anal Sacs/Glands</strong> — Two glands found near the anus of dogs and cats. These glands aid in the marking of territory. They are normally expressed/emptied on their own, but if infected or impacted they may need to be manually expressed.</p>\n<p><strong>Bowel</strong> — Another term for the intestines.</p>\n<p><strong>Colon</strong> — A term used for the large intestines and the rectum.</p>\n<p><strong>Esophagus</strong> — The hollow tube that runs from the pharynx to the stomach. It is responsible for transporting food and liquid from the throat to the stomach.</p>\n<p><strong>Gallbladder</strong> — A small organ found under the liver. It stores bile for digestion.</p>\n<p><strong>Gingiva</strong> — The medical term for the gum tissue found in the mouth.</p>\n<p><strong>Labia</strong> — The medical term for the lips.</p>\n<p><strong>Liver</strong> — An organ found in the abdominal cavity with many complex functions.</p>\n<p><strong>Palate</strong> — The roof of the mouth. It is divided into two parts: the hard palate (bone underneath the tissue) found towards the front of the mouth, and the soft palate (no bone underneath the tissue) found towards the back of the mouth.</p>\n<p><strong>Pancreas</strong> — An organ in the abdominal cavity found under the stomach. It has responsibilities in digestion and in the endocrine system with blood sugar regulation.</p>\n<p><strong>Peritoneum</strong> — A membrane that surrounds the organs in the abdomen and the abdominal wall. The kidneys are found behind the peritoneum and are said to be retroperitoneal.</p>\n<p><strong>Rectum</strong> — The last portion of the colon and the last place waste passes through before being excreted from the body through the anus.</p>\n<figure class=\"academy-figure\"><img class=\"academy-image academy-image--portrait\" src=\"assets/media/medical-terminology/gi-rectum.jpg\" alt=\"Illustration of rectum and anal region anatomy.\" width=\"510\" height=\"650\" loading=\"lazy\" decoding=\"async\"></figure>\n\n<h4>Other Terms (Not Easily Broken Down)</h4>\n<p><strong>Absorption</strong> — The passage of nutrients through the wall of the intestine into the bloodstream.</p>\n<p><strong>Anorexia</strong> — In veterinary medicine, anorexia is used to mean lack of appetite or not eating. It is not used to define an eating disorder as it is in humans.</p>\n<p><strong>Bile</strong> — A digestive fluid produced by the liver and stored in the gallbladder. Bile aids in the breakdown of ingested fats.</p>\n<p><strong>Body Condition Score</strong> — A numeric scale used to assess an animal's weight. The scale is based on numbers 1-9 with 5 being ideal weight. Less than 5 is underweight and above 5 is overweight.</p>\n<p><strong>Cachexia</strong> — A term used to generically refer to ill health and malnutrition, often associated with cancer and the ill effects of the disease.</p>\n<p><strong>Colic</strong> — Acute abdominal pain, often associated with gas and bloating.</p>\n<p><strong>Constipation</strong> — Difficulty with defecating. Note that constipated does not mean the animal can't defecate — the term obstipation is used when defecation is not possible.</p>\n<p><strong>Defecation</strong> — The discharge of feces from the body or the discharge of solid waste from the body.</p>\n<p><strong>Deglutition</strong> — The medical term for swallowing.</p>\n<p><strong>Dental Calculus</strong> — Calcified plaque on the teeth, also known as tartar.</p>\n<p><strong>Diarrhea</strong> — Literally breaks down to complete flow/discharge. Defined as the rapid flow of feces through the intestines, characterized by loose watery stool.</p>\n<p><strong>Emaciation</strong> — The process of being markedly thin and malnourished.</p>\n<p><strong>Emesis</strong> — The medical term for vomiting. Vomiting is the forceful act of expelling stomach and proximal intestine contents through the oral cavity. It is important to note that vomiting is a forceful active process, unlike regurgitation, which is a passive flow of esophageal contents into the oral cavity. It is important to be able to distinguish these two from each other.</p>\n<p><strong>Emulsification</strong> — Breaking large pieces of fat into smaller more digestible pieces.</p>\n<p><strong>Enema</strong> — A process of introducing fluid into the rectum to aid defecation in a constipated or obstipated patient.</p>\n<p><strong>Enzymes</strong> — Proteins that speed up a chemical reaction. Enzymes are in most instances named ending with the suffix -ase.</p>\n<p><strong>Eructation</strong> — The medical name for a belch or burp. Gas from the stomach is expelled out the oral cavity.</p>\n<p><strong>Feces</strong> — The medical name for stool or solid waste that is defecated.</p>\n<p><strong>Flatulence</strong> — The medical name for gas from the stomach or intestines that is expelled from the anus.</p>\n<p><strong>Foreign Body</strong> — Some kind of foreign material that finds its way into tissues or organs where it doesn't belong. Foreign bodies are covered in the GI section as there are animals that ingest things that aren't digestible like bones, toys, rocks, etc.</p>\n<p><strong>Gastric Dilatation Volvulus</strong> — Gastric = pertaining to the stomach; Dilatation = abnormal stretching; Volvulus = twisting on itself. Gastric dilatation volvulus is a life-threatening condition where the stomach bloats and twists. This condition requires immediate surgical intervention to attempt to save the dog's life. GDV is common in large breed deep-chested dogs. Many will refer to this as \"Bloat,\" but there is a difference between bloating and twisting — bloat is when the stomach fills with air, fluid, or food, and a GDV is one step further when the stomach has twisted on itself. There is also a difference between dilation and dilatation: dilation is normal stretching, and dilatation is an abnormal stretching.</p>\n<p><strong>Gastric Dilation</strong> — Gastric = pertaining to the stomach; Dilation = normal stretching. Gastric dilation is the normal stretching of the stomach to accommodate food and water.</p>\n<p><strong>Gavage</strong> — Introducing food, fluid, or medications into the stomach via a tube inserted through the nose or oral cavity.</p>\n<p><strong>Glucose</strong> — A simple sugar. It is easily absorbed through the intestinal walls into the bloodstream, making it the body's fuel of choice.</p>\n<p><strong>Halitosis</strong> — The medical term for bad breath.</p>\n<p><strong>Inappetence</strong> — The medical term for lack of appetite or not wanting to eat.</p>\n<p><strong>Incontinence</strong> — The inability to control urination or defecation.</p>\n<p><strong>Jaundice</strong> — A condition characterized by yellowing of the skin and mucous membranes due to excessive bilirubin buildup in the body. Jaundice is seen in cases of liver disease, gallbladder disease, or certain blood conditions.</p>\n<p><strong>Lethargy</strong> — A lack of energy characterized by drowsiness or indifference.</p>\n<p><strong>Malaise</strong> — A vague feeling of discomfort, often used interchangeably with lethargy. The difference is malaise comes with a feeling of exhaustion; a lethargic patient may or may not be exhausted. In veterinary medicine, it is hard to distinguish as we don't know exactly what our patients are feeling.</p>\n<p><strong>Melena</strong> — Dark, tarry stools due to digested blood. Melan/o is the combining form for black.</p>\n<p><strong>Mucosa</strong> — Another term for mucous membranes.</p>\n<p><strong>Nausea</strong> — The feeling of an upset stomach usually associated with vomiting.</p>\n<p><strong>Obese</strong> — An excessive fat accumulation in the body.</p>\n<p><strong>Obstipation</strong> — The inability to defecate.</p>\n<p><strong>Obstruction</strong> — A complete blockage not allowing something to pass. An obstruction can happen anywhere in the body where there can be a blockage — obstructions are possible in the GI system, urinary system, cardiovascular system, and respiratory system.</p>\n<p><strong>Palpation</strong> — An examination of the internal body structures by feeling.</p>\n<p><strong>Pica</strong> — Eating abnormal objects (like rocks), usually due to a lack of a real food source.</p>\n<p><strong>Plaque</strong> — A soft film of bacteria and bacterial by-products that builds up on the teeth. If plaque is not removed, it will calcify to calculus.</p>\n<p><strong>Regurgitation</strong> — The passive flow of swallowed contents from the esophagus up into the oral cavity. It is important to note that regurgitation is a passive process and to be able to distinguish it from vomiting.</p>\n<p><strong>Tenesmus</strong> — The medical term for straining to urinate or defecate.</p>\n<p><strong>Ulcer</strong> — Erosion of the skin or mucous membrane. Ulcers can be found throughout the GI tract and are very painful.</p>\n<p><strong>Ultrasound</strong> — A type of diagnostic imaging that uses waves to produce an image.</p>\n\n<h4>Terms That Can Be Broken Down</h4>\n<p><strong>Abdominal</strong> — Pertaining to the abdomen.</p>\n<p><strong>Abdominocentesis</strong> — A surgical puncture into the abdomen to remove fluid.</p>\n<p><strong>Adipose</strong> — Full of fat. Adipose is the medical name given to fat in the body.</p>\n<p><strong>Antiemetic</strong> — Pertaining to against vomiting. An antiemetic is a medication given to stop vomiting.</p>\n<p><strong>Anal Sacculitis</strong> — Inflammation of the anal glands/sacs.</p>\n<p><strong>Biopsy</strong> — Process of viewing life. A biopsy is the removal of tissue for examination.</p>\n<p><strong>Borborygmus</strong> — Pertaining to a rumbling sound. Borborygmus is the medical term for stomach growling or other intestinal sounds as gas, fluid, and food contents move through the gastrointestinal tract.</p>\n<p><strong>Bruxism</strong> — Condition/process of grinding. Bruxism is a term meaning to grind teeth. In some species, this can be a sign of gastrointestinal upset.</p>\n<p><strong>Colitis</strong> — Inflammation of the colon.</p>\n<p><strong>Colonoscopy</strong> — Process of a visual examination of the colon.</p>\n<p><strong>Coprophagia</strong> — Condition of eating feces. In some animals coprophagia is a normal part of the digestive process. In dogs and cats, there is no purpose — it is just a bad habit.</p>\n<p><strong>Deciduous</strong> — Pertaining to shedding. Deciduous teeth are puppy and kitten teeth that will be lost to make room for the adult teeth coming in behind them.</p>\n<p><strong>Dehydration</strong> — Process of lack of water.</p>\n<p><strong>Dysphagia</strong> — A condition of difficult eating.</p>\n<p><strong>Emetic</strong> — Pertaining to vomiting. An emetic is a medication given to induce vomiting in an animal.</p>\n<p><strong>Enteritis</strong> — Inflammation of the small intestine.</p>\n<p><strong>Enterocolitis</strong> — Inflammation of the small and large intestine.</p>\n<p><strong>Esophagitis</strong> — Inflammation of the esophagus.</p>\n<p><strong>Extraction</strong> — The process of pulling out.</p>\n<p><strong>Gastric</strong> — Pertaining to the stomach.</p>\n<p><strong>Gastroenteritis</strong> — Inflammation of the stomach and small intestine.</p>\n<p><strong>Gastropexy</strong> — Surgical fixation/to put in place of the stomach. A gastropexy is a surgical procedure done to prevent GDVs before they happen. If the stomach is fixed in place (tacked to the abdominal wall), an animal may still bloat but the stomach won't be able to twist on itself. This is commonly done with dog breeds that are predisposed to GDV, and if intact it can be done at the time of spay/neuter.</p>\n<p><strong>Gastrotomy</strong> — Process of surgically cutting into the stomach. A gastrotomy may be performed to remove a foreign body stuck in the stomach.</p>\n<p><strong>Gingival</strong> — Pertaining to the gingiva.</p>\n<p><strong>Gingivitis</strong> — Inflammation of the gingiva.</p>\n<p><strong>Glossal</strong> — Pertaining to the tongue.</p>\n<p><strong>Glossitis</strong> — Inflammation of the tongue.</p>\n<p><strong>Glycemic</strong> — Pertaining to sugar in the blood.</p>\n<p><strong>Hematemesis</strong> — Condition of blood in the vomit.</p>\n<p><strong>Hematochezia</strong> — Condition of blood in the feces.</p>\n<p><strong>Hemoabdomen</strong> — Blood in the abdominal cavity.</p>\n<p><strong>Hemorrhagic Gastroenteritis</strong> — Hemorrhagic = pertaining to the flow or discharge of blood; Gastroenteritis = inflammation of the stomach and small intestine. Hemorrhagic gastroenteritis is an acute condition seen in dogs that causes vomiting and bloody diarrhea. This condition can be life-threatening if treatment is not initiated.</p>\n<p><strong>Hepatic Lipidosis</strong> — Hepatic = pertaining to the liver; Lipidosis = a condition of fat. Hepatic lipidosis is a condition seen most commonly in cats after a period of not eating.</p>\n<p><strong>Hepatitis</strong> — Inflammation of the liver.</p>\n<p><strong>Hepatocyte</strong> — Cell of the liver. A hepatocyte is a liver cell.</p>\n<p><strong>Hepatomegaly</strong> — Condition of an abnormally enlarged liver.</p>\n<p><strong>Hypoglossal</strong> — Pertaining to under the tongue.</p>\n<p><strong>Idiopathic</strong> — Pertaining to unknown disease. Idiopathic is the term used when there is no known cause of the disease.</p>\n<p><strong>Laparotomy</strong> — Process of surgically cutting into the abdomen. The term laparotomy is used with any surgery where the incision is made into the abdomen.</p>\n<p><strong>Lingual</strong> — Pertaining to the tongue.</p>\n<p><strong>Lipoma</strong> — A tumor of fat, also known as a steatoma.</p>\n<p><strong>Malocclusion</strong> — Process of bad closure. Malocclusion is a term used when bad teeth alignment doesn't allow the mouth to close properly.</p>\n<p><strong>Mandibular</strong> — Pertaining to the mandible.</p>\n<p><strong>Mastication</strong> — The process of chewing.</p>\n<p><strong>Megacolon</strong> — Colon enlargement (abnormal enlargement).</p>\n<p><strong>Megaesophagus</strong> — Esophageal enlargement (abnormal enlargement).</p>\n<p><strong>Mucous</strong> — Pertaining to mucus.</p>\n<p><strong>Nasal</strong> — Pertaining to the nasal cavities.</p>\n<p><strong>Nasogastric</strong> — Pertaining to the nose and stomach.</p>\n<p><strong>Nasogastric Intubation</strong> — Intubation = the process of placing a pipe in. Placing a tube in the nose that leads to the esophagus or stomach for the purpose of delivering food, fluids, or medication.</p>\n<p><strong>Necropsy</strong> — A necropsy is the visual examination of an animal's body after death to determine the cause of death. Called an autopsy in humans.</p>\n<p><strong>Necrosis</strong> — A condition of death. Necrosis is tissue death.</p>\n<p><strong>Occlusion</strong> — The process of closing. Occlusion is a term often used with the closure of the mouth but may be used in other instances as well — for example, a fluid line can have an occlusion.</p>\n<p><strong>Oral</strong> — Pertaining to the mouth.</p>\n<p><strong>Orogastric Intubation</strong> — Intubation = the process of placing a pipe in. Placing a tube in the oral cavity that leads to the esophagus or stomach for the purpose of delivering food, fluids, or medication.</p>\n<p><strong>Pancreatic</strong> — Pertaining to the pancreas.</p>\n<p><strong>Pancreatitis</strong> — Inflammation of the pancreas.</p>\n<p><strong>Perianal</strong> — Pertaining to around the anus.</p>\n<p><strong>Periodontal Disease</strong> — Pertaining to around the teeth. Periodontal disease is the medical term for dental disease. It is infection and inflammation in the mouth that leads to the breakdown of the periodontal ligament and leads to tooth and bone loss if not treated. Also known as periodontitis.</p>\n<p><strong>Peristalsis</strong> — Wave-like contractions through the GI tract. Peristalsis is a normal part of digestion and is a problem if it is not happening.</p>\n<p><strong>Peritonitis</strong> — Inflammation of the peritoneum.</p>\n<p><strong>Pharyngeal</strong> — Pertaining to the pharynx.</p>\n<p><strong>Polydipsia</strong> — Condition of many (excessive) drinking.</p>\n<p><strong>Polyuria</strong> — Condition of many (excessive) urination.</p>\n<p><strong>Postprandial</strong> — Pertaining to after a meal.</p>\n<p><strong>Preprandial</strong> — Pertaining to before a meal.</p>\n<p><strong>Rectal</strong> — Pertaining to the rectum.</p>\n<p><strong>Stasis</strong> — Controlling or stopping.</p>\n<p><strong>Steatolysis</strong> — Condition of fat destruction, also known as emulsification.</p>\n<p><strong>Steatoma</strong> — A tumor of fat, also known as a lipoma.</p>\n<p><strong>Stenosis</strong> — State of narrowing.</p>\n<p><strong>Stomatitis</strong> — Inflammation of the mouth.</p>\n<p><strong>Sublingual</strong> — Pertaining to under the tongue.</p>\n<p><strong>Submandibular</strong> — Pertaining to under the mandible.</p>\n<p><strong>Torsion</strong> — Process of twisting or rotating.</p>\n<p><strong>Volvulus</strong> — Condition of twisting or turning on itself.</p>\n<figure class=\"academy-figure\"><img class=\"academy-image\" src=\"assets/media/medical-terminology/gi-volvulus-surgery.jpg\" alt=\"Surgical view of an abdominal procedure, illustrating volvulus/GDV clinical context.\" width=\"982\" height=\"652\" loading=\"lazy\" decoding=\"async\"></figure>\n\n<h4>Abbreviations</h4>\n<p><strong>GI</strong> — Gastrointestinal: pertaining to the stomach and intestine. Abbreviation used for the gastrointestinal system.</p>\n<p><strong>GDV</strong> — Gastric Dilatation Volvulus: a life-threatening condition where the stomach bloats and twists. This condition requires immediate surgical intervention to attempt to save the dog's life.</p>\n<p><strong>HGE</strong> — Hemorrhagic Gastroenteritis: Hemorrhagic = pertaining to the discharge of blood; Gastroenteritis = inflammation of the stomach and small intestine. Hemorrhagic Gastroenteritis is a condition of the stomach and small intestines that is characterized by bloody diarrhea.</p>\n<figure class=\"academy-figure\"><img class=\"academy-image academy-image--portrait\" src=\"assets/media/medical-terminology/gi-hge.jpg\" alt=\"Syringe with red fluid, illustrating hemorrhagic gastroenteritis/bloody diarrhea context.\" width=\"492\" height=\"628\" loading=\"lazy\" decoding=\"async\"></figure>\n<p><strong>NG Tube</strong> — Nasogastric Tube: a tube that is placed in the nose to deliver food, fluid, and medications to the stomach.</p>\n<p><strong>NPO</strong> — Nothing Per Os: nothing by mouth.</p>\n<p><strong>PO</strong> — Per Os: by mouth, the \"PO\" portion of NPO (Nothing Per Os).</p>\n<p><strong>AC</strong> — Before meals, paired with the concept of Preprandial (pertaining to before a meal).</p>\n<p><strong>PC</strong> — After meals, paired with the concept of Postprandial (pertaining to after a meal).</p>\n<p><strong>BCS</strong> — Body Condition Score: the numeric scale (1-9, with 5 being ideal) used to assess a Pet's weight.</p>\n\n<p><strong>Clinical connection:</strong> A PetNurse relies on this vocabulary daily — describing a Pet's vomiting versus regurgitation, noting melena or hematochezia in stool, or flagging suspected GDV or foreign body findings — while verbalizing these observations so the Nurse Aide can enter them accurately into Hannahware during a Nose-to-Tail exam.</p>",
+      "quiz": [
+        {
+          "q": "What does the term \"Gastrointestinal\" literally break down to?",
+          "exp": "Gastrointestinal breaks down to gastr/o (stomach) + intestin/o (intestines) + -al (pertaining to), meaning pertaining to the stomach and intestines.",
+          "opts": [
+            "Pertaining to the stomach and intestines",
+            "Pertaining to the liver and pancreas",
+            "Pertaining to the mouth and throat",
+            "Pertaining to the colon and rectum"
+          ],
+          "correct": 0
+        },
+        {
+          "q": "A PetNurse notices a Pet passively bringing up esophageal contents into the mouth, with no forceful abdominal effort. What is this called, and how does it differ from vomiting?",
+          "exp": "This is regurgitation — a passive flow of swallowed contents from the esophagus into the oral cavity. Vomiting (emesis) is a forceful, active process expelling stomach and proximal intestine contents, so distinguishing the two is clinically important.",
+          "opts": [
+            "Regurgitation; it is passive, while vomiting is a forceful active process",
+            "Emesis; it is identical to vomiting",
+            "Eructation; it only involves gas from the stomach",
+            "Coprophagia; it involves eating feces"
+          ],
+          "correct": 0
+        },
+        {
+          "q": "Which condition is a life-threatening emergency in large breed, deep-chested dogs where the stomach bloats and twists on itself, requiring immediate surgery?",
+          "exp": "Gastric Dilatation Volvulus (GDV) is a life-threatening condition where the stomach bloats (dilatation) and twists (volvulus), requiring immediate surgical intervention. A gastropexy can be performed preventively to tack the stomach in place.",
+          "opts": [
+            "Gastric Dilatation Volvulus (GDV)",
+            "Gastric Dilation",
+            "Megaesophagus",
+            "Hemorrhagic Gastroenteritis (HGE)"
+          ],
+          "correct": 0
+        },
+        {
+          "q": "What is the difference between constipation and obstipation?",
+          "exp": "Constipation is difficulty with defecating, but the animal can still defecate. Obstipation means defecation is not possible at all.",
+          "opts": [
+            "Constipation is difficulty defecating; obstipation is the inability to defecate at all",
+            "They are the same condition with different names",
+            "Constipation refers to excess feces; obstipation refers to diarrhea",
+            "Obstipation is a mild form of constipation"
+          ],
+          "correct": 0
+        },
+        {
+          "q": "A patient has dark, tarry stools. Which term describes this finding, and what causes it?",
+          "exp": "Melena refers to dark, tarry stools caused by digested blood. (Melan/o is the combining form for black.) This differs from hematochezia, which is fresh blood in the feces.",
+          "opts": [
+            "Melena — dark, tarry stools due to digested blood",
+            "Hematemesis — blood in the vomit",
+            "Hemoabdomen — blood in the abdominal cavity",
+            "Cachexia — malnutrition and ill health"
+          ],
+          "correct": 0
+        },
+        {
+          "q": "What does the abbreviation NPO mean, and what does it instruct?",
+          "exp": "NPO stands for Nothing Per Os, meaning nothing by mouth — the animal should not be given food or water orally.",
+          "opts": [
+            "Nothing Per Os — nothing by mouth",
+            "Nasogastric Placement Order",
+            "Normal Pancreatic Output",
+            "Post-Operative — after surgery only"
+          ],
+          "correct": 0
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "icon": "🦋",
+      "title": "Endocrine System",
+      "minutes": 22,
+      "content": "<p><strong>Endocrine</strong> breaks down to: <strong>Endo-</strong> + <strong>crine/o</strong> = to secrete within (specifically meaning within the blood). The endocrine system is a complex network of glands that secrete chemicals called hormones into the blood. Each gland and hormone has very specific functions that act on different tissues throughout the body. These hormones help maintain <strong>homeostasis</strong> (the state of sameness) throughout the body.</p>\n<p>This system includes the following glands: Adrenal glands, Ovaries, Pancreas, Parathyroid, Pineal, Pituitary, Testicles, Thymus, and Thyroid. This lesson covers anatomy, disease condition, and procedure terms and abbreviations associated with structures in the endocrine system. Coverage here stays general, since this is a large group of glands with many hormones and functions. The focus is on glands with common problems seen in practice: the adrenal glands, thyroid, and pancreas. The ovaries and testicles also belong to the reproductive system and are covered there. Refer back to the anatomy section of this course and your dictionary and abbreviation tools if needed.</p>\n<figure class=\"academy-figure\"><img class=\"academy-image\" src=\"assets/media/medical-terminology/endocrine-overview.jpg\" alt=\"Clinician holding a pancreas model, introducing endocrine glands and hormone regulation.\" width=\"492\" height=\"326\" loading=\"lazy\" decoding=\"async\"></figure>\n<h4>Glands</h4>\n<p><strong>Adrenal Glands</strong> — A pair of glands that sit on top of each kidney and secrete several hormones that control many different body functions.</p>\n<p><strong>Ovaries</strong> — Part of the endocrine system's gland list; the ovaries also belong to the reproductive system and are covered in that section of the course.</p>\n<p><strong>Pancreas</strong> — An organ covered with the digestive system that also plays a major role in the endocrine system by producing hormones that regulate blood sugar.</p>\n<p><strong>Parathyroid</strong> — One of the glands included in the endocrine system's structures.</p>\n<p><strong>Pineal</strong> — One of the glands included in the endocrine system's structures.</p>\n<p><strong>Pituitary</strong> — One of the glands included in the endocrine system's structures.</p>\n<p><strong>Testicles</strong> — Part of the endocrine system's gland list; the testicles also belong to the reproductive system and are covered in that section of the course.</p>\n<p><strong>Thymus</strong> — One of the glands included in the endocrine system's structures.</p>\n<p><strong>Thyroid Gland</strong> — A butterfly-shaped gland that sits on the outside of the trachea in the neck. It produces several different hormones that regulate body functions.</p>\n<h4>Endocrine System Common Terms That Aren't Easily Broken Down</h4>\n<p><strong>Cortisol</strong> — A hormone that is produced by the adrenal glands.</p>\n<p><strong>Glucagon</strong> — A hormone produced by the pancreas to increase blood sugar.</p>\n<p><strong>Glucose Curve</strong> — A test performed on a diabetic animal or a suspected diabetic animal. Blood is drawn and the blood glucose is tested every few hours to monitor glucose changes.</p>\n<p><strong>Hormone</strong> — A chemical produced by a gland that acts as a chemical messenger and helps the body regulate homeostasis.</p>\n<p><strong>Hormonal</strong> — Pertaining to hormones.</p>\n<p><strong>Hypercrinism</strong> — Condition of excessive movement; Hypercrinism is a condition of excessive secretions from a gland.</p>\n<p><strong>Hyperinsulinism</strong> — Condition of excessive insulin secretion from the pancreas.</p>\n<p><strong>Hypocrinism</strong> — Condition of deficient movement; Hypocrinism is a condition of deficient secretions from a gland.</p>\n<p><strong>Hypoinsulinism</strong> — Condition of deficient insulin secretion from the pancreas.</p>\n<p><strong>Euthyroid</strong> — Good thyroid. Euthyroid is used to mean a normal functioning thyroid gland.</p>\n<p><strong>Glucometer</strong> — An instrument used to measure glucose (specifically blood glucose).</p>\n<p><strong>Glucosuria</strong> — Condition of sugar in the urine. Glucosuria is commonly seen in diabetic animals. Same as glycosuria.</p>\n<p><strong>Homeostasis</strong> — Controlling sameness. Homeostasis is an equilibrium in the body where certain body functions and products are maintained at a consistent level.</p>\n<figure class=\"academy-figure\"><img class=\"academy-image\" src=\"assets/media/medical-terminology/endocrine-homeostasis.jpg\" alt=\"Blood sample tubes in a lab rack, illustrating laboratory monitoring of body equilibrium/homeostasis.\" width=\"936\" height=\"626\" loading=\"lazy\" decoding=\"async\"></figure>\n<p><strong>Adrenal Glands</strong> — The adrenal glands are a pair of glands that sit on top of each kidney and secrete several hormones that control many different body functions.</p>\n<p><strong>Pancreas</strong> — The pancreas is an organ that was covered with the digestive system but also plays a major role in the endocrine system by producing hormones that regulate blood sugar.</p>\n<p><strong>Thyroid Gland</strong> — The thyroid gland is a butterfly-shaped gland that sits on the outside of the trachea in the neck. It produces several different hormones that regulate body functions.</p>\n<p><strong>Insulin</strong> — A hormone produced by the pancreas that decreases blood sugar.</p>\n<h4>Endocrine System Common Terms That Can Be Broken Down</h4>\n<p><strong>Hormonal</strong> — Pertaining to hormones.</p>\n<p><strong>Hypercrinism</strong> — <strong>Hyper-</strong> = excessive, <strong>crin/o</strong> = secretion/movement, <strong>-ism</strong> = condition of. Condition of excessive movement; Hypercrinism is a condition of excessive secretions from a gland.</p>\n<p><strong>Hyperinsulinism</strong> — <strong>Hyper-</strong> = excessive, <strong>insulin</strong> = insulin, <strong>-ism</strong> = condition of. Condition of excessive insulin secretion from the pancreas.</p>\n<p><strong>Hypocrinism</strong> — <strong>Hypo-</strong> = deficient, <strong>crin/o</strong> = secretion/movement, <strong>-ism</strong> = condition of. Condition of deficient movement; Hypocrinism is a condition of deficient secretions from a gland.</p>\n<p><strong>Hypoinsulinism</strong> — <strong>Hypo-</strong> = deficient, <strong>insulin</strong> = insulin, <strong>-ism</strong> = condition of. Condition of deficient insulin secretion from the pancreas.</p>\n<p><strong>Pancreatic</strong> — <strong>Pancreat/o</strong> = pancreas, <strong>-ic</strong> = pertaining to. Pertaining to the pancreas.</p>\n<p><strong>Pancreatitis</strong> — <strong>Pancreat/o</strong> = pancreas, <strong>-itis</strong> = inflammation. Inflammation of the pancreas. Pancreatitis can affect the amount of insulin and glucagon it produces and secretes, causing imbalances of blood sugar in the body.</p>\n<p><strong>Polydipsia</strong> — <strong>Poly-</strong> = many/excessive, <strong>-dipsia</strong> = drinking. Condition of many (excessive) drinking. Polydipsia is a common clinical sign of many endocrine disorders.</p>\n<p><strong>Polyuria</strong> — <strong>Poly-</strong> = many/excessive, <strong>-uria</strong> = urination/urine condition. Condition of many (excessive) urination. Polyuria is a common clinical sign of many endocrine disorders.</p>\n<p><strong>Thyroiditis</strong> — <strong>Thyroid/o</strong> = thyroid gland, <strong>-itis</strong> = inflammation. Inflammation of the thyroid gland.</p>\n<p><strong>Thyromegaly</strong> — <strong>Thyro/o</strong> = thyroid gland, <strong>-megaly</strong> = enlargement. Enlargement (abnormal) of the thyroid gland.</p>\n<p><strong>Thyrotoxicosis</strong> — <strong>Thyro/o</strong> = thyroid gland, <strong>toxic/o</strong> = poison, <strong>-osis</strong> = condition of. Condition of a thyroid gland poisoning.</p>\n<h4>Endocrine System Must Know Abbreviations</h4>\n<p><strong>DI</strong> — Diabetes Insipidus: A disease where the endocrine system cannot balance fluid levels. It has nothing to do with blood sugar as Diabetes Mellitus does. It is named based on a similar clinical sign to DM — PU/PD.</p>\n<p><strong>DKA</strong> — Diabetic Ketoacidosis: A life-threatening side effect of DM.</p>\n<p><strong>DM</strong> — Diabetes Mellitus: A disease of the pancreas where blood sugar cannot be maintained.</p>\n<p><strong>FBS</strong> — Fasting Blood Sugar: A diagnostic test where blood is drawn from a fasted patient (one who has not eaten) and the blood glucose is tested.</p>\n<p><strong>BG</strong> — Blood Glucose: The amount of sugar in the bloodstream. This is tested with a glucometer, an instrument used to measure glucose in a blood sample.</p>\n<p><strong>PU/PD</strong> — Polyuria/Polydipsia: PU and PD commonly go together. An animal that drinks a lot will urinate a lot and vice versa. Experiencing PU/PD is common with many endocrine disorders.</p>\n<h4>Common Endocrine Pathologies</h4>\n<p><strong>Diabetes Mellitus (DM)</strong> — The pancreas produces and secretes insulin. Insulin is the hormone necessary to help glucose leave the blood and enter the cells, where it is needed for energy production. Without insulin, or when there are low insulin levels, the glucose remains in the blood and cannot enter the cells.</p>\n<p><strong>Hyperglycemia</strong> — Increased levels of blood sugar. If a diabetic Pet is given too much insulin (overdose), all of the sugar will be driven from the blood into the cells.</p>\n<p><strong>Hypoglycemia</strong> — Decreased levels of blood sugar. One of the clinical signs of DM is the animal being PU/PD (Polyuria/Polydipsia). If a diabetic Pet goes too long with hyperglycemia, the cells are starving for sugar/energy. In this case, the patient's body will break down fat for energy. A toxic byproduct of fat breakdown/digestion, ketones, is produced. Ketones are an acidic product that, if allowed to build up in the bloodstream, can cause a life-threatening condition.</p>\n<p><strong>Diabetic Ketoacidosis (DKA)</strong> — Low blood pH (acidic) due to a build-up of ketones in diabetics. Diabetics will require insulin to be given daily, possibly two times a day, and frequent monitoring of blood sugars. Although any animal can be diabetic, the most common patients are fat cats.</p>\n<p><strong>Hyperthyroidism</strong> — The condition of the overproduction of thyroid hormones. The thyroid gland is responsible for the production and secretion of several hormones that regulate metabolism among other body functions. This condition is seen most commonly in older cats, although it can occasionally be seen in dogs. The first clinical sign usually noticed is a dramatic weight loss and increased appetite, as the excess hormone is speeding up the animal's metabolism. This condition can be treated in several different ways: daily medication, surgical removal of part of the thyroid gland, or injection of radioactive Iodine (I-131) which will kill diseased thyroid tissue.</p>\n<figure class=\"academy-figure\"><img class=\"academy-image\" src=\"assets/media/medical-terminology/endocrine-hyperthyroidism.jpg\" alt=\"Thin older cat, illustrating hyperthyroidism clinical presentation such as weight loss.\" width=\"1356\" height=\"1080\" loading=\"lazy\" decoding=\"async\"></figure>\n<p><strong>Hypothyroidism</strong> — The condition of the underproduction of thyroid hormones. This condition is most common in dogs 2-6 years old and rare in cats. These patients usually present with thin fur, skin changes, and weight gain due to decreased metabolism. This condition is treated with synthetic thyroid hormone given daily.</p>\n<p><strong>Hyperadrenocorticism / Cushing's Disease</strong> — The adrenal glands are responsible for the production and secretion of several hormones, including cortisol. Cortisol is a steroid that regulates metabolism and increases blood glucose. Hyperadrenocorticism is the condition of excess production of cortisol by the adrenal glands. This condition is commonly called Cushing's Disease or Syndrome and is the most commonly diagnosed endocrine disease in adult dogs (rare in cats). There are many clinical signs including weight gain and low energy. Treatment varies.</p>\n<p><strong>Hypoadrenocorticism / Addison's Disease</strong> — The condition of underproduction of cortisol by the adrenal glands. This condition is commonly called Addison's Disease and there are no clear-cut clinical signs, although the patient may lose weight and be lethargic. Addison's is seen in young to middle-aged dogs, most commonly females. Supplementing hormones is the treatment.</p>\n<figure class=\"academy-figure\"><img class=\"academy-image\" src=\"assets/media/medical-terminology/endocrine-hypoadrenocorticism.jpg\" alt=\"Resting dog, illustrating Addison’s disease/hypoadrenocorticism clinical context such as lethargy.\" width=\"606\" height=\"398\" loading=\"lazy\" decoding=\"async\"></figure>\n<p><strong>Clinical connection:</strong> When a PetNurse verbalizes findings like PU/PD, weight changes, or BG results during an exam, using precise endocrine terminology (DM, DKA, hyperthyroidism, Cushing's, Addison's) helps the Nurse Aide document accurately and in real time in Hannahware, and helps the whole care team track glands like the thyroid, pancreas, and adrenal glands that most often present with problems in practice.</p>",
+      "quiz": [
+        {
+          "q": "Endocrine breaks down into which word parts, and what do they mean?",
+          "exp": "Endo- + crine/o = to secrete within, specifically meaning within the blood.",
+          "opts": [
+            "Endo- + crine/o = to secrete within the blood",
+            "Endo- + crine/o = outside the cell",
+            "End/o = kidney, -crine = urine",
+            "Endo- + crine/o = to digest food"
+          ],
+          "correct": 0
+        },
+        {
+          "q": "Which gland pair sits on top of each kidney and secretes cortisol among other hormones?",
+          "exp": "The adrenal glands are a pair of glands that sit on top of each kidney and secrete several hormones, including cortisol, that control many different body functions.",
+          "opts": [
+            "Thyroid glands",
+            "Parathyroid glands",
+            "Adrenal glands",
+            "Pineal glands"
+          ],
+          "correct": 2
+        },
+        {
+          "q": "A Pet with Diabetes Mellitus has low insulin. What happens to blood glucose as a result?",
+          "exp": "Insulin is needed to help glucose leave the blood and enter the cells. Without enough insulin, glucose remains in the blood, leading to hyperglycemia.",
+          "opts": [
+            "Glucose enters the cells normally",
+            "Glucose remains in the blood, causing hyperglycemia",
+            "Glucose is converted directly to cortisol",
+            "Glucose leaves the body immediately"
+          ],
+          "correct": 1
+        },
+        {
+          "q": "What is DKA, and why is it dangerous?",
+          "exp": "DKA (Diabetic Ketoacidosis) is a low blood pH (acidic) condition caused by a build-up of ketones in diabetics; it is a life-threatening side effect of DM.",
+          "opts": [
+            "A mild vitamin deficiency",
+            "A life-threatening acidic condition from ketone build-up in diabetics",
+            "An infection of the thyroid gland",
+            "A benign pancreatic cyst"
+          ],
+          "correct": 1
+        },
+        {
+          "q": "Which condition is most commonly seen in older cats and presents with dramatic weight loss and increased appetite due to overproduction of thyroid hormones?",
+          "exp": "Hyperthyroidism is the overproduction of thyroid hormones and is seen most commonly in older cats, causing weight loss and increased appetite as metabolism speeds up.",
+          "opts": [
+            "Hypothyroidism",
+            "Hyperthyroidism",
+            "Hypoadrenocorticism",
+            "Hyperadrenocorticism"
+          ],
+          "correct": 1
+        },
+        {
+          "q": "Cushing's Disease and Addison's Disease both involve which gland's hormone, cortisol?",
+          "exp": "Both Hyperadrenocorticism (Cushing's Disease, excess cortisol) and Hypoadrenocorticism (Addison's Disease, deficient cortisol) involve cortisol produced by the adrenal glands.",
+          "opts": [
+            "Thyroid gland",
+            "Pancreas",
+            "Adrenal glands",
+            "Pituitary gland"
+          ],
+          "correct": 2
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "icon": "🧠",
+      "title": "Nervous System",
+      "minutes": 25,
+      "content": "<p><strong>Nervous</strong> breaks down to: <strong>Nerv/o</strong> + <strong>-ous</strong> = pertaining to the nerves. The nervous system, including the brain, is the control center for the body. It controls every other system's activities in the body. Nerves transmit messages to the spinal cord and brain to elicit a specific response, and then new messages travel back out to the body. The nervous system includes the brain, spinal cord, and peripheral nerves.</p>\n   <p>The nervous system is divided into: the <strong>Central Nervous System (CNS)</strong>, including the brain and spinal cord, and the <strong>Peripheral Nervous System (PNS)</strong>, including nerves that branch from the brain and spinal cord. This lesson covers anatomy, disease condition, and procedure terms and abbreviations associated with structures in the nervous system.</p>\n   <figure class=\"academy-figure\"><img class=\"academy-image\" src=\"assets/media/medical-terminology/nervous-overview.jpg\" alt=\"Dog illustration highlighting the nervous system throughout the body.\" width=\"562\" height=\"402\" loading=\"lazy\" decoding=\"async\"></figure>\n<h4>Anatomy &amp; Other Terms (Nervous System Common Terms That Aren't Easily Broken Down)</h4>\n   <p><strong>Blood-Brain Barrier</strong> — The blood-brain barrier is composed of capillaries that will allow certain things through to the brain and block others from entering.</p>\n   <p><strong>Brainstem</strong> — The brain stem is the portion of the brain that connects to the spinal cord.</p>\n   <p><strong>Cauda Equina</strong> — The cauda equina is composed of the nerve roots that come out of the caudal end of the spinal cord. It is named as it resembles a horse's tail.</p>\n   <p><strong>Central Nervous System</strong> — The central nervous system is the part of the nervous system that contains the brain and spinal cord.</p>\n   <p><strong>Cerebrum</strong> — The cerebrum is the largest part of the brain, responsible for voluntary muscle movement, sensory functions, thought, and memory.</p>\n<figure class=\"academy-figure\"><img class=\"academy-image\" src=\"assets/media/medical-terminology/nervous-cerebrum.jpg\" alt=\"Brain model highlighting cerebral anatomy, illustrating cerebrum terminology.\" width=\"1130\" height=\"636\" loading=\"lazy\" decoding=\"async\"></figure>\n   <p><strong>Cerebellum</strong> — The cerebellum is the second largest part of the brain, responsible for coordination and balance.</p>\n   <p><strong>Meninges</strong> — The meninges are the three layers that surround and protect the brain and spinal cord.</p>\n   <p><strong>Nerve</strong> — A nerve is a bundle of fibers that transmits messages to the brain and spinal cord from the body, and then messages back out to the body.</p>\n   <p><strong>Peripheral Nervous System</strong> — The peripheral nervous system is the division of the nervous system that includes all nerves outside of the brain and spinal cord.</p>\n   <p><strong>Cerebrospinal Fluid</strong> — <strong>Cerebrospinal</strong> means pertaining to the cerebellum and spinal cord. Cerebrospinal fluid is the fluid that circulates between the brain and the spinal cord.</p>\n   <p><strong>Cerebrospinal Fluid Analysis</strong> — Cerebrospinal fluid analysis is the laboratory analysis of the CSF fluid that was obtained through a CSF tap.</p>\n   <p><strong>Cerebrospinal Fluid Tap</strong> — A cerebrospinal fluid tap is a surgical puncture into the spinal cavity to remove some of the fluid.</p>\n   <p><strong>Coma</strong> — A coma is a deep state of unconsciousness.</p>\n   <p><strong>Computed Tomography</strong> — Computed Tomography (CT) or CAT Scan is a diagnostic imaging procedure that shows cross-sections of the brain and spinal cord.</p>\n   <p><strong>Concussion</strong> — A concussion is a violent shaking of the brain.</p>\n   <p><strong>Conscious</strong> — Being conscious is a state of being awake and aware.</p>\n   <p><strong>Contusion</strong> — Contusion is the medical term for a bruise. It is covered in this section as the brain can incur bruising, as well as the skin and other organs.</p>\n   <p><strong>Epilepsy</strong> — Epilepsy is a neurologic disorder characterized by seizures with no known cause.</p>\n   <p><strong>Gait</strong> — Gait is the manner in which an animal walks.</p>\n   <p><strong>Innervation</strong> — Innervation is the supply of nerves to an organ or part of the body.</p>\n   <p><strong>Magnetic Resonance Imaging (MRI)</strong> — Magnetic resonance imaging is a type of diagnostic imaging that will produce a three-dimensional image of the body part being examined. Commonly used to diagnose neurological problems.</p>\n   <p><strong>Neuron</strong> — A neuron is a nerve cell.</p>\n   <p><strong>Proprioception</strong> — Proprioception is knowing where your limbs are in space.</p>\n   <p><strong>Palliative</strong> — Palliative is providing supportive care to make an animal more comfortable without treating/curing the disease that they suffer from.</p>\n   <p><strong>Sedation</strong> — Sedation is diminishing excitement or response to stimuli. This is accomplished through administering a medication called a sedative.</p>\n   <p><strong>Seizure</strong> — A seizure is sudden involuntary muscle contractions. Also called convulsions.</p>\n   <p><strong>Stupor</strong> — Stupor is a state of being unaware or unresponsive to stimuli.</p>\n   <p><strong>Syncope</strong> — Syncope is the medical term for fainting.</p>\n   <p><strong>Vestibular Disease</strong> — <strong>Vestibular</strong> means pertaining to a vestibule. Vestibular disease is a neurologic condition characterized by imbalance, head tilt, and circling. The origin of the disorder is unknown, and it is commonly seen in older dogs.</p>\n   <h4>Nervous System Common Terms That Can Be Broken Down</h4>\n   <p><strong>Akinetic</strong> — <strong>A-</strong> (without) + <strong>-kinetic</strong> (movement) = pertaining to without movement.</p>\n   <p><strong>Analgesia</strong> — <strong>An-</strong> (without) + <strong>-algesia</strong> (sensitivity to pain) = condition of no sensitivity to pain.</p>\n   <p><strong>Anesthesia</strong> — <strong>An-</strong> (without) + <strong>-esthesia</strong> (nerve sensation) = a condition of no nerve sensation. Anesthesia means a patient is not conscious and will not feel pain.</p>\n   <p><strong>Ataxia</strong> — <strong>A-</strong> (without) + <strong>-taxia</strong> (balance/coordination) = condition without balance or coordination.</p>\n   <p><strong>Bradykinesia</strong> — <strong>Brady-</strong> (slow) + <strong>-kinesia</strong> (movement) = condition of slow movement.</p>\n   <p><strong>Cerebellar</strong> — <strong>Cerebell/o</strong> + <strong>-ar</strong> = pertaining to the cerebellum.</p>\n   <p><strong>Cerebellar Hypoplasia</strong> — <strong>Cerebellar</strong> = pertaining to the cerebellum; <strong>Hypoplasia</strong> = a condition of deficient growth or development. Cerebellar hypoplasia is a condition of deficient growth or development of the cerebellum. Since the cerebellum is responsible for balance and coordination, animals with this condition are wobbly and unstable, but not in pain. Cerebellar hypoplasia can be seen in kittens born to a queen who had a virus or trauma that did not allow the fetuses to develop appropriately. Animals can only be born with cerebellar hypoplasia — it cannot be developed later in life.</p>\n   <p><strong>Cerebral</strong> — <strong>Cerebr/o</strong> + <strong>-al</strong> = pertaining to the cerebrum.</p>\n   <p><strong>Contraindication</strong> — <strong>Contra-</strong> (against) + <strong>-indication</strong> = condition of being against indication. Contraindication means treatments/procedures that would not be indicated in a patient.</p>\n   <p><strong>Electroencephalogram</strong> — <strong>Electro-</strong> (electricity) + <strong>encephal/o</strong> (brain) + <strong>-gram</strong> (recording) = recording of the electric activity in the brain.</p>\n   <p><strong>Encephalitis</strong> — <strong>Encephal/o</strong> (brain) + <strong>-itis</strong> (inflammation) = inflammation of the brain.</p>\n   <p><strong>Encephalomyelitis</strong> — <strong>Encephal/o</strong> (brain) + <strong>myel/o</strong> (spinal cord) + <strong>-itis</strong> (inflammation) = inflammation of the brain and spinal cord. Myelo means with bone marrow or spinal cord, so you have to use the context to determine which meaning it has within a specific term.</p>\n   <p><strong>Encephalopathy</strong> — <strong>Encephal/o</strong> (brain) + <strong>-pathy</strong> (disease condition) = disease condition of the brain.</p>\n   <p><strong>Hydrocephalus</strong> — <strong>Hydro-</strong> (fluid/water) + <strong>-cephalus</strong> (head) = fluid in the brain. The fluid puts pressure on the brain and skull, and is characterized by a misshapen head/skull.</p>\n   <p><strong>Hyperkinesis</strong> — <strong>Hyper-</strong> (excessive) + <strong>-kinesis</strong> (movement) = a condition of excessive movement.</p>\n   <p><strong>Intracranial</strong> — <strong>Intra-</strong> (within) + <strong>crani/o</strong> (skull) + <strong>-al</strong> = pertaining to within the skull.</p>\n   <p><strong>Macrocephaly</strong> — <strong>Macro-</strong> (large) + <strong>-cephaly</strong> (head) = condition of a large head.</p>\n   <p><strong>Meningeal</strong> — <strong>Mening/o</strong> + <strong>-eal</strong> = pertaining to the meninges.</p>\n   <p><strong>Meningitis</strong> — <strong>Mening/o</strong> + <strong>-itis</strong> (inflammation) = inflammation of the meninges.</p>\n   <p><strong>Microcephaly</strong> — <strong>Micro-</strong> (small) + <strong>-cephaly</strong> (head) = condition of a small head.</p>\n   <p><strong>Myasthenia</strong> — <strong>My/o</strong> (muscle) + <strong>-asthenia</strong> (weakness) = condition of muscle weakness.</p>\n   <p><strong>Neuralgia</strong> — <strong>Neur/o</strong> (nerve) + <strong>-algia</strong> (pain) = condition of pain in the nerves.</p>\n   <p><strong>Neuritis</strong> — <strong>Neur/o</strong> (nerve) + <strong>-itis</strong> (inflammation) = inflammation of the nerves.</p>\n   <p><strong>Neuropathy</strong> — <strong>Neur/o</strong> (nerve) + <strong>-pathy</strong> (disease condition) = disease condition of the brain.</p>\n<figure class=\"academy-figure\"><img class=\"academy-image\" src=\"assets/media/medical-terminology/nervous-neuropathy.jpg\" alt=\"Abstract electrical waveform representing nerve disease/neuropathy.\" width=\"970\" height=\"644\" loading=\"lazy\" decoding=\"async\"></figure>\n   <h4>Weakness &amp; Paralysis: Prefix + Suffix System</h4>\n   <p>Weakness and paralysis terms in the nervous system follow a consistent prefix-plus-suffix pattern. The suffix names the severity of the condition, and the prefix names which part of the body is affected:</p>\n   <p><strong>Suffixes:</strong> <strong>-paresis</strong> = weakness; <strong>-plegia</strong> = paralysis.</p>\n   <p><strong>Prefixes:</strong> <strong>para-</strong> = hind limbs; <strong>hemi-</strong> = left or right halves of the body; <strong>mono-</strong> = one limb; <strong>quadra-</strong> or <strong>tetra-</strong> = all four limbs.</p>\n   <p><strong>Hemiparesis</strong> — <strong>Hemi-</strong> + <strong>-paresis</strong> = a condition of weakness on the right or left half of the body.</p>\n   <p><strong>Monoparesis</strong> — <strong>Mono-</strong> + <strong>-paresis</strong> = a condition of weakness in one limb.</p>\n   <p><strong>Paraparesis</strong> — <strong>Para-</strong> + <strong>-paresis</strong> = a condition of weakness in the hind limbs.</p>\n   <p><strong>Quadraparesis</strong> — <strong>Quadra-</strong> + <strong>-paresis</strong> = a condition of weakness in all four limbs.</p>\n   <p><strong>Tetraparesis</strong> — <strong>Tetra-</strong> + <strong>-paresis</strong> = a condition of weakness in all four limbs.</p>\n   <p><strong>Hemiplegia</strong> — <strong>Hemi-</strong> + <strong>-plegia</strong> = a condition of paralysis on the right or left half of the body.</p>\n   <p><strong>Monoplegia</strong> — <strong>Mono-</strong> + <strong>-plegia</strong> = a condition of paralysis in one limb.</p>\n   <p><strong>Paraplegia</strong> — <strong>Para-</strong> + <strong>-plegia</strong> = a condition of paralysis in the hind limbs.</p>\n   <p><strong>Quadriplegia</strong> — <strong>Quadri-</strong> + <strong>-plegia</strong> = a condition of paralysis in all four limbs.</p>\n   <p><strong>Tetraplegia</strong> — <strong>Tetra-</strong> + <strong>-plegia</strong> = a condition of paralysis in all four limbs.</p>\n   <h4>Nervous System Must-Know Abbreviations</h4>\n   <p><strong>BBB</strong> — Blood-Brain Barrier: The blood-brain barrier is composed of capillaries that will allow certain things through to the brain and block others from entering.</p>\n   <p><strong>CNS</strong> — Central Nervous System: The central nervous system is the part of the nervous system that contains the brain and spinal cord.</p>\n   <p><strong>CSF</strong> — Cerebrospinal Fluid: Cerebrospinal fluid is the fluid that circulates between the brain and the spinal cord.</p>\n   <p><strong>ICP</strong> — Intracranial Pressure: Intracranial pressure is the pressure that builds up in the skull.</p>\n   <p><strong>Sz</strong> — Seizure: A seizure is sudden involuntary muscle contractions.</p>\n   <p><strong>CT / CAT Scan</strong> — Computed Tomography: Computed Tomography (CT) or CAT Scan is a diagnostic imaging procedure that shows cross-sections of the brain and spinal cord.</p>\n   <p><strong>EEG</strong> — Electroencephalogram: An EEG is the recording of the electric activity in the brain.</p>\n   <p><strong>MRI</strong> — Magnetic Resonance Imaging: Magnetic resonance imaging is a type of diagnostic imaging that will produce a three-dimensional image of the body part being examined. Commonly used to diagnose neurological problems.</p>\n   <p><strong>Clinical connection:</strong> When a PetNurse observes and verbalizes findings such as gait changes, altered consciousness, or a suspected seizure, using precise nervous system terminology helps the Nurse Aide document the encounter accurately in Hannahware in real time, and helps the veterinary team quickly recognize whether a Pet's presentation may involve the CNS, PNS, or both.</p>",
+      "quiz": [
+        {
+          "q": "What is the correct word-part breakdown of \"Nervous\"?",
+          "exp": "Nervous breaks down to Nerv/o + -ous, meaning \"pertaining to the nerves.\"",
+          "opts": [
+            "Nerv/o + -itis = inflammation of the nerves",
+            "Nerv/o + -ous = pertaining to the nerves",
+            "Neur/o + -algia = pain in the nerves",
+            "Neur/o + -pathy = disease of the nerves"
+          ],
+          "correct": 1
+        },
+        {
+          "q": "Which division of the nervous system includes the brain and spinal cord?",
+          "exp": "The Central Nervous System (CNS) is the part of the nervous system that contains the brain and spinal cord. The Peripheral Nervous System (PNS) includes all nerves outside of the brain and spinal cord.",
+          "opts": [
+            "Peripheral Nervous System (PNS)",
+            "Central Nervous System (CNS)",
+            "Cauda Equina",
+            "Vestibular system"
+          ],
+          "correct": 1
+        },
+        {
+          "q": "A Pet presents with sudden involuntary muscle contractions, also called convulsions. What is this called, and what is its abbreviation?",
+          "exp": "A seizure is sudden involuntary muscle contractions, also called convulsions, and is abbreviated Sz.",
+          "opts": [
+            "Syncope (Sy)",
+            "Seizure (Sz)",
+            "Stupor (St)",
+            "Concussion (Cx)"
+          ],
+          "correct": 1
+        },
+        {
+          "q": "Which term means \"inflammation of the brain and spinal cord\"?",
+          "exp": "Encephalomyelitis breaks down to encephal/o (brain) + myel/o (spinal cord) + -itis (inflammation), meaning inflammation of the brain and spinal cord.",
+          "opts": [
+            "Encephalitis",
+            "Encephalopathy",
+            "Encephalomyelitis",
+            "Meningitis"
+          ],
+          "correct": 2
+        },
+        {
+          "q": "Using the weakness/paralysis prefix-suffix system, what does \"Tetraplegia\" mean?",
+          "exp": "The suffix -plegia means paralysis, and the prefix tetra- means all four limbs, so Tetraplegia is a condition of paralysis in all four limbs.",
+          "opts": [
+            "Weakness in one limb",
+            "Paralysis in the hind limbs",
+            "Paralysis in all four limbs",
+            "Weakness on one half of the body"
+          ],
+          "correct": 2
+        },
+        {
+          "q": "Which diagnostic imaging procedure produces a three-dimensional image of the body part being examined and is commonly used to diagnose neurological problems?",
+          "exp": "Magnetic Resonance Imaging (MRI) produces a three-dimensional image of the body part being examined and is commonly used for neurological diagnosis, distinct from CT/CAT scan which shows cross-sections.",
+          "opts": [
+            "CT/CAT Scan",
+            "EEG",
+            "MRI",
+            "CSF Tap"
+          ],
+          "correct": 2
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "icon": "💉",
+      "title": "Vaccines & Medications",
+      "minutes": 10,
+      "content": "<p>This module covers two areas that affect nearly every patient visit: <strong>vaccines</strong> and <strong>medications</strong>. Both rely on precise terminology and abbreviations for accurate communication and documentation.</p>\n<h4>Vaccines</h4>\n<figure class=\"academy-video\"><figcaption class=\"academy-video-label\">Audio: Vaccines Overview</figcaption><img class=\"academy-image\" src=\"assets/media/medical-terminology/vaccines-overview.jpg\" alt=\"Gloved veterinary team member holding assorted medications in cupped hands.\" width=\"1032\" height=\"928\" loading=\"lazy\" decoding=\"async\"><audio class=\"academy-audio\" controls preload=\"metadata\" title=\"Vaccines Overview audio\"><source src=\"assets/media/medical-terminology/vaccines-overview.mp3\" type=\"audio/mpeg\">Your browser does not support the audio element. <a class=\"video-fallback\" href=\"assets/media/medical-terminology/vaccines-overview.mp3\">Download the audio (57 sec)</a>.</audio></figure>\n<p><em class=\"academy-transcript-label\">Audio transcript:</em> This course will cover two very important aspects of the veterinary practice business and patient care - vaccines and medications.</p>\n<p>Depending on the type of practice you work in, you may be seeing many animals come in for vaccinations. You may also be seeing many sick animals with diseases that could have been prevented with a vaccine. Vaccines play a vital role in an animal's immunity and can help protect them from common diseases.</p>\n<p>The medical terminology associated with medications is vital in communicating with the medical staff and clients and writing in medical records. The goal is correctly medicating the patient and making sure we get compliance from owners at home.</p>\n<p>It does not matter what your role is in the practice; you should have a basic understanding of vaccines and medications. Everything leads back to the patient getting the best medical care they can receive, not only when they are in our hands but while at home as well.</p>\n<h4>Medication Delivery</h4>\n<p>One area where you will see many medical terms and abbreviations used is when it comes to delivering medications to patients. This part of the course will cover the terms and abbreviations for the route that the drug or treatment is delivered, how frequently it is given, concentrations/volumes, and the medication forms.</p>\n<figure class=\"academy-video\"><figcaption class=\"academy-video-label\">Audio: Medication Delivery</figcaption><img class=\"academy-image\" src=\"assets/media/medical-terminology/medication-delivery-kitten.jpg\" alt=\"Kitten receiving liquid medication from a dropper held by a person's hand.\" width=\"1278\" height=\"718\" loading=\"lazy\" decoding=\"async\"><audio class=\"academy-audio\" controls preload=\"metadata\" title=\"Medication Delivery audio\"><source src=\"assets/media/medical-terminology/medication-delivery.mp3\" type=\"audio/mpeg\">Your browser does not support the audio element. <a class=\"video-fallback\" href=\"assets/media/medical-terminology/medication-delivery.mp3\">Download the audio (28 sec)</a>.</audio></figure>\n<p><em class=\"academy-transcript-label\">Audio transcript:</em> Let's discuss two general categories of medication administration: enteral and parenteral. Enteral is pertaining to the small intestine. It is used to mean a route of medication delivery that goes through the GI tract. Parenteral is pertaining to around the small intestine. It is used to mean a route of medication delivery that does not include the GI tract. It is commonly used for injectable routes.</p>\n<p><strong>Clinical connection:</strong> When a PetNurse verbalizes a route, frequency, or dose, the Nurse Aide records it in Hannahware using these same abbreviations. Getting the route right — enteral versus parenteral — is the difference between a medication working and a medication being unsafe.</p>",
+      "quiz": [
+        {
+          "q": "Enteral medication delivery refers to a route that…",
+          "opts": [
+            "Goes through the GI tract",
+            "Bypasses the GI tract",
+            "Is always given as an injection",
+            "Is applied to the skin only"
+          ],
+          "correct": 0,
+          "exp": "Enteral means pertaining to the small intestine and is used for routes of medication delivery that go through the GI tract."
+        },
+        {
+          "q": "Parenteral medication delivery refers to a route that…",
+          "opts": [
+            "Goes through the GI tract",
+            "Does not include the GI tract",
+            "Is always given by mouth",
+            "Requires food to be absorbed"
+          ],
+          "correct": 1,
+          "exp": "Parenteral means pertaining to around the small intestine — a route of medication delivery that does not include the GI tract. It is commonly used for injectable routes."
+        },
+        {
+          "q": "A canine patient presents for DHLPP and RV. Which diseases does DHLPP protect against?",
+          "opts": [
+            "Distemper, Hepatitis, Leptospirosis, Parainfluenza, Parvovirus",
+            "Distemper, Heartworm, Lyme, Panleukopenia, Parvovirus",
+            "Dermatitis, Hepatitis, Leukemia, Parainfluenza, Pyometra",
+            "Distemper, Hepatitis, Leukemia, Parvovirus, Rabies"
+          ],
+          "correct": 0,
+          "exp": "DHLPP covers Distemper, Hepatitis, Leptospirosis, Parainfluenza and Parvovirus. Rabies is the separate RV vaccine."
+        },
+        {
+          "q": "Which abbreviation stands for Feline Leukemia Virus?",
+          "opts": [
+            "FVR",
+            "FeLV",
+            "FLV",
+            "FIV"
+          ],
+          "correct": 1,
+          "exp": "FeLV = Feline Leukemia Virus. FVR is Feline Viral Rhinotracheitis; FIV is a different virus."
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "icon": "🧩",
+      "title": "Medical Terminology Mastery Review",
+      "minutes": 20,
+      "mode": "review",
+      "content": "<p class=\"safety-note\"><strong>How this review works</strong><span>This is a completion-based mastery review, not a graded exam. Work through the reflection prompts and case rounds, then the 24 review items below. You will see whether each answer is right as you go, and the review is marked complete once you have worked through every item. There is no pass mark and no score is recorded.</span></p>\n<h4>Reflection &mdash; anatomy and directional terms</h4>\n<p>Answer these in your own words. Use the modules listed beside each prompt to check your work.</p>\n<ol>\n<li>List three organs of the respiratory system and give the function of each. <em>(Module 5)</em></li>\n<li>List three organs of the digestive system and give the function of each. <em>(Module 6)</em></li>\n<li>List three organs of the urinary system and give the function of each. <em>(Urinary terminology is not yet covered in this lesson &mdash; answer from your own experience or prior study.)</em></li>\n<li>Write five statements using directional terminology to compare the location of bones, joints, or organs relative to each other. Example: <em>The elbow is proximal to the carpus.</em> <em>(Module 2)</em></li>\n</ol>\n<h4>Reflection &mdash; recumbencies</h4>\n<p>Describe how the animal would be lying for each of the following, then reveal the reference answers.</p>\n<ol>\n<li>Left lateral</li>\n<li>Right lateral</li>\n<li>Dorsal</li>\n<li>Sternal / ventral</li>\n</ol>\n<details><summary>Reveal reference answers</summary><dl><dt><strong>Left lateral</strong></dt><dd>On their left side.</dd><dt><strong>Right lateral</strong></dt><dd>On their right side.</dd><dt><strong>Dorsal</strong></dt><dd>Positioned on their back.</dd><dt><strong>Sternal / ventral</strong></dt><dd>Positioned in a way that the patient's sternum lies in contact with the table.</dd></dl></details>\n<h4>Case rounds &mdash; define the terms</h4>\n<p>Seven case studies, one for each body system this lesson covers. Read the case, define the terms you recognize, then reveal the reference definitions.</p>\n<p><strong>Case 1 &mdash; Riley &middot; Musculoskeletal (Module 2)</strong></p>\n<p>Riley is a 4-year-old SF Labrador Retriever who presented for an orthopedic exam. Clinical signs include bilat lameness and muscle atrophy on hind limbs. Radiographs at previous vet have R/O hip dysplasia, osteosarcoma, and arthritis in the pelvis and stifle joints. Upon examination, the lack of anterior drawer sign has R/O ACL rupture, no luxation of the patella was palpated. The owner agreed to an ultrasound to examine ligaments and tendons of the stifle and groin. Diagnosis: bilat tendonitis of the Iliopsoas (groin) tendons. Recommended TX: NSAIDs PRN and PT. Recheck in 3 weeks.</p>\n<details><summary>Reveal the term definitions (21)</summary><dl><dt><strong>SF</strong></dt><dd>Spayed Female</dd><dt><strong>Orthopedic</strong></dt><dd>Referring to the musculoskeletal system</dd><dt><strong>Bilat lameness</strong></dt><dd>Both sides</dd><dt><strong>Atrophy</strong></dt><dd>Body tissue or an organ wastes away, especially as a result of the degeneration of cells</dd><dt><strong>Radiographs</strong></dt><dd>An image produced on a sensitive plate or film by X-rays, gamma rays, or similar radiation, and typically used in medical examination</dd><dt><strong>R/O</strong></dt><dd>Rule Out</dd><dt><strong>Dysplasia</strong></dt><dd>A term used to describe the presence of abnormal cells within a tissue or organ</dd><dt><strong>Osteosarcoma</strong></dt><dd>A type of bone cancer that begins in the cells that form bones</dd><dt><strong>Arthritis</strong></dt><dd>Inflammation of one or more joints, causing pain and stiffness that can worsen with age</dd><dt><strong>Pelvis</strong></dt><dd>Basin-shaped structure that supports the spinal column and protects the abdominal organs</dd><dt><strong>Stifle</strong></dt><dd>A complex joint in the hind limbs of quadruped mammals</dd><dt><strong>Anterior Drawer Sign</strong></dt><dd>The examiner grasps the proximal lower leg, just below the tibial plateau or tibiofemoral joint line, and attempts to translate the lower leg anteriorly</dd><dt><strong>ACL</strong></dt><dd>One of the key ligaments that help stabilize the knee joint</dd><dt><strong>Patella</strong></dt><dd>A thick flat triangular movable bone that forms the anterior point of the knee and protects the front of the joint; the kneecap</dd><dt><strong>Ligaments</strong></dt><dd>Often connect two bones together, particularly in the joints</dd><dt><strong>Tendons</strong></dt><dd>A fibrous connective tissue that attaches muscle to bone</dd><dt><strong>Tendonitis</strong></dt><dd>Inflammation of the thick fibrous cords that attach muscle to bone</dd><dt><strong>TX</strong></dt><dd>Treatment</dd><dt><strong>NSAIDs</strong></dt><dd>Non-steroidal anti-inflammatory drugs</dd><dt><strong>PRN</strong></dt><dd>As needed</dd><dt><strong>PT</strong></dt><dd>Physical therapy</dd></dl></details>\n<p><strong>Case 2 &mdash; Steve &middot; Integumentary (Module 3)</strong></p>\n<p>Steve is a 1.5-year-old NM Great Dane who presented for a derm exam. Clinical signs include alopecia, dermatitis, erythema, and pruritus. No fleas were seen upon exam, so FAD was R/O. Skin scrape was done to R/O mange, which was negative. Suspect atopy and referred to a dermatologist.</p>\n<details><summary>Reveal the term definitions (10)</summary><dl><dt><strong>NM</strong></dt><dd>Neutered Male</dd><dt><strong>Alopecia</strong></dt><dd>Sudden hair/fur loss</dd><dt><strong>Dermatitis</strong></dt><dd>A general term that describes a common skin irritation</dd><dt><strong>Erythema</strong></dt><dd>Redness of the skin, either in a limited area or all over</dd><dt><strong>Pruritus</strong></dt><dd>An uncomfortable, irritating sensation that creates an urge to scratch that can involve any part of the body</dd><dt><strong>FAD</strong></dt><dd>Flea allergy dermatitis</dd><dt><strong>R/O</strong></dt><dd>Rule out</dd><dt><strong>Mange</strong></dt><dd>A type of skin disease caused by parasitic mites</dd><dt><strong>Atopy</strong></dt><dd>The genetic tendency to develop allergic diseases such as allergic rhinitis, asthma and atopic dermatitis</dd><dt><strong>Dermatologist</strong></dt><dd>A doctor who specializes in treating the skin</dd></dl></details>\n<p><strong>Case 3 &mdash; Gus &middot; Cardiovascular (Module 4)</strong></p>\n<p>Gus, a 12-year-old M/N Shepherd mix, presented on emergency after collapsing at home with his owners. He was cyanotic and hypoxic. Cardiac auscultation revealed a murmur and tachycardia with a HR of 180 BPM. His CRT was &gt; 4 seconds, and after taking his BP with a Sphygmomanometer, he was hypertensive. An ECG revealed an arrhythmia. The vet suspected CHF, and while getting ready for more diagnostic tests, Gus went into CPA and asystole. CPR was performed but was unsuccessful.</p>\n<details><summary>Reveal the term definitions (18)</summary><dl><dt><strong>MN</strong></dt><dd>Male Neutered</dd><dt><strong>Cyanotic</strong></dt><dd>A pathologic condition that is characterized by a bluish discoloration of the skin or mucous membrane</dd><dt><strong>Hypoxic</strong></dt><dd>Having too little oxygen</dd><dt><strong>Cardiac auscultation</strong></dt><dd>Listening to the heart with a stethoscope to characterize heart sounds and murmurs</dd><dt><strong>Murmur</strong></dt><dd>Sound of blood flowing through the heart, due to anything from healthy heart exertion during exercise to a diseased heart valve or other abnormality</dd><dt><strong>Tachycardia</strong></dt><dd>An elevated heart rate</dd><dt><strong>HR</strong></dt><dd>Heart Rate</dd><dt><strong>BPM</strong></dt><dd>Beats per minute</dd><dt><strong>CRT</strong></dt><dd>Capillary Refill Time</dd><dt><strong>BP</strong></dt><dd>Blood Pressure</dd><dt><strong>Sphygmomanometer</strong></dt><dd>An instrument for measuring blood pressure</dd><dt><strong>Hypertensive</strong></dt><dd>Elevated blood pressure</dd><dt><strong>ECG</strong></dt><dd>Electrocardiogram: records the electrical signal from the heart to check for different heart conditions</dd><dt><strong>Arrhythmia</strong></dt><dd>A condition in which the heart beats with an irregular or abnormal rhythm</dd><dt><strong>CHF</strong></dt><dd>Congestive heart failure: a serious condition in which the heart doesn't pump blood as efficiently as it should</dd><dt><strong>CPA</strong></dt><dd>Cardiopulmonary arrest</dd><dt><strong>Asystole</strong></dt><dd>Represents the cessation of electrical and mechanical activity of the heart</dd><dt><strong>CPR</strong></dt><dd>An emergency lifesaving procedure performed when the heart stops beating</dd></dl></details>\n<p><strong>Case 4 &mdash; Penny &middot; Respiratory (Module 5)</strong></p>\n<p>Penny, a 4-month-old intact female Golden retriever puppy, has been coughing since the owners got her from the breeder. She was initially treated with Ab and an antitussive for kennel cough but has gotten worse. She presented dyspneic today with a RR of 10 RPM. Auscultation revealed what sounded like fluid in her lungs. Radiographs confirmed pneumonia. When using a pulse oximeter, her O2 sat was 85%, and a capnograph showed she was hypercapnic. Penny was hospitalized for O2 therapy and a transtracheal wash to determine what bacteria is causing her pneumonia. Once we know the organism, she can be treated with the correct Ab.</p>\n<details><summary>Reveal the term definitions (14)</summary><dl><dt><strong>Ab</strong></dt><dd>Antibiotic</dd><dt><strong>Antitussive</strong></dt><dd>Medicines that suppress coughing, also known as cough suppressants</dd><dt><strong>Dyspneic</strong></dt><dd>Uncomfortable abnormal breathing</dd><dt><strong>RR</strong></dt><dd>Respiratory Rate</dd><dt><strong>RPM</strong></dt><dd>Respirations per minute</dd><dt><strong>Auscultation</strong></dt><dd>Listening to the internal sounds of the body, usually using a stethoscope</dd><dt><strong>Radiographs</strong></dt><dd>An image produced on a sensitive plate or film by X-rays, gamma rays, or similar radiation, and typically used in medical examination</dd><dt><strong>Pneumonia</strong></dt><dd>An infection that affects one or both lungs</dd><dt><strong>Pulse oximeter</strong></dt><dd>An oximeter that measures the proportion of oxygenated hemoglobin in the blood in pulsating vessels</dd><dt><strong>O2 sat</strong></dt><dd>Oxygen saturation</dd><dt><strong>Capnograph</strong></dt><dd>Monitors the concentration or partial pressure of carbon dioxide in the respiratory gases</dd><dt><strong>Hypercapnic</strong></dt><dd>High levels of carbon dioxide in the blood</dd><dt><strong>O2</strong></dt><dd>Oxygen</dd><dt><strong>Transtracheal</strong></dt><dd>Passing through or administered by way of the trachea</dd></dl></details>\n<p><strong>Case 5 &mdash; Piper &middot; Gastrointestinal (Module 6)</strong></p>\n<p>Piper, a 4-year-old spayed Female Doberman, presented upon emergency with a distended abdomen and unsuccessful emesis attempts. The owners described it as &ldquo;dry-heaving,&rdquo; but nothing was coming up. Upon quick abdominal palpation and auscultation of no peristalsis in the abdomen, the vet suspects a GDV. Piper is rushed to radiography which confirms the bloat and gastric torsion. After the vet's diagnosis, Piper goes to surgery. A laparotomy is performed where the gastric volvulus is corrected, the gastric contents are emptied, and a gastropexy is performed. She was lucky to have no necrotic tissue in the abdomen and will be hospitalized to monitor her for the next few days.</p>\n<details><summary>Reveal the term definitions (13)</summary><dl><dt><strong>Spayed</strong></dt><dd>To sterilize by removing the ovaries</dd><dt><strong>Emesis</strong></dt><dd>The action or process of vomiting</dd><dt><strong>Abdominal palpation</strong></dt><dd>The examination of the abdomen for crepitus of the abdominal wall, for any abdominal tenderness, or for abdominal masses</dd><dt><strong>Auscultation</strong></dt><dd>Listening to the internal sounds of the body, usually using a stethoscope</dd><dt><strong>Peristalsis</strong></dt><dd>The involuntary constriction and relaxation of the muscles of the intestine or another canal, creating wave-like movements that push the contents of the canal forward</dd><dt><strong>GDV</strong></dt><dd>Gastric dilatation and volvulus</dd><dt><strong>Radiography</strong></dt><dd>An imaging technique using X-rays, gamma rays, or similar ionizing radiation and non-ionizing radiation to view the internal form of an object</dd><dt><strong>Gastric Torsion</strong></dt><dd>An abnormal rotation of the stomach twisting on its longitudinal axis</dd><dt><strong>Laparotomy</strong></dt><dd>A surgical procedure involving a surgical incision through the abdominal wall to gain access into the abdominal cavity</dd><dt><strong>Gastric Volvulus</strong></dt><dd>An abnormal rotation of the stomach on its mesenteric axis</dd><dt><strong>Gastric</strong></dt><dd>Of the stomach</dd><dt><strong>Gastropexy</strong></dt><dd>A surgical operation in which the stomach is sutured to the abdominal wall or the diaphragm</dd><dt><strong>Necrotic</strong></dt><dd>The death of most or all of the cells in an organ or tissue due to disease, injury, or failure of the blood supply</dd></dl></details>\n<p><strong>Case 6 &mdash; Chuck &middot; Endocrine (Module 7)</strong></p>\n<p>Chuck is a 14-year-old DLH on steroid therapy for asthma who presents PU/PD, anorexic, and lethargic. Chuck has lost 4 lbs in the last 3 months. The veterinary technician draws blood from his jugular vein and performs a cystocentesis to collect a urine sample for diagnostic lab work. Chuck's BG is 450 g/dl, which is hyperglycemic. He also has increased ketones and glucosuria. The vet diagnoses him with DM, which is caused by decreased pancreatic insulin production. The owners are sent home with insulin and a glucometer to monitor Chuck at home. They are told their timing of getting him in was good, as he could have experienced DKA. Chuck is scheduled for a recheck in 1 week and a glucose curve.</p>\n<details><summary>Reveal the term definitions (17)</summary><dl><dt><strong>DLH</strong></dt><dd>Domestic Long Hair</dd><dt><strong>PU/PD</strong></dt><dd>Polyuria and polydipsia</dd><dt><strong>Anorexic</strong></dt><dd>Loss of appetite</dd><dt><strong>Lethargic</strong></dt><dd>A state of weariness that involves diminished energy, mental capacity, and motivation</dd><dt><strong>Lbs</strong></dt><dd>Pounds</dd><dt><strong>Jugular vein</strong></dt><dd>Major blood vessels that stretch from the head to the upper chest</dd><dt><strong>Cystocentesis</strong></dt><dd>A common clinical technique used to obtain a sample of urine directly from the urinary bladder of dogs and cats when collecting a voided sample is not preferred</dd><dt><strong>BG</strong></dt><dd>Blood glucose</dd><dt><strong>Hyperglycemic</strong></dt><dd>High blood glucose (blood sugar)</dd><dt><strong>Ketones</strong></dt><dd>A type of chemical that the liver produces when it breaks down fats</dd><dt><strong>Glucosuria</strong></dt><dd>The presence of glucose in the urine</dd><dt><strong>DM</strong></dt><dd>Diabetes Mellitus</dd><dt><strong>Pancreatic insulin</strong></dt><dd>The most important hormone that the pancreas produces is insulin. Its role is to lower glucose levels in the bloodstream and promote the storage of glucose in fat, muscle, liver and other body tissues</dd><dt><strong>Insulin</strong></dt><dd>A hormone created by the pancreas that controls the amount of glucose in the bloodstream at any given moment</dd><dt><strong>Glucometer</strong></dt><dd>A small device called a glucose meter or glucometer measures how much sugar is in the blood sample</dd><dt><strong>DKA</strong></dt><dd>Diabetic ketoacidosis, a serious complication of diabetes that can be life-threatening</dd><dt><strong>Glucose Curve</strong></dt><dd>Serial measurements of blood glucose during the duration of action of insulin</dd></dl></details>\n<p><strong>Case 7 &mdash; Charlie &middot; Nervous (Module 8)</strong></p>\n<p>Charlie, an 11-year-old mixed breed canine, presents with ataxia, an abnormal gait, a loss of proprioception, and seizures. This is not normal for Charlie, so the vet puts epilepsy low on the DDX list. It is suspected to be a problem with the CNS, and a CSF tap and analysis is recommended, along with an MRI done under anesthesia. The R/O list includes vestibular disease, meningitis, encephalitis, encephalomyelitis, or another encephalopathy.</p>\n<details><summary>Reveal the term definitions (16)</summary><dl><dt><strong>Ataxia</strong></dt><dd>Impaired balance or coordination, can be due to damage to brain, nerves, or muscles</dd><dt><strong>Gait</strong></dt><dd>Pattern of movement of the limbs of animals</dd><dt><strong>Proprioception</strong></dt><dd>The sense that lets us perceive the location, movement, and action of parts of the body</dd><dt><strong>Seizures</strong></dt><dd>A sudden, uncontrolled burst of electrical activity in the brain</dd><dt><strong>Epilepsy</strong></dt><dd>A disorder in which nerve cell activity in the brain is disturbed, causing seizures</dd><dt><strong>DDX</strong></dt><dd>Differential Diagnosis</dd><dt><strong>CNS</strong></dt><dd>Central Nervous System</dd><dt><strong>CSF tap and analysis</strong></dt><dd>A medical procedure in which a needle is inserted into the spinal canal to collect cerebrospinal fluid for diagnostic testing. The main reason for a CSF tap is to help diagnose diseases of the central nervous system, including the brain and spine</dd><dt><strong>MRI</strong></dt><dd>Magnetic Resonance Imaging (MRI) is a non-invasive imaging technology that produces three-dimensional detailed anatomical images</dd><dt><strong>Anesthesia</strong></dt><dd>The use of medicines to prevent pain during surgery and other procedures</dd><dt><strong>R/O</strong></dt><dd>Rule Out</dd><dt><strong>Vestibular disease</strong></dt><dd>A sudden, non-progressive disturbance of balance</dd><dt><strong>Meningitis</strong></dt><dd>An inflammation (swelling) of the protective membranes covering the brain and spinal cord</dd><dt><strong>Encephalitis</strong></dt><dd>Inflammation of the brain</dd><dt><strong>Encephalomyelitis</strong></dt><dd>Inflammation of the brain and spinal cord</dd><dt><strong>Encephalopathy</strong></dt><dd>Any disease of the brain that alters brain function or structure</dd></dl></details>\n<h4>Review items</h4>\n<p>Twenty-four items across four sections follow. Answer each one to complete the review.</p>",
+      "quiz": [
+        {
+          "section": "Word Parts & Abbreviations",
+          "q": "Which abbreviation means <em>as needed</em>?",
+          "opts": [
+            "PRN",
+            "NPO",
+            "PO",
+            "QID"
+          ],
+          "correct": 0,
+          "exp": "PRN = as needed. NPO = nothing by mouth; PO = by mouth; QID = four times a day."
+        },
+        {
+          "section": "Word Parts & Abbreviations",
+          "q": "Which abbreviation means <em>nothing by mouth</em>?",
+          "opts": [
+            "PRN",
+            "NPO",
+            "PO",
+            "NG"
+          ],
+          "correct": 1,
+          "exp": "NPO = nothing by mouth — often ordered before anesthesia or surgery."
+        },
+        {
+          "section": "Word Parts & Abbreviations",
+          "q": "<strong>OD</strong> refers to which eye?",
+          "opts": [
+            "Both eyes",
+            "Neither eye",
+            "Right eye",
+            "Left eye"
+          ],
+          "correct": 2,
+          "exp": "OD = right eye, OS = left eye, OU = both eyes."
+        },
+        {
+          "section": "Word Parts & Abbreviations",
+          "q": "In <strong>Gastr/o</strong>, what does adding the <strong>/o</strong> create?",
+          "opts": [
+            "A prefix",
+            "A suffix",
+            "A word root",
+            "A combining form"
+          ],
+          "correct": 3,
+          "exp": "Gastr is the word root; adding the combining vowel o makes Gastr/o a combining form, which lets the root join a suffix that begins with a consonant."
+        },
+        {
+          "section": "Word Parts & Abbreviations",
+          "q": "<strong>Epi-</strong> and <strong>Hyper-</strong> are examples of…",
+          "opts": [
+            "Prefixes",
+            "Suffixes",
+            "Word roots",
+            "Combining forms"
+          ],
+          "correct": 0,
+          "exp": "Both attach to the front of a term. Epi- = above/upon; Hyper- = excessive."
+        },
+        {
+          "section": "Word Parts & Abbreviations",
+          "q": "The suffix <strong>-logy</strong> means…",
+          "opts": [
+            "Abnormal condition",
+            "The study of",
+            "Disease",
+            "Tumor"
+          ],
+          "correct": 1,
+          "exp": "Contrast -pathy (disease), -oma (tumor), and -osis (abnormal condition)."
+        },
+        {
+          "section": "Word Parts & Abbreviations",
+          "q": "<strong>PU/PD</strong> describes…",
+          "opts": [
+            "Post-operative urinary drainage",
+            "Partial urethral dysfunction",
+            "Excessive urination and excessive thirst",
+            "Painful urination and defecation"
+          ],
+          "correct": 2,
+          "exp": "Polyuria / polydipsia — a classic endocrine presentation, seen in Chuck's diabetes mellitus case."
+        },
+        {
+          "section": "Anatomy & Directional Terms",
+          "q": "A patient in <strong>dorsal recumbency</strong> is positioned…",
+          "opts": [
+            "On their left side",
+            "On their right side",
+            "With the sternum on the table",
+            "On their back"
+          ],
+          "correct": 3,
+          "exp": "Dorsal recumbency: positioned on their back."
+        },
+        {
+          "section": "Anatomy & Directional Terms",
+          "q": "A patient in <strong>sternal (ventral) recumbency</strong> is positioned so that…",
+          "opts": [
+            "The sternum lies in contact with the table",
+            "They lie on their back",
+            "They lie on their left side",
+            "They stand squarely on all four limbs"
+          ],
+          "correct": 0,
+          "exp": "Sternal/ventral recumbency: positioned in a way that the patient's sternum lies in contact with the table."
+        },
+        {
+          "section": "Anatomy & Directional Terms",
+          "q": "&ldquo;The elbow is <strong>proximal</strong> to the carpus&rdquo; means the elbow is…",
+          "opts": [
+            "Toward the back",
+            "Closer to the point of attachment to the body",
+            "Further from the point of attachment to the body",
+            "Toward the belly"
+          ],
+          "correct": 1,
+          "exp": "Proximal = nearer the trunk or point of attachment; distal = further away."
+        },
+        {
+          "section": "Anatomy & Directional Terms",
+          "q": "Which term means <em>pertaining to above the skin</em>?",
+          "opts": [
+            "Intradermal",
+            "Transdermal",
+            "Epidermal",
+            "Subcutaneous"
+          ],
+          "correct": 2,
+          "exp": "Epi- (above) + derm (skin) + -al. Subcutaneous is pertaining to under the skin."
+        },
+        {
+          "section": "Anatomy & Directional Terms",
+          "q": "The root <strong>hepat</strong> refers to which organ?",
+          "opts": [
+            "Kidney",
+            "Stomach",
+            "Heart",
+            "Liver"
+          ],
+          "correct": 3,
+          "exp": "Hepat = liver. It also appears in the H of the DHLPP vaccine — hepatitis."
+        },
+        {
+          "section": "Body-System Case Rounds",
+          "q": "Riley's chart records <strong>bilat lameness</strong> and muscle <strong>atrophy</strong>. Atrophy means…",
+          "opts": [
+            "Body tissue or an organ wasting away",
+            "Abnormal enlargement",
+            "Inflammation",
+            "Twisting on itself"
+          ],
+          "correct": 0,
+          "exp": "Atrophy is tissue or an organ wasting away, especially as a result of the degeneration of cells."
+        },
+        {
+          "section": "Body-System Case Rounds",
+          "q": "<strong>R/O</strong> in a medical record stands for…",
+          "opts": [
+            "Recheck order",
+            "Rule out",
+            "Right orbit",
+            "Range of motion"
+          ],
+          "correct": 1,
+          "exp": "R/O = rule out. It appears in Riley's, Steve's, and Charlie's cases."
+        },
+        {
+          "section": "Body-System Case Rounds",
+          "q": "Steve's exam records <strong>alopecia</strong> and <strong>pruritus</strong>. Pruritus is…",
+          "opts": [
+            "Redness of the skin",
+            "An eroded area of skin",
+            "An irritating sensation that creates an urge to scratch",
+            "Hair loss"
+          ],
+          "correct": 2,
+          "exp": "Alopecia is the hair loss; erythema is the redness; an ulcer is the eroded area."
+        },
+        {
+          "section": "Body-System Case Rounds",
+          "q": "<strong>FAD</strong> stands for…",
+          "opts": [
+            "Feline Atopic Disease",
+            "Focal Alopecic Dermatosis",
+            "Follicular Allergic Disorder",
+            "Flea Allergy Dermatitis"
+          ],
+          "correct": 3,
+          "exp": "Flea Allergy Dermatitis — the most common dermatological condition diagnosed in dogs in the US."
+        },
+        {
+          "section": "Body-System Case Rounds",
+          "q": "Gus presented <strong>cyanotic</strong> with a <strong>CRT</strong> greater than 4 seconds. CRT is…",
+          "opts": [
+            "Capillary Refill Time",
+            "Cardiac Rhythm Test",
+            "Central Respiratory Tone",
+            "Chronic Renal Therapy"
+          ],
+          "correct": 0,
+          "exp": "Capillary refill time. A prolonged CRT indicates poor perfusion."
+        },
+        {
+          "section": "Body-System Case Rounds",
+          "q": "Piper's suspected <strong>GDV</strong> stands for…",
+          "opts": [
+            "Gastro-Duodenal Ventriculitis",
+            "Gastric Dilatation and Volvulus",
+            "Gastric Duodenal Vomiting",
+            "Generalized Digestive Volvulus"
+          ],
+          "correct": 1,
+          "exp": "Gastric = of the stomach, dilatation = abnormal stretching, volvulus = twisting on itself."
+        },
+        {
+          "section": "Body-System Case Rounds",
+          "q": "Chuck's bloodwork shows <strong>glucosuria</strong> and a <strong>BG of 450</strong>, consistent with…",
+          "opts": [
+            "Hyperthyroidism",
+            "Addison's disease",
+            "Diabetes mellitus",
+            "Diabetes insipidus"
+          ],
+          "correct": 2,
+          "exp": "Diabetes mellitus, caused by decreased pancreatic insulin production."
+        },
+        {
+          "section": "Vaccines & Medications",
+          "q": "<strong>Give 1 tab PO TID ac</strong> translated for the owner's label reads…",
+          "opts": [
+            "1 tablet by mouth twice a day, after meals",
+            "1 tablet by mouth three times a day, after meals",
+            "1 tablet in the ear three times a day",
+            "1 tablet by mouth three times a day, before meals"
+          ],
+          "correct": 3,
+          "exp": "PO = by mouth, TID = three times a day, ac = before meals."
+        },
+        {
+          "section": "Vaccines & Medications",
+          "q": "&ldquo;Give one tablet twice a day as needed for pain&rdquo; written in record abbreviations is…",
+          "opts": [
+            "1 tab PO BID prn for pain",
+            "1 tab PO TID prn for pain",
+            "1 tab SQ BID prn for pain",
+            "1 tab PO QID ac for pain"
+          ],
+          "correct": 0,
+          "exp": "BID = twice a day; prn = as needed; PO = by mouth."
+        },
+        {
+          "section": "Vaccines & Medications",
+          "q": "<strong>Administer 2 gtts OS QID</strong> means…",
+          "opts": [
+            "2 tablets by mouth four times a day",
+            "2 drops in the left eye four times a day",
+            "2 drops in the right eye four times a day",
+            "2 drops in both eyes twice a day"
+          ],
+          "correct": 1,
+          "exp": "gtts = drops, OS = left eye, QID = four times a day."
+        },
+        {
+          "section": "Vaccines & Medications",
+          "q": "Which of these is a <strong>parenteral</strong> route?",
+          "opts": [
+            "Via nasogastric tube",
+            "Rectal suppository",
+            "Intravenous injection",
+            "By mouth"
+          ],
+          "correct": 2,
+          "exp": "Parenteral routes do not include the GI tract. The other three all deliver medication through the GI tract, making them enteral."
+        },
+        {
+          "section": "Vaccines & Medications",
+          "q": "<strong>FVRCP</strong> protects cats against Feline Viral Rhinotracheitis, Calicivirus and…",
+          "opts": [
+            "Feline Leukemia Virus",
+            "Rabies",
+            "Chlamydia",
+            "Panleukopenia"
+          ],
+          "correct": 3,
+          "exp": "FVR = Feline Viral Rhinotracheitis, C = Calicivirus, P = Panleukopenia. FeLV is a separate vaccine."
+        }
+      ]
+    }
+  ],
+  "cases": []
+}
