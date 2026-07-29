@@ -153,22 +153,50 @@ simulations.forEach(s=>{
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const modal=$("#modal");
 const modalContent=$("#modalContent");
+const MODAL_DISCLOSURE_KEYS=new Set([" ","Space","Spacebar","Enter","Return"]);
+let modalDisclosureKeyToggle=null;
 function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2200)}
 function openModal(html){modalContent.innerHTML=html;if(!modal.open)modal.showModal()}
 function toggleModalDisclosure(summary){
  const details=summary.closest("details");
  if(details)details.open=!details.open;
 }
+function modalDisclosureSummary(target){
+ const summary=target instanceof Element?target.closest("summary"):null;
+ return summary&&modalContent.contains(summary)?summary:null;
+}
+function rememberModalDisclosureKeyToggle(summary){
+ modalDisclosureKeyToggle={summary,expires:performance.now()+400};
+}
+function consumeModalDisclosureKeyToggle(summary){
+ if(!modalDisclosureKeyToggle)return false;
+ const match=modalDisclosureKeyToggle.summary===summary&&modalDisclosureKeyToggle.expires>=performance.now();
+ modalDisclosureKeyToggle=null;
+ return match;
+}
 function handleModalDisclosureKeydown(e){
- const key=e.key;
- if((key!==" "&&key!=="Spacebar"&&key!=="Enter")||e.altKey||e.ctrlKey||e.metaKey)return;
- const summary=e.target instanceof Element?e.target.closest("summary"):null;
- if(!summary||!modalContent.contains(summary))return;
+ const summary=modalDisclosureSummary(e.target);
+ if(!summary||!MODAL_DISCLOSURE_KEYS.has(e.key)||e.altKey||e.ctrlKey||e.metaKey||e.repeat)return;
  e.preventDefault();
  e.stopPropagation();
+ rememberModalDisclosureKeyToggle(summary);
  toggleModalDisclosure(summary);
 }
+function handleModalDisclosureKeyup(e){
+ const summary=modalDisclosureSummary(e.target);
+ if(!summary||!MODAL_DISCLOSURE_KEYS.has(e.key))return;
+ e.preventDefault();
+ e.stopPropagation();
+}
+function handleModalDisclosureClick(e){
+ const summary=modalDisclosureSummary(e.target);
+ if(!summary||!consumeModalDisclosureKeyToggle(summary))return;
+ e.preventDefault();
+ e.stopPropagation();
+}
 modalContent.addEventListener("keydown",handleModalDisclosureKeydown,true);
+modalContent.addEventListener("keyup",handleModalDisclosureKeyup,true);
+modalContent.addEventListener("click",handleModalDisclosureClick,true);
 function switchView(id){
  $$(".view").forEach(v=>v.classList.toggle("active",v.id===id));
  $$(".nav").forEach(n=>n.classList.toggle("active",n.dataset.view===id));
