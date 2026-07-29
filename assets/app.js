@@ -151,8 +151,24 @@ simulations.forEach(s=>{
 });
 
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const modal=$("#modal");
+const modalContent=$("#modalContent");
 function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2200)}
-function openModal(html){$("#modalContent").innerHTML=html;$("#modal").showModal()}
+function openModal(html){modalContent.innerHTML=html;modal.showModal()}
+function toggleModalDisclosure(summary){
+ const details=summary.closest("details");
+ if(details)details.open=!details.open;
+}
+function handleModalDisclosureKeydown(e){
+ const key=e.key;
+ if((key!==" "&&key!=="Spacebar"&&key!=="Enter")||e.altKey||e.ctrlKey||e.metaKey)return;
+ const summary=e.target instanceof Element?e.target.closest("summary"):null;
+ if(!summary||!modalContent.contains(summary))return;
+ e.preventDefault();
+ e.stopPropagation();
+ toggleModalDisclosure(summary);
+}
+modalContent.addEventListener("keydown",handleModalDisclosureKeydown,true);
 function switchView(id){
  $$(".view").forEach(v=>v.classList.toggle("active",v.id===id));
  $$(".nav").forEach(n=>n.classList.toggle("active",n.dataset.view===id));
@@ -482,7 +498,7 @@ $("#profileBtn").addEventListener("click",()=>{
  openModal(`<span class="eyebrow">User profile</span><h1 class="modal-title">${escapeHtml(name)}</h1><p>${escapeHtml(sub)}</p><div class="detail-card"><strong>Account role</strong><span>${escapeHtml(currentRole())}</span></div><div class="detail-card"><strong>Signed in as</strong><span>${escapeHtml(hlsAuth.user?.email||"—")}</span></div><button class="secondary" id="logoutBtn">Log out</button>`);
  $("#logoutBtn").addEventListener("click",async()=>{$("#modal").close();await sb.auth.signOut();showAuthGate();toast("Signed out")});
 });
-$("#modalClose").addEventListener("click",()=>$("#modal").close());
+$("#modalClose").addEventListener("click",()=>modal.close());
 
 const notifications=[
  ["Competency review ready","Sofia Ramirez requested sign-off for Urgent Call Triage."],
@@ -1917,6 +1933,20 @@ function lessonScoredModules(lesson){return (lesson?.content?.modules||[]).filte
 function lessonModuleScores(lesson,st){
  return lessonScoredModules(lesson).map(m=>st.moduleScores[m.id]).filter(v=>typeof v==='number'&&!Number.isNaN(v));
 }
+function snapshotModuleState(st,id){
+ return{
+  progressExists:Object.prototype.hasOwnProperty.call(st.moduleProgress,id),
+  progress:st.moduleProgress[id],
+  scoreExists:Object.prototype.hasOwnProperty.call(st.moduleScores,id),
+  score:st.moduleScores[id]
+ };
+}
+function restoreModuleState(st,id,snap){
+ if(snap.progressExists)st.moduleProgress[id]=snap.progress;
+ else delete st.moduleProgress[id];
+ if(snap.scoreExists)st.moduleScores[id]=snap.score;
+ else delete st.moduleScores[id];
+}
 function moduleQuestionType(q){return q?.type==='multi_select'?'multi_select':'single'}
 function moduleSelectionsMatch(selected,correct){
  if(!Array.isArray(selected)||!Array.isArray(correct)||selected.length!==correct.length)return false;
@@ -2091,6 +2121,7 @@ async function saveProgress(lesson,st,opts={}){
  if(isBundledFallbackLesson(lesson)){toast('Progress sync is unavailable while live lesson data is offline');return false}
  const uid=hlsAuth.user?.id; if(!uid)return false;
  const scores=lessonModuleScores(lesson,st);
+ const hasScoredModules=lessonScoredModules(lesson).length>0;
  const avg=scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length):null;
  const nextAttempts=(st.progressRow?.quiz_attempts||0)+(opts.attempt?1:0);
  const done=allRequirementsMet(lesson,st);
@@ -2104,11 +2135,11 @@ async function saveProgress(lesson,st,opts={}){
  const row={
   user_id:uid,lesson_id:lesson.id,
   status:done?'completed':'in_progress',
-  quiz_score:avg,
-  quiz_attempts:scores.length?nextAttempts:null,
   completed_at:st.progressRow?.completed_at||(done?new Date().toISOString():null),
   detail
  };
+ if(hasScoredModules&&scores.length)row.quiz_score=avg;
+ if(hasScoredModules&&(opts.attempt||scores.length||st.progressRow?.quiz_attempts!=null))row.quiz_attempts=nextAttempts;
  const {data,error}=await sb.from('lesson_progress').upsert(row,{onConflict:'user_id,lesson_id'}).select().single();
  if(error){toast('Progress could not be saved');return false}
  st.progressRow=data;
@@ -2397,10 +2428,16 @@ function answerQuizQuestion(qi,oi){
 }
 async function completeManualModule(){
  const m=activeModule,lesson=activeLesson(),st=activeState();
+ const snap=snapshotModuleState(st,m.id);
  st.moduleProgress[m.id]=true;
- await saveProgress(lesson,st);
+ const saved=await saveProgress(lesson,st);
+ if(!saved){
+  restoreModuleState(st,m.id,snap);
+  renderModuleModal();
+  return;
+ }
  toast(`${m.title} complete`);
- document.querySelector('#modal').close();
+ modal.close();
  paintLesson();
 }
 async function renderQuizResult(){
@@ -2408,9 +2445,10 @@ async function renderQuizResult(){
  const total=moduleQuestionCount(m);
  const correctCount=Object.values(quizAnswers).filter(a=>a.correct===true).length;
  const pct=total?Math.round((correctCount/total)*100):0;
-  const review=m.mode==='review';
+ const review=m.mode==='review';
  const ungradedReview=moduleIsUngradedReview(m);
  const passed=review||ungradedReview?true:pct>=75;
+ const snap=snapshotModuleState(st,m.id);
  if(moduleUsesScoring(m))st.moduleScores[m.id]=pct;
  if(passed)st.moduleProgress[m.id]=true;
  document.querySelector('#l2QuizResult').innerHTML=ungradedReview
@@ -2432,8 +2470,12 @@ async function renderQuizResult(){
   </div>`;
  document.querySelector('#l2RetakeQuiz')?.addEventListener('click',()=>{quizAnswers={};renderModuleModal()});
  document.querySelector('#l2CloseModuleModal')?.addEventListener('click',()=>{document.querySelector('#modal').close();paintLesson()});
+ const saved=await saveProgress(lesson,st,{attempt:moduleUsesScoring(m)});
+ if(!saved){
+  restoreModuleState(st,m.id,snap);
+  return;
+ }
  if(passed)toast(review||ungradedReview?`${m.title} complete`:`${m.title} module complete — ${pct}%`);
- await saveProgress(lesson,st,{attempt:moduleUsesScoring(m)});
 }
 
 /* ---- Case runner ---- */
