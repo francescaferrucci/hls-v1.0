@@ -464,6 +464,12 @@ html[data-theme="dark"] .anat-match-zone.is-wrong{background:#3d1f1f}
 .triage-manual-complete{margin-top:16px;padding:16px;border-radius:14px;background:var(--soft);border:1px solid var(--line)}
 .triage-manual-complete p{margin:0 0 14px;line-height:1.6}
 .triage-manual-actions{display:flex;gap:10px;flex-wrap:wrap}
+.triage-module-result-actions{margin-top:12px;display:flex;gap:10px;flex-wrap:wrap}
+.triage-module-status{margin:0 0 14px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--panel);line-height:1.5}
+.triage-module-status.is-info{border-color:#9fd9c8;background:#e4f6ef;color:#08705c}
+.triage-module-status.is-error{border-color:#f3bcbc;background:#fdecec;color:#a02020}
+.triage-module-action:focus-visible,#l2ModuleModalTitle:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+.triage-module-action[disabled]{opacity:.6;cursor:not-allowed}
 .triage-check-group{display:grid;gap:10px}
 .triage-check-option{display:flex;gap:12px;align-items:flex-start;padding:13px 14px;border:1px solid var(--line);border-radius:12px;background:var(--panel);cursor:pointer}
 .triage-check-option input{margin-top:3px;transform:scale(1.15)}
@@ -472,9 +478,12 @@ html[data-theme="dark"] .anat-match-zone.is-wrong{background:#3d1f1f}
 .triage-check-option.is-correct{border-color:var(--green);background:#e5f7f1;color:#08705c}
 .triage-check-option.is-wrong{border-color:var(--red);background:#fde8e8;color:#963d3d}
 .triage-inline-submit{min-width:150px}
-html[data-theme=\"dark\"] .triage-hero-strip p{color:#d7e8f2}
-html[data-theme=\"dark\"] .triage-check-option.is-correct{background:#0f3b33;color:#8fe0cb}
-html[data-theme=\"dark\"] .triage-check-option.is-wrong{background:#3d1f1f;color:#f0b3b3}
+html[data-theme="dark"] .triage-hero-strip p{color:#d7e8f2}
+html[data-theme="dark"] .triage-module-status{background:var(--soft2)}
+html[data-theme="dark"] .triage-module-status.is-info{background:#0f3b33;color:#8fe0cb;border-color:#1d6455}
+html[data-theme="dark"] .triage-module-status.is-error{background:#3d1f1f;color:#f0b3b3;border-color:#6d3535}
+html[data-theme="dark"] .triage-check-option.is-correct{background:#0f3b33;color:#8fe0cb}
+html[data-theme="dark"] .triage-check-option.is-wrong{background:#3d1f1f;color:#f0b3b3}
 
 @media(max-width:780px){
  .l2-lesson-actions{justify-content:flex-start}
@@ -488,5 +497,5 @@ html[data-theme=\"dark\"] .triage-check-option.is-wrong{background:#3d1f1f;color
  .triage-video figcaption,.triage-card,.triage-link-card,.triage-manual-complete{padding:14px}
 }
 @media(prefers-reduced-motion:reduce){
- .triage-accordion-plus,.triage-video-frame,.triage-check-option,.triage-manual-actions .primary,.triage-manual-actions .secondary{transition:none!important}
+ .triage-accordion-plus,.triage-video-frame,.triage-check-option,.triage-manual-actions .primary,.triage-manual-actions .secondary,.triage-module-action{transition:none!important}
 }

@@ -154,7 +154,7 @@ const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const modal=$("#modal");
 const modalContent=$("#modalContent");
 function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2200)}
-function openModal(html){modalContent.innerHTML=html;modal.showModal()}
+function openModal(html){modalContent.innerHTML=html;if(!modal.open)modal.showModal()}
 function toggleModalDisclosure(summary){
  const details=summary.closest("details");
  if(details)details.open=!details.open;
@@ -2120,31 +2120,36 @@ function refreshLevel2ProgressViews(lesson){
 async function saveProgress(lesson,st,opts={}){
  if(isBundledFallbackLesson(lesson)){toast('Progress sync is unavailable while live lesson data is offline');return false}
  const uid=hlsAuth.user?.id; if(!uid)return false;
- const scores=lessonModuleScores(lesson,st);
- const hasScoredModules=lessonScoredModules(lesson).length>0;
- const avg=scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length):null;
- const nextAttempts=(st.progressRow?.quiz_attempts||0)+(opts.attempt?1:0);
- const done=allRequirementsMet(lesson,st);
- const detail={
-  moduleProgress:st.moduleProgress,
-  moduleScores:st.moduleScores,
-  casesCompleted:st.casesCompleted,
-  checklist:st.checklist,
-  attested:!!st.attested
- };
- const row={
-  user_id:uid,lesson_id:lesson.id,
-  status:done?'completed':'in_progress',
-  completed_at:st.progressRow?.completed_at||(done?new Date().toISOString():null),
-  detail
- };
- if(hasScoredModules&&scores.length)row.quiz_score=avg;
- if(hasScoredModules&&(opts.attempt||scores.length||st.progressRow?.quiz_attempts!=null))row.quiz_attempts=nextAttempts;
- const {data,error}=await sb.from('lesson_progress').upsert(row,{onConflict:'user_id,lesson_id'}).select().single();
- if(error){toast('Progress could not be saved');return false}
- st.progressRow=data;
- refreshLevel2ProgressViews(lesson);
- return true;
+ try{
+  const scores=lessonModuleScores(lesson,st);
+  const hasScoredModules=lessonScoredModules(lesson).length>0;
+  const avg=scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length):null;
+  const nextAttempts=(st.progressRow?.quiz_attempts||0)+(opts.attempt?1:0);
+  const done=allRequirementsMet(lesson,st);
+  const detail={
+   moduleProgress:st.moduleProgress,
+   moduleScores:st.moduleScores,
+   casesCompleted:st.casesCompleted,
+   checklist:st.checklist,
+   attested:!!st.attested
+  };
+  const row={
+   user_id:uid,lesson_id:lesson.id,
+   status:done?'completed':'in_progress',
+   completed_at:st.progressRow?.completed_at||(done?new Date().toISOString():null),
+   detail
+  };
+  if(hasScoredModules&&scores.length)row.quiz_score=avg;
+  if(hasScoredModules&&(opts.attempt||scores.length||st.progressRow?.quiz_attempts!=null))row.quiz_attempts=nextAttempts;
+  const {data,error}=await sb.from('lesson_progress').upsert(row,{onConflict:'user_id,lesson_id'}).select().single();
+  if(error){toast('Progress could not be saved');return false}
+  st.progressRow=data;
+  refreshLevel2ProgressViews(lesson);
+  return true;
+ }catch(error){
+  toast('Progress could not be saved');
+  return false;
+ }
 }
 async function requestSignoff(lesson,st){
  if(isBundledFallbackLesson(lesson)){toast('Sign-off requests are unavailable while live lesson data is offline');return null}
@@ -2354,36 +2359,183 @@ function wireLessonPlayer(){
 }
 
 /* ---- Module modal with knowledge check ---- */
+const TRIAGE_REVIEW_LESSON_SLUG='triage-review';
 let activeModule=null, quizAnswers={};
+const moduleModalState={saving:false,message:'',isError:false,reviewSaveStatus:'idle'};
+function resetModuleModalState(){
+ moduleModalState.saving=false;
+ moduleModalState.message='';
+ moduleModalState.isError=false;
+ moduleModalState.reviewSaveStatus='idle';
+}
+function setModuleModalMessage(message,{error=false}={}){
+ moduleModalState.message=message||'';
+ moduleModalState.isError=!!message&&error;
+}
+function lessonUsesTriageContinueFlow(lesson){return lesson?.slug===TRIAGE_REVIEW_LESSON_SLUG}
+function lessonModules(lesson){return Array.isArray(lesson?.content?.modules)?lesson.content.modules:[]}
+function nextLessonModule(lesson,module){
+ const modules=lessonModules(lesson);
+ const idx=modules.findIndex(item=>item.id===module?.id);
+ return idx>=0?modules[idx+1]||null:null;
+}
+function isLastLessonModule(lesson,module){return !nextLessonModule(lesson,module)}
+function triagePrimaryActionLabel(lesson,module){return isLastLessonModule(lesson,module)?'Finish lesson':'Continue'}
+function triagePrimaryActionAriaLabel(lesson,module){
+ const next=nextLessonModule(lesson,module);
+ return next
+  ?`Continue to Module ${next.id}: ${next.title}`
+  :`Finish ${lesson.title} and return to curriculum`;
+}
+function triageModuleStatusMarkup(){
+ if(!moduleModalState.message)return '';
+ const tone=moduleModalState.isError?'is-error':'is-info';
+ const role=moduleModalState.isError?'alert':'status';
+ const live=moduleModalState.isError?'assertive':'polite';
+ return `<div class="triage-module-status ${tone}" role="${role}" aria-live="${live}" aria-atomic="true">${escapeHtml(moduleModalState.message)}</div>`;
+}
+function focusModuleModalHeading(){
+ requestAnimationFrame(()=>{
+  const heading=document.querySelector('#l2ModuleModalTitle');
+  heading?.focus?.();
+ });
+}
+function focusLessonModuleButton(moduleId){
+ requestAnimationFrame(()=>{
+  const btn=moduleId!=null?document.querySelector(`.l2-open-module[data-module="${moduleId}"]`):null;
+  if(btn){btn.focus();return}
+  document.querySelector('#backToAcademiesL2')?.focus?.();
+ });
+}
+function closeActiveModuleToLesson(opts={}){
+ const st=activeState();
+ if(opts.tab)st.tab=opts.tab;
+ const focusModuleId=opts.focusModuleId??activeModule?.id;
+ activeModule=null;
+ resetModuleModalState();
+ if(modal.open)modal.close();
+ paintLesson();
+ focusLessonModuleButton(focusModuleId);
+}
+function openNextTriageModule(lesson,module){
+ const next=nextLessonModule(lesson,module);
+ if(!next){
+  closeActiveModuleToLesson({tab:'curriculum',focusModuleId:module.id});
+  return;
+ }
+ activeModule=next;
+ quizAnswers={};
+ resetModuleModalState();
+ renderModuleModal({focusHeading:true});
+}
+function triageManualActionMarkup(module,lesson){
+ const saving=moduleModalState.saving;
+ const primaryLabel=saving?(isLastLessonModule(lesson,module)?'Saving lesson…':'Saving…'):triagePrimaryActionLabel(lesson,module);
+ return `<div class="triage-manual-complete" aria-busy="${saving?'true':'false'}">
+    <p>${module.completionBody||'Use this when you have reviewed the source content and are ready to mark the module complete.'}</p>
+    ${triageModuleStatusMarkup()}
+    <div class="triage-manual-actions">
+     <button class="secondary triage-module-action" id="l2CloseModuleModal" ${saving?'disabled':''}>Return to curriculum</button>
+     <button class="primary triage-module-action" id="l2ManualCompleteButton" ${saving?'disabled':''} aria-label="${escapeHtml(triagePrimaryActionAriaLabel(lesson,module))}">${primaryLabel}</button>
+    </div>
+   </div>`;
+}
+function renderTriageReviewResult(module,lesson){
+ const host=document.querySelector('#l2QuizResult');
+ if(!host)return;
+ const total=moduleQuestionCount(module);
+ const saving=moduleModalState.reviewSaveStatus==='saving';
+ const saved=moduleModalState.reviewSaveStatus==='saved';
+ const finalModule=isLastLessonModule(lesson,module);
+ const primaryLabel=saving
+  ?(finalModule?'Saving lesson…':'Saving completion…')
+  :saved
+  ?(finalModule?'Finish lesson':'Continue')
+  :(finalModule?'Try finishing lesson again':'Try saving again');
+ const primaryId=saved?'l2TriageContinueButton':'l2TriageRetryButton';
+ const primaryAria=saved?` aria-label="${escapeHtml(triagePrimaryActionAriaLabel(lesson,module))}"`:'';
+ host.innerHTML=`<div class="feedback-box"><strong>Review complete.</strong> You finished all ${total} source review ${total===1?'item':'items'}. This module is intentionally ungraded until Hannah validates authoritative answer keys.</div>
+  ${triageModuleStatusMarkup()}
+  <div class="triage-module-result-actions" aria-busy="${saving?'true':'false'}">
+   <button class="secondary triage-module-action" id="l2RetakeQuiz" ${saving?'disabled':''}>Start the review again</button>
+   <button class="secondary triage-module-action" id="l2CloseModuleModal" ${saving?'disabled':''}>Return to curriculum</button>
+   <button class="primary triage-module-action" id="${primaryId}" ${saving?'disabled':''}${primaryAria}>${primaryLabel}</button>
+  </div>`;
+ document.querySelector('#l2RetakeQuiz')?.addEventListener('click',()=>{quizAnswers={};resetModuleModalState();renderModuleModal()});
+ document.querySelector('#l2CloseModuleModal')?.addEventListener('click',()=>closeActiveModuleToLesson({focusModuleId:module.id}));
+ document.querySelector('#l2TriageContinueButton')?.addEventListener('click',()=>openNextTriageModule(lesson,module));
+ document.querySelector('#l2TriageRetryButton')?.addEventListener('click',()=>{void saveTriageReviewModule()});
+}
+async function saveTriageReviewModule(){
+ const m=activeModule,lesson=activeLesson(),st=activeState();
+ if(!m||!lesson||moduleModalState.saving)return false;
+ const wasComplete=!!st.moduleProgress[m.id];
+ const needsSave=!wasComplete||!st.progressRow;
+ const snap=snapshotModuleState(st,m.id);
+ if(!needsSave){
+  moduleModalState.reviewSaveStatus='saved';
+  setModuleModalMessage(isLastLessonModule(lesson,m)?'Lesson completion already saved. Finish lesson when ready.':'Completion already saved. Continue when ready.');
+  renderTriageReviewResult(m,lesson);
+  return true;
+ }
+ moduleModalState.saving=true;
+ moduleModalState.reviewSaveStatus='saving';
+ setModuleModalMessage(isLastLessonModule(lesson,m)?'Saving lesson completion…':'Saving review completion…');
+ st.moduleProgress[m.id]=true;
+ renderTriageReviewResult(m,lesson);
+ const saved=await saveProgress(lesson,st);
+ if(!saved){
+  restoreModuleState(st,m.id,snap);
+  moduleModalState.saving=false;
+  moduleModalState.reviewSaveStatus='error';
+  setModuleModalMessage('Progress could not be saved. Your responses are still here. Try saving again.',{error:true});
+  renderTriageReviewResult(m,lesson);
+  return false;
+ }
+ moduleModalState.saving=false;
+ moduleModalState.reviewSaveStatus='saved';
+ setModuleModalMessage(isLastLessonModule(lesson,m)?'Lesson completion saved. Finish lesson when ready.':'Completion saved. Continue when ready.');
+ renderTriageReviewResult(m,lesson);
+ if(!wasComplete)toast(`${m.title} complete`);
+ return true;
+}
 function openLessonModule(id){
  activeModule=activeLesson().content.modules.find(m=>m.id===id);
  quizAnswers={};
- renderModuleModal();
+ resetModuleModalState();
+ renderModuleModal({focusHeading:true});
 }
-function renderModuleModal(){
- const m=activeModule,lesson=activeLesson();
+function renderModuleModal(opts={}){
+ const m=activeModule,lesson=activeLesson(),st=activeState();
+ if(!m||!lesson)return;
  const answeredCount=Object.keys(quizAnswers).length;
  const meta=moduleAssessmentMeta(m,answeredCount);
  const total=moduleQuestionCount(m);
  const hasQuiz=total>0;
  const answeredPct=moduleAnsweredPercent(m,answeredCount);
+ const usesTriageFlow=lessonUsesTriageContinueFlow(lesson);
  openModal(`<span class="eyebrow">Module ${m.id} of ${lesson.content.modules.length} • ${m.minutes} min</span>
-  <h1 class="modal-title">${m.title}</h1>
+  <h1 class="modal-title" id="l2ModuleModalTitle" tabindex="-1">${m.title}</h1>
   ${m.content}
   <div style="margin-top:22px;border-top:1px solid var(--line);padding-top:18px">
    <div class="section-head"><div><span class="eyebrow">${meta.eyebrow}</span><h2>${meta.heading}</h2></div>${meta.label?`<span class="l2-quiz-score" id="l2QuizScoreLabel">${meta.label}</span>`:''}</div>
    ${meta.showBar?`<div class="progress"><span id="l2QuizProgressBar" style="width:${answeredPct}%"></span></div>`:''}
-   ${moduleIsManual(m)?`<div class="triage-manual-complete"><p>${m.completionBody||'Use this when you have reviewed the source content and are ready to mark the module complete.'}</p><div class="triage-manual-actions"><button class="secondary" id="l2CloseModuleModal">Return to curriculum</button><button class="primary" id="l2ManualCompleteButton">${activeState().moduleProgress[m.id]?'Marked complete':'Mark module complete'}</button></div></div>`:''}
+   ${moduleIsManual(m)
+    ?usesTriageFlow
+     ?triageManualActionMarkup(m,lesson)
+     :`<div class="triage-manual-complete"><p>${m.completionBody||'Use this when you have reviewed the source content and are ready to mark the module complete.'}</p><div class="triage-manual-actions"><button class="secondary" id="l2CloseModuleModal">Return to curriculum</button><button class="primary" id="l2ManualCompleteButton">${st.moduleProgress[m.id]?'Marked complete':'Mark module complete'}</button></div></div>`
+    :''}
    ${hasQuiz?`<div id="l2QuizContainer">${m.quiz.map((q,qi)=>renderModuleQuestion(q,qi,m.quiz[qi-1])).join('')}</div>`:''}
    <div id="l2QuizResult" style="margin-top:16px"></div>
   </div>`);
  document.querySelectorAll('#l2QuizContainer .decision-option').forEach(btn=>btn.onclick=()=>answerQuizQuestion(+btn.dataset.qi,+btn.dataset.oi));
  document.querySelectorAll('#l2QuizContainer .triage-inline-submit').forEach(btn=>btn.onclick=()=>answerQuizQuestion(+btn.dataset.qi));
- document.querySelector('#l2ManualCompleteButton')?.addEventListener('click',()=>completeManualModule());
- document.querySelector('#l2CloseModuleModal')?.addEventListener('click',()=>{document.querySelector('#modal').close();paintLesson()});
+ document.querySelector('#l2ManualCompleteButton')?.addEventListener('click',()=>{void completeManualModule()});
+ document.querySelector('#l2CloseModuleModal')?.addEventListener('click',()=>closeActiveModuleToLesson({focusModuleId:m.id}));
  if(m.hwWidget)wireHwWidget(m.hwWidget);
  wireAnatomyWidgets(document.querySelector('#modalContent'));
- if(hasQuiz&&answeredCount===total)renderQuizResult();
+ if(hasQuiz&&answeredCount===total)void renderQuizResult();
+ if(opts.focusHeading)focusModuleModalHeading();
 }
 function answerQuizQuestion(qi,oi){
  const m=activeModule;
@@ -2424,24 +2576,51 @@ function answerQuizQuestion(qi,oi){
  }
  const bar=document.querySelector('#l2QuizProgressBar');
  if(bar)bar.style.width=moduleAnsweredPercent(m,Object.keys(quizAnswers).length)+'%';
- if(Object.keys(quizAnswers).length===moduleQuestionCount(m))renderQuizResult();
+ if(Object.keys(quizAnswers).length===moduleQuestionCount(m))void renderQuizResult();
 }
 async function completeManualModule(){
  const m=activeModule,lesson=activeLesson(),st=activeState();
+ const usesTriageFlow=lessonUsesTriageContinueFlow(lesson);
+ if(usesTriageFlow&&moduleModalState.saving)return;
  const snap=snapshotModuleState(st,m.id);
+ const wasComplete=!!st.moduleProgress[m.id];
+ const needsSave=!wasComplete||!st.progressRow;
+ if(usesTriageFlow&&!needsSave){
+  openNextTriageModule(lesson,m);
+  return;
+ }
+ if(usesTriageFlow){
+  moduleModalState.saving=true;
+  setModuleModalMessage(isLastLessonModule(lesson,m)?'Saving lesson completion…':'Saving module completion…');
+  renderModuleModal();
+ }
  st.moduleProgress[m.id]=true;
- const saved=await saveProgress(lesson,st);
+ const saved=needsSave?await saveProgress(lesson,st):true;
  if(!saved){
   restoreModuleState(st,m.id,snap);
+  if(usesTriageFlow){
+   moduleModalState.saving=false;
+   setModuleModalMessage('Progress could not be saved. Stay in this module and try Continue again.',{error:true});
+  }
   renderModuleModal();
   return;
  }
- toast(`${m.title} complete`);
+ if(usesTriageFlow){
+  if(!wasComplete)toast(`${m.title} complete`);
+  openNextTriageModule(lesson,m);
+  return;
+ }
+ if(!wasComplete)toast(`${m.title} complete`);
  modal.close();
  paintLesson();
 }
 async function renderQuizResult(){
  const m=activeModule,lesson=activeLesson(),st=activeState();
+ if(lessonUsesTriageContinueFlow(lesson)&&moduleIsUngradedReview(m)){
+  if(moduleModalState.reviewSaveStatus==='idle')await saveTriageReviewModule();
+  else renderTriageReviewResult(m,lesson);
+  return;
+ }
  const total=moduleQuestionCount(m);
  const correctCount=Object.values(quizAnswers).filter(a=>a.correct===true).length;
  const pct=total?Math.round((correctCount/total)*100):0;
@@ -2468,8 +2647,8 @@ async function renderQuizResult(){
    ${!passed?'<button class="secondary" id="l2RetakeQuiz">Retake knowledge check</button>':''}
    <button class="primary" id="l2CloseModuleModal">Return to curriculum</button>
   </div>`;
- document.querySelector('#l2RetakeQuiz')?.addEventListener('click',()=>{quizAnswers={};renderModuleModal()});
- document.querySelector('#l2CloseModuleModal')?.addEventListener('click',()=>{document.querySelector('#modal').close();paintLesson()});
+ document.querySelector('#l2RetakeQuiz')?.addEventListener('click',()=>{quizAnswers={};resetModuleModalState();renderModuleModal()});
+ document.querySelector('#l2CloseModuleModal')?.addEventListener('click',()=>closeActiveModuleToLesson({focusModuleId:m.id}));
  const saved=await saveProgress(lesson,st,{attempt:moduleUsesScoring(m)});
  if(!saved){
   restoreModuleState(st,m.id,snap);
