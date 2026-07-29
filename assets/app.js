@@ -1205,14 +1205,35 @@ const l5Stages=['History','Assessment','Differentials','Diagnostics','Treatment'
 let l5State=JSON.parse(localStorage.getItem('hlsTrueLevel5')||'{"tab":"overview","caseStep":0,"completed":false}');
 const persist=()=>localStorage.setItem('hlsTrueLevel5',JSON.stringify(l5State));
 
+function medicalFoundationsSnapshot(){
+ const snapshot=window.getCourseProgressSnapshot?.('medical-foundations');
+ const pct=snapshot&&Number.isFinite(snapshot.hubPct)?snapshot.hubPct:0;
+ const status=pct>=100?'Complete':pct>0?'In progress':'Available';
+ return{pct,status};
+}
+
+function medicalLevelsForRender(){
+ const foundations=medicalFoundationsSnapshot();
+ return medicalLevels.map(level=>level.n===1?{...level,progress:foundations.pct,status:foundations.status}:level);
+}
+
 function renderMedicalAcademy(){
  const grid=document.querySelector('#medicalLevelGrid'); if(!grid)return;
- grid.innerHTML=medicalLevels.map(l=>`<article class="level-card ${l.n===10?'current':''} ${l.status==='Locked'?'locked':''}"><div class="section-head"><div class="level-number">${l.n}</div><span class="badge ${l.status==='Complete'?'good':l.status==='Current'?'warning':l.status==='Locked'?'neutral':'warning'}">${l.status}</span></div><h2>${l.title}</h2><p>${l.desc}</p><div class="progress"><span style="width:${l.progress}%"></span></div><div class="card-footer"><strong>${l.progress}%</strong><button class="${l.n===10?'primary':'secondary'} medical-level-open" data-level="${l.n}" ${l.status==='Locked'?'disabled':''}>${l.status==='Complete'?'Review':'Open Lesson'}</button></div></article>`).join('');
- document.querySelectorAll('.medical-level-open').forEach(b=>b.onclick=()=>{const n=+b.dataset.level;if(n===1)window.openCourseHub('medical-foundations','Medical Foundations');else if(n===2)window.openCourseHub('patient-assessment','Patient Assessment');else if(n===5)openLevel5();else if(n===6)openLevel6();else if(n===7||n===9)openLevel7();else if(n>=10)openUpperLevel(n);else openModal(`<span class="eyebrow">Hannah Medical Academy</span><h1 class="modal-title">${medicalLevels[n-1].title}</h1><p>${n===8?'This course is complete and remains available for review.':'This course remains part of the same Medical Academy pathway inside the shared Hannah Learning System.'}</p><button class="primary" onclick="document.querySelector('#modal').close()">Return to pathway</button>`)});
+ const levels=medicalLevelsForRender();
+ grid.innerHTML=levels.map(l=>`<article class="level-card ${l.n===10?'current':''} ${l.status==='Locked'?'locked':''}" data-medical-level="${l.n}"><div class="section-head"><div class="level-number">${l.n}</div><span class="badge ${l.status==='Complete'?'good':l.status==='Current'?'warning':l.status==='Locked'?'neutral':'warning'}">${l.status}</span></div><h2>${l.title}</h2><p>${l.desc}</p><div class="progress"><span style="width:${l.progress}%"></span></div><div class="card-footer"><strong>${l.progress}%</strong><button class="${l.n===10?'primary':'secondary'} medical-level-open" data-level="${l.n}" ${l.status==='Locked'?'disabled':''}>${l.status==='Complete'?'Review':'Open Lesson'}</button></div></article>`).join('');
+ document.querySelectorAll('.medical-level-open').forEach(b=>b.onclick=()=>{const n=+b.dataset.level;if(n===1)window.openCourseHub('medical-foundations','Medical Foundations');else if(n===2)window.openCourseHub('patient-assessment','Patient Assessment');else if(n===5)openLevel5();else if(n===6)openLevel6();else if(n===7||n===9)openLevel7();else if(n>=10)openUpperLevel(n);else openModal(`<span class="eyebrow">Hannah Medical Academy</span><h1 class="modal-title">${levels[n-1].title}</h1><p>${n===8?'This course is complete and remains available for review.':'This course remains part of the same Medical Academy pathway inside the shared Hannah Learning System.'}</p><button class="primary" onclick="document.querySelector('#modal').close()">Return to pathway</button>`)});
  document.querySelector('#medicalAcademyMetrics').innerHTML=[['12','Courses available'],['31','Lessons completed'],['12','Competencies validated'],['3','Certificates earned']].map(x=>`<div class="metric-card"><strong>${x[0]}</strong><span>${x[1]}</span></div>`).join('');
 }
-function openMedicalAcademy(){renderMedicalAcademy();switchView('medicalAcademy')}
+async function openMedicalAcademy(){
+ renderMedicalAcademy();
+ switchView('medicalAcademy');
+ try{
+  if(window.ensureCourseSnapshotLoaded)await window.ensureCourseSnapshotLoaded('medical-foundations');
+  renderMedicalAcademy();
+ }catch(e){}
+}
 window.openMedicalAcademy=openMedicalAcademy;
+window.refreshMedicalAcademy=renderMedicalAcademy;
 function openLevel5(tab){if(tab)l5State.tab=tab;persist();renderLevel5();switchView('level5')}
 
 function renderLevel5(){
@@ -1763,6 +1784,8 @@ const bundledLessonFallbackBySlug=Object.fromEntries(Object.values(bundledCourse
 const bundledLessonFallbackCourseBySlug=Object.fromEntries(Object.entries(bundledCourseLessonFallbacks).flatMap(([courseSlug,defs])=>defs.map(def=>[def.slug,courseSlug])));
 const lessonCache={};
 const lessonStates={};
+const courseSlugByLessonSlug={};
+const courseSnapshotLoadPromises={};
 let courseLessons=[];
 let activeSlug=null;
 
@@ -1818,6 +1841,7 @@ async function fetchBundledFallbackCourseLessons(slug){
  for(const def of defs){
   const lesson=lessonCache[def.slug]||await fetchBundledFallbackLesson(def);
   lessonCache[def.slug]=lesson;
+  courseSlugByLessonSlug[lesson.slug]=slug;
   lessons.push(lesson);
  }
  courseLessons=applyCourseOrder(slug,filterCourseLessons(slug,lessons));
@@ -1838,11 +1862,28 @@ async function fetchCourseLessons(){
   const {data,error}=await sb.from('lessons').select('*').eq('course_id',course.id).eq('status','published').order('sort_order',{ascending:true});
   if(error)throw error;
   courseLessons=applyCourseOrder(currentCourse.slug,filterCourseLessons(currentCourse.slug,(data||[]).map(normalizeLessonRow)));
-  courseLessons.forEach(l=>{lessonCache[l.slug]=l});
+  courseLessons.forEach(l=>{lessonCache[l.slug]=l;courseSlugByLessonSlug[l.slug]=currentCourse.slug});
   return courseLessons;
  }catch(error){
-  if(!shouldUseBundledFallback(currentCourse.slug,error))throw error;
+ if(!shouldUseBundledFallback(currentCourse.slug,error))throw error;
   return fetchBundledFallbackCourseLessons(currentCourse.slug);
+ }
+}
+async function fetchCourseLessonsBySlug(slug,opts={}){
+ try{
+  const {data:course,error:cErr}=await sb.from('courses').select('id,slug,title').eq('slug',slug).single();
+  if(cErr)throw cErr;
+  const {data,error}=await sb.from('lessons').select('*').eq('course_id',course.id).eq('status','published').order('sort_order',{ascending:true});
+  if(error)throw error;
+  const lessons=applyCourseOrder(slug,filterCourseLessons(slug,(data||[]).map(normalizeLessonRow)));
+  lessons.forEach(l=>{lessonCache[l.slug]=l;courseSlugByLessonSlug[l.slug]=slug});
+  if(opts.updateActiveCourseLessons)courseLessons=lessons;
+  return lessons;
+ }catch(error){
+  if(!shouldUseBundledFallback(slug,error))throw error;
+  const lessons=await fetchBundledFallbackCourseLessons(slug);
+  if(opts.updateActiveCourseLessons&&currentCourse?.slug===slug)courseLessons=lessons;
+  return lessons;
  }
 }
 async function fetchLesson(slug){
@@ -1851,11 +1892,13 @@ async function fetchLesson(slug){
   const {data,error}=await sb.from('lessons').select('*').eq('slug',slug).single();
   if(error)throw error;
   lessonCache[slug]=normalizeLessonRow(data);
+  if(currentCourse?.slug)courseSlugByLessonSlug[slug]=currentCourse.slug;
   return lessonCache[slug];
  }catch(error){
   const def=bundledLessonFallbackBySlug[slug];
   if(!def||!shouldUseBundledFallback(fallbackCourseForLesson(slug),error))throw error;
   lessonCache[slug]=lessonCache[slug]&&isBundledFallbackLesson(lessonCache[slug])?lessonCache[slug]:await fetchBundledFallbackLesson(def);
+  courseSlugByLessonSlug[slug]=fallbackCourseForLesson(slug);
   return lessonCache[slug];
  }
 }
@@ -1899,9 +1942,86 @@ async function loadRemoteState(lesson,st){
  st.signoff=so&&so.length?so[0]:null;
  return true;
 }
+function courseSnapshotLessons(slug){
+ const allowed=allowedCourseLessonsFor(slug);
+ const lessons=(allowed&&allowed.length?allowed.map(id=>lessonCache[id]).filter(Boolean):Object.values(lessonCache).filter(lesson=>courseSlugByLessonSlug[lesson.slug]===slug));
+ return applyCourseOrder(slug,filterCourseLessons(slug,lessons));
+}
+async function ensureCourseSnapshotLoaded(slug){
+ const cachedLessons=courseSnapshotLessons(slug);
+ const needsLessonRows=!cachedLessons.length;
+ const needsRemoteState=cachedLessons.some(lesson=>!stateFor(lesson.slug).loaded);
+ if(!needsLessonRows&&!needsRemoteState)return buildCourseProgressSnapshot(slug,cachedLessons);
+ if(courseSnapshotLoadPromises[slug])return courseSnapshotLoadPromises[slug];
+ courseSnapshotLoadPromises[slug]=(async()=>{
+  const lessons=needsLessonRows
+   ?await fetchCourseLessonsBySlug(slug,{updateActiveCourseLessons:currentCourse?.slug===slug})
+   :cachedLessons;
+  for(const lesson of lessons){
+   const st=stateFor(lesson.slug);
+   if(!st.loaded)st.loaded=await loadRemoteState(lesson,st);
+  }
+  return buildCourseProgressSnapshot(slug,lessons);
+ })().finally(()=>{delete courseSnapshotLoadPromises[slug]});
+ return courseSnapshotLoadPromises[slug];
+}
+function buildCourseProgressSnapshot(slug,lessons){
+ const planned=plannedLessonsFor(slug);
+ let tiles=lessons.map(l=>({live:true,slug:l.slug,title:l.title,desc:l.summary||'',pct:lessonPercent(l,stateFor(l.slug))})).concat(planned.map(l=>({live:false,slug:l.id,title:l.title,desc:l.desc,pct:0})));
+ tiles=applyCourseOrder(slug,tiles);
+ const livePct=tiles.filter(t=>t.live).reduce((a,t)=>a+t.pct,0);
+ const hubPct=tiles.length?Math.round(livePct/tiles.length):0;
+ return{lessons,planned,tiles,hubPct};
+}
+function paintLevel2Hub(snapshot){
+ const grid=document.querySelector('#level2LessonGrid'); if(!grid)return;
+ const ring=document.querySelector('#level2HubProgressRing'); if(ring)ring.innerHTML=`<strong>${snapshot.hubPct}%</strong><span>Course progress</span>`;
+ const heroHeading=document.querySelector('#courseHubHeroHeading');
+ const heroBody=document.querySelector('#courseHubHeroBody');
+ const desc=document.querySelector('#courseHubDesc');
+ if(!snapshot.lessons.length&&!snapshot.planned.length){
+  if(heroHeading)heroHeading.textContent='This course is being built.';
+  if(heroBody)heroBody.textContent='Lessons for this course will appear here once they are published in Content Studio.';
+  if(desc)desc.textContent='Lessons for this course join the Hannah Learning System as they are built and clinically reviewed.';
+ }else{
+  if(heroHeading)heroHeading.textContent=snapshot.lessons.length?`${snapshot.lessons[snapshot.lessons.length-1].title} is live now.`:'New lessons are on the way.';
+  if(heroBody)heroBody.textContent=snapshot.planned.length?`The remaining ${snapshot.planned.length} ${currentCourse.label} lessons join this course as they're built and clinically reviewed.`:'All published lessons for this course are shown below.';
+  if(desc)desc.textContent=`${snapshot.lessons.length+snapshot.planned.length} core skills every clinical team member builds in this course.`;
+ }
+ const tiles=snapshot.tiles;
+ grid.innerHTML=tiles.map((t,i)=>{
+  const n=i+1;
+  const badge=t.live?(t.pct>=100?'good':'warning'):'neutral';
+  const badgeLabel=t.live?(t.pct>=100?'Complete':t.pct>0?'In progress':'Start here'):'Coming soon';
+  const cta=t.live?(t.pct>0?'Continue lesson':'Start lesson'):'Coming soon';
+  return `<article class="level-card ${t.live?'':'locked'}" data-lesson="${t.slug}"><div class="section-head"><div class="level-number">${n}</div><span class="badge ${badge}">${badgeLabel}</span></div><h2>${t.title}</h2><p>${t.desc}</p><div class="progress"><span style="width:${t.pct}%"></span></div><div class="card-footer"><strong>${t.pct}%</strong><button class="${t.live?'primary':'secondary'} l2-lesson-open" data-lesson="${t.slug}" data-live="${t.live}" ${t.live?'':'disabled'}>${cta}</button></div></article>`;
+ }).join('');
+ if(!tiles.length){
+  grid.innerHTML=`<section class="panel"><span class="eyebrow">${escapeHtml(currentCourse.label)}</span><h2>No lessons published yet</h2><p>This course doesn't have any published lessons in the Hannah Learning System yet. Check back soon, or ask a manager to publish a lesson in Content Studio.</p></section>`;
+ }
+ document.querySelectorAll('.l2-lesson-open').forEach(b=>b.onclick=()=>{
+  const tile=tiles.find(x=>x.slug===b.dataset.lesson);
+  if(tile&&tile.live)renderLessonPlayer(tile.slug,'overview');
+  else if(tile)openModal(`<span class="eyebrow">${escapeHtml(currentCourse.label)} • Coming soon</span><h1 class="modal-title">${tile.title}</h1><p>${tile.desc}</p><p class="safety-note"><strong>In development</strong><span>This lesson is planned for ${escapeHtml(currentCourse.label)} and will appear here once built and clinically reviewed.</span></p><button class="primary" onclick="document.querySelector('#modal').close()">Close</button>`);
+ });
+}
+function refreshLevel2ProgressViews(lesson){
+ if(!lesson)return;
+ if(activeSlug===lesson.slug&&activeLesson())paintLesson();
+ const courseSlug=courseSlugByLessonSlug[lesson.slug]||currentCourse.slug||fallbackCourseForLesson(lesson.slug);
+ const hasCourseSnapshot=currentCourse?.slug===courseSlug||courseLessons.some(item=>item.slug===lesson.slug);
+ if(courseSlug&&hasCourseSnapshot){
+  const snapshotLessons=currentCourse?.slug===courseSlug&&courseLessons.length?courseLessons:courseSnapshotLessons(courseSlug);
+  if(snapshotLessons.length){
+   paintCourseHubHeader();
+   paintLevel2Hub(buildCourseProgressSnapshot(courseSlug,snapshotLessons));
+  }
+ }
+ window.refreshMedicalAcademy?.();
+}
 async function saveProgress(lesson,st,opts={}){
- if(isBundledFallbackLesson(lesson)){toast('Progress sync is unavailable while live lesson data is offline');return}
- const uid=hlsAuth.user?.id; if(!uid)return;
+ if(isBundledFallbackLesson(lesson)){toast('Progress sync is unavailable while live lesson data is offline');return false}
+ const uid=hlsAuth.user?.id; if(!uid)return false;
  const scores=Object.values(st.moduleScores);
  const avg=scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length):0;
  const done=allRequirementsMet(lesson,st);
@@ -1921,8 +2041,10 @@ async function saveProgress(lesson,st,opts={}){
   detail
  };
  const {data,error}=await sb.from('lesson_progress').upsert(row,{onConflict:'user_id,lesson_id'}).select().single();
- if(error){toast('Progress could not be saved');return}
+ if(error){toast('Progress could not be saved');return false}
  st.progressRow=data;
+ refreshLevel2ProgressViews(lesson);
+ return true;
 }
 async function requestSignoff(lesson,st){
  if(isBundledFallbackLesson(lesson)){toast('Sign-off requests are unavailable while live lesson data is offline');return null}
@@ -1949,43 +2071,16 @@ async function renderLevel2Hub(){
  try{lessons=await fetchCourseLessons()}
  catch(e){grid.innerHTML=`<section class="panel"><span class="eyebrow">${escapeHtml(currentCourse.label)}</span><h2>We couldn't load this course</h2><p>${escapeHtml(e.message||'Unknown error')}</p></section>`;return}
  for(const l of lessons){const st=stateFor(l.slug);if(!st.loaded)st.loaded=await loadRemoteState(l,st)}
- const planned=plannedLessonsFor(currentCourse.slug);
- let tiles=lessons.map(l=>({live:true,slug:l.slug,title:l.title,desc:l.summary||'',pct:lessonPercent(l,stateFor(l.slug))})).concat(planned.map(l=>({live:false,slug:l.id,title:l.title,desc:l.desc,pct:0})));
- tiles=applyCourseOrder(currentCourse.slug,tiles);
- const livePct=tiles.filter(t=>t.live).reduce((a,t)=>a+t.pct,0);
- const hubPct=tiles.length?Math.round(livePct/tiles.length):0;
- const ring=document.querySelector('#level2HubProgressRing'); if(ring)ring.innerHTML=`<strong>${hubPct}%</strong><span>Course progress</span>`;
- const heroHeading=document.querySelector('#courseHubHeroHeading');
- const heroBody=document.querySelector('#courseHubHeroBody');
- const desc=document.querySelector('#courseHubDesc');
- if(!lessons.length&&!planned.length){
-  if(heroHeading)heroHeading.textContent='This course is being built.';
-  if(heroBody)heroBody.textContent='Lessons for this course will appear here once they are published in Content Studio.';
-  if(desc)desc.textContent='Lessons for this course join the Hannah Learning System as they are built and clinically reviewed.';
- }else{
-  if(heroHeading)heroHeading.textContent=lessons.length?`${lessons[lessons.length-1].title} is live now.`:'New lessons are on the way.';
-  if(heroBody)heroBody.textContent=planned.length?`The remaining ${planned.length} ${currentCourse.label} lessons join this course as they're built and clinically reviewed.`:'All published lessons for this course are shown below.';
-  if(desc)desc.textContent=`${lessons.length+planned.length} core skills every clinical team member builds in this course.`;
- }
- grid.innerHTML=tiles.map((t,i)=>{
-  const n=i+1;
-  const badge=t.live?(t.pct>=100?'good':'warning'):'neutral';
-  const badgeLabel=t.live?(t.pct>=100?'Complete':t.pct>0?'In progress':'Start here'):'Coming soon';
-  const cta=t.live?(t.pct>0?'Continue lesson':'Start lesson'):'Coming soon';
-  return `<article class="level-card ${t.live?'':'locked'}" data-lesson="${t.slug}"><div class="section-head"><div class="level-number">${n}</div><span class="badge ${badge}">${badgeLabel}</span></div><h2>${t.title}</h2><p>${t.desc}</p><div class="progress"><span style="width:${t.pct}%"></span></div><div class="card-footer"><strong>${t.pct}%</strong><button class="${t.live?'primary':'secondary'} l2-lesson-open" data-lesson="${t.slug}" data-live="${t.live}" ${t.live?'':'disabled'}>${cta}</button></div></article>`;
- }).join('');
- if(!tiles.length){
-  grid.innerHTML=`<section class="panel"><span class="eyebrow">${escapeHtml(currentCourse.label)}</span><h2>No lessons published yet</h2><p>This course doesn't have any published lessons in the Hannah Learning System yet. Check back soon, or ask a manager to publish a lesson in Content Studio.</p></section>`;
- }
- document.querySelectorAll('.l2-lesson-open').forEach(b=>b.onclick=()=>{
-  const tile=tiles.find(x=>x.slug===b.dataset.lesson);
-  if(tile&&tile.live)renderLessonPlayer(tile.slug,'overview');
-  else if(tile)openModal(`<span class="eyebrow">${escapeHtml(currentCourse.label)} • Coming soon</span><h1 class="modal-title">${tile.title}</h1><p>${tile.desc}</p><p class="safety-note"><strong>In development</strong><span>This lesson is planned for ${escapeHtml(currentCourse.label)} and will appear here once built and clinically reviewed.</span></p><button class="primary" onclick="document.querySelector('#modal').close()">Close</button>`);
- });
+ paintLevel2Hub(buildCourseProgressSnapshot(currentCourse.slug,lessons));
 }
 window.openLevel2Hub=openLevel2Hub;
 window.openCourseHub=openCourseHub;
 window.setCourseContext=(slug,label)=>{currentCourse={slug,label}};
+window.ensureCourseSnapshotLoaded=ensureCourseSnapshotLoaded;
+window.getCourseProgressSnapshot=slug=>{
+ const lessons=(currentCourse?.slug===slug&&courseLessons.length)?courseLessons:courseSnapshotLessons(slug);
+ return buildCourseProgressSnapshot(slug,lessons);
+};
 
 /* ---- Generic lesson player ---- */
 async function renderLessonPlayer(lessonSlug,tab){
@@ -2004,8 +2099,12 @@ async function renderLessonPlayer(lessonSlug,tab){
 window.renderLessonPlayer=renderLessonPlayer;
 // Content Studio edits a lesson out from under the player's cache; let it drop stale copies.
 window.invalidateLessonCache=slug=>{
- if(slug){delete lessonCache[slug];delete lessonStates[slug]}
- else{Object.keys(lessonCache).forEach(k=>delete lessonCache[k]);Object.keys(lessonStates).forEach(k=>delete lessonStates[k])}
+ if(slug){delete lessonCache[slug];delete lessonStates[slug];delete courseSlugByLessonSlug[slug]}
+ else{
+  Object.keys(lessonCache).forEach(k=>delete lessonCache[k]);
+  Object.keys(lessonStates).forEach(k=>delete lessonStates[k]);
+  Object.keys(courseSlugByLessonSlug).forEach(k=>delete courseSlugByLessonSlug[k]);
+ }
 };
 
 function paintLessonHeader(lesson){

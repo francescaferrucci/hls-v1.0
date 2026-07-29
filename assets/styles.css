@@ -397,3 +397,14 @@ html[data-theme="dark"] .anat-match-zone.is-wrong{background:#3d1f1f}
 @media(prefers-reduced-motion:reduce){
  .anat-flip-inner,.anat-wheel,.anat-hotspot{transition:none!important}
 }
+
+.l2-lesson-actions{align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.l2-progress-ring{width:96px;height:96px;border-width:8px;border-color:var(--line);border-top-color:var(--orange);background:var(--panel);color:var(--ink)}
+.l2-progress-ring strong{font-size:24px}
+.l2-progress-ring span{font-size:11px;max-width:62px}
+
+@media(max-width:780px){
+ .l2-lesson-actions{justify-content:flex-start}
+ .l2-progress-ring{width:80px;height:80px;border-width:7px}
+ .l2-progress-ring strong{font-size:20px}
+}
