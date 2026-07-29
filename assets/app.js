@@ -1567,17 +1567,7 @@ renderMedicalAcademy();renderLevel5();renderLevel6();renderLevel7();applyHashRou
 let currentCourse={slug:'patient-assessment',label:'Patient Assessment'};
 /* Lessons still in development are not in the database yet; live lessons are loaded from Supabase. */
 const plannedLessonsBySlug={
- 'patient-assessment':[
-  {id:'history',title:'Patient History',desc:'Structured history-taking, Member interview technique, and chart documentation.'},
-  {id:'tpr',title:'TPR',desc:'Temperature, pulse, and respiration: technique, normal ranges, and red flags.'},
-  {id:'bcs',title:'Body Condition Scoring',desc:'9-point body condition and muscle condition scoring with Member communication.'},
-  {id:'pain',title:'Pain Assessment',desc:'Species-specific pain scales, behavioral cues, and escalation criteria.'},
- {id:'hydration',title:'Hydration Assessment',desc:'Skin turgor, mucous membranes, and dehydration percentage estimation.'},
- {id:'neuro',title:'Neurologic Screening',desc:'Cranial nerve checks, gait, proprioception, and reflex screening basics.'},
- {id:'mobility',title:'Mobility Evaluation',desc:'Gait analysis, orthopedic screening, and lameness grading fundamentals.'},
- {id:'ophthalmic',title:'Ophthalmic Basics',desc:'External eye exam, pupillary light reflex, and common abnormality recognition.'},
- {id:'derm',title:'Dermatologic Examination',desc:'Skin and coat exam technique, lesion recognition, and cytology preview.'}
- ],
+ 'patient-assessment':[],
  'medical-foundations':[]
 };
 function plannedLessonsFor(slug){return plannedLessonsBySlug[slug]||[]}
@@ -1916,6 +1906,81 @@ function lessonPercent(lesson,st){
  if(!parts.length)return 0;
  return Math.round(parts.reduce((a,b)=>a+b,0)/parts.length);
 }
+function moduleQuestionCount(m){return Array.isArray(m?.quiz)?m.quiz.length:0}
+function moduleIsManual(m){return m?.mode==='manual'}
+function moduleIsReview(m){return m?.mode==='review'}
+function moduleHasAnswerKey(q){return Number.isInteger(q?.correct)||(Array.isArray(q?.correct)&&q.correct.every(Number.isInteger))}
+function moduleHasAnswerKeys(m){return moduleQuestionCount(m)>0&&m.quiz.every(moduleHasAnswerKey)}
+function moduleUsesScoring(m){return !moduleIsManual(m)&&!moduleIsReview(m)&&moduleHasAnswerKeys(m)}
+function moduleIsUngradedReview(m){return moduleIsReview(m)&&!moduleHasAnswerKeys(m)}
+function lessonScoredModules(lesson){return (lesson?.content?.modules||[]).filter(moduleUsesScoring)}
+function lessonModuleScores(lesson,st){
+ return lessonScoredModules(lesson).map(m=>st.moduleScores[m.id]).filter(v=>typeof v==='number'&&!Number.isNaN(v));
+}
+function moduleQuestionType(q){return q?.type==='multi_select'?'multi_select':'single'}
+function moduleSelectionsMatch(selected,correct){
+ if(!Array.isArray(selected)||!Array.isArray(correct)||selected.length!==correct.length)return false;
+ const a=[...selected].sort((x,y)=>x-y), b=[...correct].sort((x,y)=>x-y);
+ return a.every((v,i)=>v===b[i]);
+}
+function renderModuleQuestion(q,qi,prev){
+ const section=q.section&&q.section!==(prev||{}).section?`<h3 class="l2-quiz-section">${q.section}</h3>`:'';
+ if(moduleQuestionType(q)==='multi_select'){
+  return `${section}
+    <div class="l2-quiz-question">
+     <h4>${qi+1}. ${q.q}</h4>
+     <div id="l2q-${qi}" class="triage-check-group">${q.opts.map((o,oi)=>`<label class="triage-check-option"><input type="checkbox" data-qi="${qi}" data-oi="${oi}"><span>${o}</span></label>`).join('')}</div>
+     <button class="secondary triage-inline-submit" data-qi="${qi}" style="margin-top:12px">Record response</button>
+     <div id="l2fb-${qi}"></div>
+    </div>`;
+ }
+ return `${section}
+    <div class="l2-quiz-question">
+     <h4>${qi+1}. ${q.q}</h4>
+     <div id="l2q-${qi}">${q.opts.map((o,oi)=>`<button class="decision-option" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('')}</div>
+     <div id="l2fb-${qi}"></div>
+    </div>`;
+}
+function moduleCardMeta(m,score){
+ const parts=[`${m.minutes} min`];
+ if(moduleIsManual(m))parts.push('manual completion');
+ else if(moduleIsUngradedReview(m))parts.push('ungraded review');
+ else if(moduleIsReview(m))parts.push('mastery review');
+ else parts.push('knowledge check on completion');
+ if(moduleUsesScoring(m)&&score!=null)parts.push(`scored ${score}%`);
+ return parts.join(' • ');
+}
+function moduleAssessmentMeta(m,answeredCount){
+ const total=moduleQuestionCount(m);
+ if(moduleIsManual(m))return{
+  eyebrow:'Module completion',
+  heading:m.completionHeading||'Review the source content, then mark this module complete.',
+  label:'',
+  showBar:false
+ };
+ if(moduleIsUngradedReview(m))return{
+  eyebrow:'Ungraded review',
+  heading:`Complete all ${total} review ${total===1?'item':'items'}`,
+  label:`${answeredCount}/${total} reviewed`,
+  showBar:true
+ };
+ if(moduleIsReview(m))return{
+  eyebrow:'Mastery review',
+  heading:`Work through all ${total} items`,
+  label:`${answeredCount}/${total} answered`,
+  showBar:true
+ };
+ return{
+  eyebrow:'Knowledge check',
+  heading:`Answer all ${total} questions`,
+  label:`${answeredCount}/${total} answered`,
+  showBar:false
+ };
+}
+function moduleAnsweredPercent(m,answeredCount){
+ const total=moduleQuestionCount(m);
+ return total?Math.round(answeredCount/total*100):0;
+}
 
 async function loadRemoteState(lesson,st){
  if(isBundledFallbackLesson(lesson))return false;
@@ -1933,7 +1998,10 @@ async function loadRemoteState(lesson,st){
   }else if(prog.status==='completed'){
    // Legacy rows saved before the detail column existed: reconstruct a fully-complete
    // state so previously completed lessons don't regress to "not started".
-   lesson.content.modules.forEach(m=>{st.moduleProgress[m.id]=true;if(m.mode!=='review'&&st.moduleScores[m.id]==null)st.moduleScores[m.id]=prog.quiz_score??100});
+   lesson.content.modules.forEach(m=>{
+    st.moduleProgress[m.id]=true;
+    if(moduleUsesScoring(m)&&st.moduleScores[m.id]==null)st.moduleScores[m.id]=prog.quiz_score??100;
+   });
    lesson.content.cases.forEach(c=>{if(!st.casesCompleted.includes(c.id))st.casesCompleted.push(c.id)});
    lesson.content.checklistItems.forEach((_,i)=>{st.checklist[i]=true});
   }
@@ -2022,8 +2090,9 @@ function refreshLevel2ProgressViews(lesson){
 async function saveProgress(lesson,st,opts={}){
  if(isBundledFallbackLesson(lesson)){toast('Progress sync is unavailable while live lesson data is offline');return false}
  const uid=hlsAuth.user?.id; if(!uid)return false;
- const scores=Object.values(st.moduleScores);
- const avg=scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length):0;
+ const scores=lessonModuleScores(lesson,st);
+ const avg=scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length):null;
+ const nextAttempts=(st.progressRow?.quiz_attempts||0)+(opts.attempt?1:0);
  const done=allRequirementsMet(lesson,st);
  const detail={
   moduleProgress:st.moduleProgress,
@@ -2036,7 +2105,7 @@ async function saveProgress(lesson,st,opts={}){
   user_id:uid,lesson_id:lesson.id,
   status:done?'completed':'in_progress',
   quiz_score:avg,
-  quiz_attempts:(st.progressRow?.quiz_attempts||0)+(opts.attempt?1:0),
+  quiz_attempts:scores.length?nextAttempts:null,
   completed_at:st.progressRow?.completed_at||(done?new Date().toISOString():null),
   detail
  };
@@ -2168,7 +2237,7 @@ function paintLesson(){
   host.innerHTML=`<div class="l2-module-grid">${c.modules.map(m=>{
    const done=!!st.moduleProgress[m.id];
    const score=st.moduleScores[m.id];
-   return `<article class="l2-module-card"><div class="section-head"><div class="l2-module-num">${m.id}</div><span class="badge ${done?'good':'neutral'}">${done?'Complete':'Not started'}</span></div><h3>${m.title}</h3><p>${m.minutes} min • knowledge check on completion${score!=null?` • scored ${score}%`:''}</p><button class="${done?'secondary':'primary'} l2-open-module" data-module="${m.id}">${done?'Review module':'Open module'}</button></article>`;
+   return `<article class="l2-module-card"><div class="section-head"><div class="l2-module-num">${m.id}</div><span class="badge ${done?'good':'neutral'}">${done?'Complete':'Not started'}</span></div><h3>${m.title}</h3><p>${moduleCardMeta(m,score)}</p><button class="${done?'secondary':'primary'} l2-open-module" data-module="${m.id}">${done?'Review module':'Open module'}</button></article>`;
   }).join('')}</div>`;
  }
  if(st.tab==='cases'){
@@ -2191,7 +2260,7 @@ function paintLesson(){
  }
  if(st.tab==='certification'){
   const cert=c.certification||{};
-  const scores=Object.values(st.moduleScores);
+  const scores=lessonModuleScores(lesson,st);
   const modAvg=scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length):0;
   const modulesComplete=c.modules.every(m=>st.moduleProgress[m.id]);
   const moduleReqMet=modulesComplete&&modAvg>=85;
@@ -2204,7 +2273,7 @@ function paintLesson(){
     <div class="l2-cert-head"><span>Requirement</span><span>Status</span><span>Passing criterion</span></div>
     ${c.certRows.map((r,i)=>{
       let status='In progress';
-      if(i===1)status=moduleReqMet?'Met':modulesComplete?`${modAvg}% avg`:`${Object.keys(st.moduleScores).length}/${c.modules.length} modules`;
+      if(i===1)status=moduleReqMet?'Met':modulesComplete?(scores.length?`${modAvg}% avg`:'Met'):`${Object.values(st.moduleProgress).filter(Boolean).length}/${c.modules.length} modules`;
       if(i===4)status=criticalDone?'Met':'Incomplete';
       if(i===5)status=st.attested?'Signed':'Not signed';
       const good=status==='Met'||status==='Signed';
@@ -2238,7 +2307,7 @@ function wireLessonPlayer(){
   const cert=lesson.content.certification||{};
   const c2=lesson.content;
   const modulesComplete=c2.modules.every(m=>st.moduleProgress[m.id]);
-  const modScores=Object.values(st.moduleScores);
+  const modScores=lessonModuleScores(lesson,st);
   const modAvgOk=modScores.length&&Math.round(modScores.reduce((a,b)=>a+b,0)/modScores.length)>=85;
   const criticalDone=c2.checklistItems.every((item,i)=>!item.critical||st.checklist[i]);
   if(!modulesComplete||!modAvgOk||!criticalDone||!st.attested){
@@ -2263,69 +2332,108 @@ function openLessonModule(id){
 function renderModuleModal(){
  const m=activeModule,lesson=activeLesson();
  const answeredCount=Object.keys(quizAnswers).length;
+ const meta=moduleAssessmentMeta(m,answeredCount);
+ const total=moduleQuestionCount(m);
+ const hasQuiz=total>0;
+ const answeredPct=moduleAnsweredPercent(m,answeredCount);
  openModal(`<span class="eyebrow">Module ${m.id} of ${lesson.content.modules.length} • ${m.minutes} min</span>
   <h1 class="modal-title">${m.title}</h1>
   ${m.content}
   <div style="margin-top:22px;border-top:1px solid var(--line);padding-top:18px">
-   <div class="section-head"><div><span class="eyebrow">${m.mode==='review'?'Mastery review':'Knowledge check'}</span><h2>${m.mode==='review'?`Work through all ${m.quiz.length} items`:`Answer all ${m.quiz.length} questions`}</h2></div><span class="l2-quiz-score" id="l2QuizScoreLabel">${answeredCount}/${m.quiz.length} answered</span></div>
-   ${m.mode==='review'?`<div class="progress"><span id="l2QuizProgressBar" style="width:${Math.round(answeredCount/m.quiz.length*100)}%"></span></div>`:''}
-   <div id="l2QuizContainer">${m.quiz.map((q,qi)=>`
-    ${q.section&&q.section!==(m.quiz[qi-1]||{}).section?`<h3 class="l2-quiz-section">${q.section}</h3>`:''}
-    <div class="l2-quiz-question">
-     <h4>${qi+1}. ${q.q}</h4>
-     <div id="l2q-${qi}">${q.opts.map((o,oi)=>`<button class="decision-option" data-qi="${qi}" data-oi="${oi}">${o}</button>`).join('')}</div>
-     <div id="l2fb-${qi}"></div>
-    </div>`).join('')}
-   </div>
+   <div class="section-head"><div><span class="eyebrow">${meta.eyebrow}</span><h2>${meta.heading}</h2></div>${meta.label?`<span class="l2-quiz-score" id="l2QuizScoreLabel">${meta.label}</span>`:''}</div>
+   ${meta.showBar?`<div class="progress"><span id="l2QuizProgressBar" style="width:${answeredPct}%"></span></div>`:''}
+   ${moduleIsManual(m)?`<div class="triage-manual-complete"><p>${m.completionBody||'Use this when you have reviewed the source content and are ready to mark the module complete.'}</p><div class="triage-manual-actions"><button class="secondary" id="l2CloseModuleModal">Return to curriculum</button><button class="primary" id="l2ManualCompleteButton">${activeState().moduleProgress[m.id]?'Marked complete':'Mark module complete'}</button></div></div>`:''}
+   ${hasQuiz?`<div id="l2QuizContainer">${m.quiz.map((q,qi)=>renderModuleQuestion(q,qi,m.quiz[qi-1])).join('')}</div>`:''}
    <div id="l2QuizResult" style="margin-top:16px"></div>
   </div>`);
  document.querySelectorAll('#l2QuizContainer .decision-option').forEach(btn=>btn.onclick=()=>answerQuizQuestion(+btn.dataset.qi,+btn.dataset.oi));
+ document.querySelectorAll('#l2QuizContainer .triage-inline-submit').forEach(btn=>btn.onclick=()=>answerQuizQuestion(+btn.dataset.qi));
+ document.querySelector('#l2ManualCompleteButton')?.addEventListener('click',()=>completeManualModule());
+ document.querySelector('#l2CloseModuleModal')?.addEventListener('click',()=>{document.querySelector('#modal').close();paintLesson()});
  if(m.hwWidget)wireHwWidget(m.hwWidget);
  wireAnatomyWidgets(document.querySelector('#modalContent'));
- if(answeredCount===m.quiz.length)renderQuizResult();
+ if(hasQuiz&&answeredCount===total)renderQuizResult();
 }
 function answerQuizQuestion(qi,oi){
  const m=activeModule;
  if(quizAnswers[qi])return;
  const q=m.quiz[qi];
- const isCorrect=oi===q.correct;
- quizAnswers[qi]={oi,correct:isCorrect};
+ const hasKey=moduleHasAnswerKey(q);
+ const multi=moduleQuestionType(q)==='multi_select';
+ const selected=multi?[...document.querySelectorAll(`#l2q-${qi} input:checked`)].map(input=>+input.dataset.oi):[oi];
+ if(multi&&!selected.length)return;
+ const isCorrect=hasKey?(multi?moduleSelectionsMatch(selected,q.correct):selected[0]===q.correct):null;
+ quizAnswers[qi]=multi?{selected,correct:isCorrect}:{oi:selected[0],correct:isCorrect};
  const wrap=document.querySelector(`#l2q-${qi}`);
- wrap.querySelectorAll('.decision-option').forEach((btn,idx)=>{
-  btn.disabled=true;
-  if(idx===q.correct)btn.classList.add('correct');
-  else if(idx===oi)btn.classList.add('wrong');
- });
- document.querySelector(`#l2fb-${qi}`).innerHTML=`<div class="feedback"><p><strong>${isCorrect?'Correct.':'Not quite.'}</strong> ${q.exp}</p></div>`;
+ if(multi){
+  wrap.querySelectorAll('input').forEach((input,idx)=>{
+   input.disabled=true;
+   const row=input.closest('.triage-check-option');
+   if(hasKey){
+    if(q.correct.includes(idx))row?.classList.add('is-correct');
+    else if(selected.includes(idx))row?.classList.add('is-wrong');
+   }else if(selected.includes(idx))row?.classList.add('is-selected');
+  });
+  document.querySelectorAll(`.triage-inline-submit[data-qi="${qi}"]`).forEach(btn=>btn.disabled=true);
+ }else{
+  wrap.querySelectorAll('.decision-option').forEach((btn,idx)=>{
+   btn.disabled=true;
+   if(hasKey){
+    if(idx===q.correct)btn.classList.add('correct');
+    else if(idx===selected[0])btn.classList.add('wrong');
+   }else if(idx===selected[0])btn.classList.add('selected');
+  });
+ }
+ const feedbackLead=hasKey?(isCorrect?'Correct.':'Not quite.'):'Response recorded.';
+ document.querySelector(`#l2fb-${qi}`).innerHTML=`<div class="feedback"><p><strong>${feedbackLead}</strong> ${q.exp||''}</p></div>`;
  const label=document.querySelector('#l2QuizScoreLabel');
- if(label)label.textContent=`${Object.keys(quizAnswers).length}/${m.quiz.length} answered`;
+ if(label){
+  const answered=Object.keys(quizAnswers).length;
+  label.textContent=moduleIsUngradedReview(m)?`${answered}/${moduleQuestionCount(m)} reviewed`:`${answered}/${moduleQuestionCount(m)} answered`;
+ }
  const bar=document.querySelector('#l2QuizProgressBar');
- if(bar)bar.style.width=Math.round(Object.keys(quizAnswers).length/m.quiz.length*100)+'%';
- if(Object.keys(quizAnswers).length===m.quiz.length)renderQuizResult();
+ if(bar)bar.style.width=moduleAnsweredPercent(m,Object.keys(quizAnswers).length)+'%';
+ if(Object.keys(quizAnswers).length===moduleQuestionCount(m))renderQuizResult();
+}
+async function completeManualModule(){
+ const m=activeModule,lesson=activeLesson(),st=activeState();
+ st.moduleProgress[m.id]=true;
+ await saveProgress(lesson,st);
+ toast(`${m.title} complete`);
+ document.querySelector('#modal').close();
+ paintLesson();
 }
 async function renderQuizResult(){
  const m=activeModule,lesson=activeLesson(),st=activeState();
- const correctCount=Object.values(quizAnswers).filter(a=>a.correct).length;
- const pct=Math.round((correctCount/m.quiz.length)*100);
- const review=m.mode==='review';
- const passed=review?true:pct>=75;
- if(!review)st.moduleScores[m.id]=pct;
+ const total=moduleQuestionCount(m);
+ const correctCount=Object.values(quizAnswers).filter(a=>a.correct===true).length;
+ const pct=total?Math.round((correctCount/total)*100):0;
+  const review=m.mode==='review';
+ const ungradedReview=moduleIsUngradedReview(m);
+ const passed=review||ungradedReview?true:pct>=75;
+ if(moduleUsesScoring(m))st.moduleScores[m.id]=pct;
  if(passed)st.moduleProgress[m.id]=true;
- document.querySelector('#l2QuizResult').innerHTML=review
-  ?`<div class="feedback-box"><strong>Review complete.</strong> You answered ${correctCount} of ${m.quiz.length} correctly. There is no pass mark for this review — its purpose is to show you which areas to revisit. Reopen any module from the curriculum to re-read the terms behind the items you missed.</div>
+ document.querySelector('#l2QuizResult').innerHTML=ungradedReview
+  ?`<div class="feedback-box"><strong>Review complete.</strong> You finished all ${total} source review ${total===1?'item':'items'}. This module is intentionally ungraded until Hannah validates authoritative answer keys.</div>
   <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
    <button class="secondary" id="l2RetakeQuiz">Start the review again</button>
    <button class="primary" id="l2CloseModuleModal">Return to curriculum</button>
   </div>`
-  :`<div class="feedback-box"><strong>Score: ${pct}%</strong> (${correctCount} of ${m.quiz.length} correct) — ${passed?'Module marked complete.':'Retake recommended (75% needed to mark complete).'}</div>
+  :review
+  ?`<div class="feedback-box"><strong>Review complete.</strong> You answered ${correctCount} of ${total} correctly. There is no pass mark for this review — its purpose is to show you which areas to revisit. Reopen any module from the curriculum to re-read the terms behind the items you missed.</div>
+  <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
+   <button class="secondary" id="l2RetakeQuiz">Start the review again</button>
+   <button class="primary" id="l2CloseModuleModal">Return to curriculum</button>
+  </div>`
+  :`<div class="feedback-box"><strong>Score: ${pct}%</strong> (${correctCount} of ${total} correct) — ${passed?'Module marked complete.':'Retake recommended (75% needed to mark complete).'}</div>
   <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
    ${!passed?'<button class="secondary" id="l2RetakeQuiz">Retake knowledge check</button>':''}
    <button class="primary" id="l2CloseModuleModal">Return to curriculum</button>
   </div>`;
  document.querySelector('#l2RetakeQuiz')?.addEventListener('click',()=>{quizAnswers={};renderModuleModal()});
  document.querySelector('#l2CloseModuleModal')?.addEventListener('click',()=>{document.querySelector('#modal').close();paintLesson()});
- if(passed)toast(review?`${m.title} complete`:`${m.title} module complete — ${pct}%`);
- await saveProgress(lesson,st,{attempt:true});
+ if(passed)toast(review||ungradedReview?`${m.title} complete`:`${m.title} module complete — ${pct}%`);
+ await saveProgress(lesson,st,{attempt:moduleUsesScoring(m)});
 }
 
 /* ---- Case runner ---- */
