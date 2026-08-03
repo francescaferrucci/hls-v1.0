@@ -755,3 +755,192 @@ dialog:has(.cc-video) #l2ModuleModalTitle:focus-visible{outline:0}
   dialog:has(.cc-watch) .section-head h2,
   dialog:has(.cc-video) .section-head h2{font-size:19px;line-height:1.25}
 }
+
+/* ========== Clinical Diagnostics — Imaging Support ========== */
+.ims-hero p{margin:0}
+.ims-scope{border:1px solid var(--line);border-left:4px solid var(--navy2);background:var(--soft2);border-radius:14px;padding:16px 18px;margin:18px 0}
+.ims-scope .sc-kicker{margin:0 0 10px}
+.ims-scope-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.ims-scope h4{margin:0 0 6px;font-size:14px}
+.ims-scope-do h4::before{content:"✓ ";color:var(--green)}
+.ims-scope-dont h4::before{content:"✕ ";color:var(--red)}
+.ims-scope .sc-list li{font-size:13px;line-height:1.5}
+.ims-objectives{border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin:18px 0;background:var(--panel)}
+.ims-objectives .sc-kicker{margin:0 0 8px}
+.ims-callout--warn{border-left:4px solid var(--orange)}
+.ims-boundary{margin:10px 0 0;padding:10px 12px;border-radius:10px;background:var(--soft);font-size:13px;line-height:1.55}
+.ims-card-grid{margin:14px 0}
+.ims-card h4{font-size:14px}
+.ims-card--alara h4{color:var(--navy2)}
+.ims-figure{margin:18px 0;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--soft2)}
+.ims-figure figcaption{margin-top:10px;font-size:13px;line-height:1.55;color:var(--ink)}
+.ims-figure--icon .academy-image{max-width:min(100%,160px)}
+.ims-credit{display:block;margin-top:6px;font-size:11.5px;color:var(--muted)}
+.ims-credit a{color:var(--blue)}
+.ims-img-fallback{margin:0;padding:14px;border:1px dashed var(--line);border-radius:12px;font-size:13px;color:var(--muted)}
+.ims-figure-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
+.ims-figure-pair .ims-figure{margin:18px 0 0}
+.ims-video{margin:18px 0}
+.ims-video-meta{margin:10px 0 4px;font-size:13px}
+.ims-video-copy{margin:0;font-size:12.5px;line-height:1.55;color:var(--muted)}
+.ims-video-copy a{color:var(--blue)}
+.ims-sources{margin-top:20px}
+.ims-sources .sc-list li{font-size:13px}
+.ims-source-book{color:var(--muted)}
+.ims-optional{margin:18px 0}
+
+/* Shared widget chrome */
+.ims-widget{border:1px solid var(--line);border-radius:16px;padding:18px;margin:18px 0;background:var(--panel)}
+.ims-widget-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.ims-widget-head h4{margin:2px 0 0;font-size:17px;line-height:1.3}
+.ims-widget-head .sc-kicker{margin:0}
+.ims-counter{margin:0;font-size:13px;font-weight:850;color:var(--navy2)}
+.ims-widget-intro{margin:10px 0 12px;font-size:13.5px;line-height:1.6;color:var(--muted)}
+.ims-widget-intro kbd{font:inherit;font-size:12px;border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;padding:1px 5px;background:var(--soft2)}
+.ims-progress{margin:0 0 14px;height:8px;border-radius:999px;overflow:hidden;background:var(--soft)}
+.ims-progress span{display:block;height:100%;background:var(--blue);transition:width .3s ease}
+.ims-btn{min-height:44px;padding:11px 18px}
+.ims-btn:disabled{opacity:.5;cursor:not-allowed}
+.ims-btn:focus-visible,.ims-opt:focus-visible,.ims-hotspot:focus-visible,.ims-sort-item:focus-visible{outline:3px solid var(--orange);outline-offset:3px}
+.ims-widget-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.ims-widget-actions .ims-btn{flex:0 1 auto}
+.ims-summary{margin-top:14px;padding:14px;border-radius:12px;background:var(--soft);border:1px solid var(--line)}
+.ims-summary p{margin:0 0 8px;font-size:13.5px;line-height:1.6}
+.ims-summary-note{margin:8px 0 0;font-size:12.5px;color:var(--muted);line-height:1.55}
+.ims-summary:focus{outline:0}
+.ims-feedback{margin-top:12px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--soft2);font-size:13.5px;line-height:1.6}
+.ims-feedback p{margin:0 0 6px}
+.ims-feedback p:last-child{margin-bottom:0}
+.ims-feedback .sc-list{margin:8px 0 0}
+.ims-feedback .sc-list li{font-size:13px}
+.ims-feedback.is-good{border-left:4px solid var(--green)}
+.ims-feedback.is-bad{border-left:4px solid var(--orange)}
+.ims-feedback:focus{outline:0}
+
+/* Paged practice questions */
+.ims-q-list{list-style:none;margin:0;padding:0}
+.ims-q-group{margin:0 0 4px;font-size:11px;font-weight:850;letter-spacing:.11em;text-transform:uppercase;color:var(--blue)}
+.ims-q-stem{margin:0 0 6px;font-size:16px;line-height:1.45}
+.ims-q-stem:focus{outline:0}
+.ims-q-prompt{margin:0 0 10px;font-size:12.5px;color:var(--muted)}
+.ims-opt-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.ims-opt{width:100%;min-height:44px;text-align:left;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.45}
+.ims-opt:hover:not(:disabled){border-color:var(--blue)}
+.ims-opt:disabled{cursor:default}
+.ims-opt.is-correct{border-color:var(--green);background:rgba(19,162,131,.1)}
+.ims-opt.is-correct::before{content:"✓ ";font-weight:900;color:var(--green)}
+.ims-opt.is-wrong{border-color:var(--red);background:rgba(198,83,83,.1)}
+.ims-opt.is-wrong::before{content:"✕ ";font-weight:900;color:var(--red)}
+.ims-opt.is-chosen{box-shadow:inset 0 0 0 1px var(--ink)}
+
+/* ALARA room sweep */
+.ims-room-plan{position:relative;aspect-ratio:16/9;border:1px solid var(--line);border-radius:14px;background:var(--soft2);overflow:hidden;margin-bottom:14px}
+.ims-room-shell{position:absolute;inset:0}
+.ims-room-table{position:absolute;left:36%;top:44%;width:30%;height:26%;border:2px solid var(--navy2);border-radius:8px;background:var(--soft)}
+.ims-room-tube{position:absolute;left:47.5%;top:26%;width:5%;aspect-ratio:1;border-radius:50%;border:2px solid var(--navy2);background:var(--panel)}
+.ims-room-beam{position:absolute;left:41%;top:31%;width:18%;height:16%;background:linear-gradient(180deg,rgba(18,155,210,.28),rgba(18,155,210,.05));clip-path:polygon(38% 0,62% 0,100% 100%,0 100%)}
+.ims-room-barrier{position:absolute;left:56%;top:6%;width:22%;height:6px;border-radius:4px;background:var(--navy)}
+.ims-room-door{position:absolute;right:2%;top:64%;width:6px;height:22%;border-radius:3px;background:var(--orange)}
+.ims-room-shelf{position:absolute;left:6%;top:64%;width:14%;height:6px;border-radius:3px;background:var(--muted)}
+.ims-room-tag{position:absolute;font-size:10.5px;font-weight:800;letter-spacing:.04em;color:var(--muted);white-space:nowrap}
+.ims-room-tag--table{left:36%;top:72%}
+.ims-room-tag--tube{left:54%;top:27%}
+.ims-room-tag--barrier{left:56%;top:1%}
+.ims-room-tag--door{right:2%;top:88%}
+.ims-room-tag--shelf{left:6%;top:57%}
+.ims-hotspot{position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);display:flex;align-items:center;gap:8px;min-height:44px;max-width:min(46%,320px);padding:8px 12px;border:2px solid var(--line);border-radius:999px;background:var(--panel);color:var(--ink);text-align:left;box-shadow:var(--shadow)}
+.ims-hotspot:hover{border-color:var(--blue)}
+.ims-hotspot-num{flex:0 0 auto;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--navy);color:#fff;font-size:12px;font-weight:900}
+.ims-hotspot-label{font-size:12.5px;line-height:1.35;font-weight:700}
+.ims-hotspot-status{font-size:12px;font-weight:900;white-space:nowrap}
+.ims-hotspot.is-hazard{border-color:var(--red);background:rgba(198,83,83,.12)}
+.ims-hotspot.is-hazard .ims-hotspot-status{color:#a13c3c}
+.ims-hotspot.is-safe{border-color:var(--green);background:rgba(19,162,131,.12)}
+.ims-hotspot.is-safe .ims-hotspot-status{color:#0d7a62}
+.ims-room-log{list-style:none;margin:0 0 4px;padding:0;display:grid;gap:8px}
+.ims-room-log-item{border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:13px;line-height:1.55;background:var(--soft2)}
+.ims-room-log-item.is-hazard{border-left:4px solid var(--red)}
+.ims-room-log-item.is-safe{border-left:4px solid var(--green)}
+
+/* Ultrasound prep sort */
+.ims-sort-bank{list-style:none;margin:0 0 14px;padding:12px;display:flex;flex-wrap:wrap;gap:8px;border:1px dashed var(--line);border-radius:12px;background:var(--soft2);min-height:60px}
+.ims-sort-item{min-height:44px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);padding:10px 12px;font-size:13px;line-height:1.4;text-align:left}
+.ims-sort-item[aria-pressed="true"]{border-color:var(--orange);box-shadow:inset 0 0 0 2px var(--orange)}
+.ims-sort-item.is-correct{border-left:4px solid var(--green)}
+.ims-sort-item.is-wrong{border-left:4px solid var(--red)}
+.ims-sort-result{font-weight:900;font-size:12px}
+.ims-sort-item.is-correct .ims-sort-result{color:#0d7a62}
+.ims-sort-item.is-wrong .ims-sort-result{color:#a13c3c}
+.ims-sort-buckets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.ims-sort-bucket{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--soft2);display:flex;flex-direction:column}
+.ims-sort-bucket h4{margin:0 0 4px;font-size:14px}
+.ims-sort-bucket p{margin:0 0 10px;font-size:12px;color:var(--muted);line-height:1.5}
+.ims-sort-list{list-style:none;margin:0 0 10px;padding:0;display:grid;gap:8px;flex:1;min-height:44px}
+.ims-sort-place{width:100%;font-size:13px;margin-top:auto}
+
+/* Advanced imaging time-out */
+.ims-timeout-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.ims-check{min-height:44px;align-items:flex-start}
+.ims-check.is-correct{border-color:var(--green);background:rgba(19,162,131,.1)}
+.ims-check.is-wrong{border-color:var(--red);background:rgba(198,83,83,.1)}
+
+/* Plain HTML/CSS diagrams */
+.ims-plan-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:16px 0}
+.ims-plan{display:flex;gap:12px;border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--soft2)}
+.ims-plan-num{flex:0 0 auto;width:28px;height:28px;border-radius:9px;display:grid;place-items:center;background:var(--navy);color:#fff;font-weight:900;font-size:13px}
+.ims-plan h4{margin:0 0 4px;font-size:14px}
+.ims-plan p{margin:0;font-size:13px;line-height:1.55;color:var(--muted)}
+.ims-rule{display:flex;align-items:stretch;gap:10px;margin:16px 0;flex-wrap:wrap}
+.ims-rule-step{flex:1 1 210px;display:flex;gap:10px;border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--soft2)}
+.ims-rule-num{flex:0 0 auto;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--blue);color:#fff;font-weight:900;font-size:13px}
+.ims-rule-step h4{margin:0 0 4px;font-size:14px}
+.ims-rule-step p{margin:0;font-size:13px;line-height:1.55;color:var(--muted)}
+.ims-rule-arrow{align-self:center;color:var(--orange);font-weight:900;font-size:20px}
+.ims-credits{border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin:16px 0;background:var(--soft2)}
+.ims-credits h4{margin:14px 0 6px;font-size:14px}
+.ims-credits h4:first-child{margin-top:0}
+.ims-credits .sc-list li{font-size:12.5px;line-height:1.6}
+.ims-credit-note{margin:12px 0 0;font-size:12px;color:var(--muted);line-height:1.55}
+
+.ims-q-part{display:inline-block;margin:0 0 6px 6px;vertical-align:baseline;font-size:10.5px;font-weight:850;letter-spacing:.11em;text-transform:uppercase;color:var(--blue)}
+.ims-q-text{display:block}
+/* Lesson links: AA-contrast blue in both themes, scoped to this lesson only */
+dialog:has(.ims-scope) #modalContent a{color:var(--navy2);text-decoration:underline;text-underline-offset:2px}
+dialog:has(.ims-scope) #modalContent a:hover{color:var(--orange)}
+dialog:has(.ims-scope) #modalContent a:focus-visible{outline:3px solid var(--orange);outline-offset:2px;border-radius:4px}
+html[data-theme="dark"] dialog:has(.ims-scope) #modalContent a{color:#7fd0f0}
+/* Dark theme */
+html[data-theme="dark"] .ims-opt.is-correct{background:rgba(19,162,131,.2)}
+html[data-theme="dark"] .ims-opt.is-wrong{background:rgba(198,83,83,.22)}
+html[data-theme="dark"] .ims-hotspot.is-hazard .ims-hotspot-status{color:#f4a3a3}
+html[data-theme="dark"] .ims-hotspot.is-safe .ims-hotspot-status{color:#8fe3cd}
+html[data-theme="dark"] .ims-sort-item.is-correct .ims-sort-result{color:#8fe3cd}
+html[data-theme="dark"] .ims-sort-item.is-wrong .ims-sort-result{color:#f4a3a3}
+html[data-theme="dark"] .ims-room-table,html[data-theme="dark"] .ims-room-tube{border-color:var(--blue)}
+
+/* Wide modal for this lesson so text and media are never clipped */
+dialog:has(.ims-scope){width:min(1120px,calc(100% - 32px))}
+dialog:has(.ims-scope) .modal-title{font-size:34px;line-height:1.15;margin:2px 0 4px;max-width:100%;overflow-wrap:break-word;hyphens:none}
+dialog:has(.ims-scope) #l2ModuleModalTitle:focus,dialog:has(.ims-scope) #l2ModuleModalTitle:focus-visible{outline:0}
+dialog:has(.ims-scope) .academy-video{width:100%}
+
+@media(max-width:980px){
+ .ims-scope-grid,.ims-figure-pair,.ims-plan-grid{grid-template-columns:1fr}
+ .ims-sort-buckets{grid-template-columns:1fr}
+}
+@media(max-width:820px){
+ .ims-room-plan{aspect-ratio:auto;display:flex;flex-direction:column;gap:8px;padding:12px}
+ .ims-room-shell{display:none}
+ .ims-hotspot{position:static;transform:none;max-width:100%;width:100%;border-radius:12px;flex-wrap:wrap}
+}
+@media(max-width:780px){
+ dialog:has(.ims-scope) .modal-title{font-size:28px;line-height:1.18}
+ dialog:has(.ims-scope) .section-head h2{font-size:19px;line-height:1.25}
+ .ims-widget{padding:14px}
+ .ims-widget-actions .ims-btn,.ims-widget-head .ims-counter{flex:1 1 100%}
+ .ims-scope,.ims-objectives,.ims-credits{padding:14px}
+ .ims-rule-arrow{display:none}
+}
+@media(prefers-reduced-motion:reduce){
+ .ims-progress span,.ims-opt,.ims-hotspot,.ims-sort-item{transition:none!important}
+}

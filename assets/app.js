@@ -1627,7 +1627,7 @@ function plannedLessonsFor(slug){return plannedLessonsBySlug[slug]||[]}
 /* Optional fixed display order per course (mixes live + planned lesson slugs/ids). Falls back to live-then-planned order when a course has no entry here. */
 const courseOrderBySlug={
  'medical-foundations':['medical-terminology','reproductive-anatomy','anatomy-and-physiology','understanding-canine-communication'],
- 'clinical-diagnostics':['sample-collection']
+ 'clinical-diagnostics':['sample-collection','imaging-support']
 };
 function applyCourseOrder(slug,tiles){
  const order=courseOrderBySlug[slug]; if(!order)return tiles;
@@ -1827,7 +1827,8 @@ const bundledCourseLessonFallbacks={
  /* Bundled-only lessons ship with the package and are not published to the lessons table yet.
     They are merged into their course hub alongside live lessons and keep progress in this browser. */
  'clinical-diagnostics':[
-  {slug:'sample-collection',title:'Sample Collection',summary:'Blood, urine, fecal, and ear sample collection: venipuncture sites and technique, cystocentesis and free catch urine, ear swab cytology, needles, syringes and sharps safety, blood tube selection, a fifteen-point recap, and a graded end-of-course assessment.',sort_order:1,path:'assets/data/clinical-diagnostics/sample-collection.json',localOnly:true}
+  {slug:'sample-collection',title:'Sample Collection',summary:'Blood, urine, fecal, and ear sample collection: venipuncture sites and technique, cystocentesis and free catch urine, ear swab cytology, needles, syringes and sharps safety, blood tube selection, a fifteen-point recap, and a graded end-of-course assessment.',sort_order:1,path:'assets/data/clinical-diagnostics/sample-collection.json',localOnly:true},
+  {slug:'imaging-support',title:'Imaging Support',summary:'Support the imaging team safely: radiography workflow and image quality, ALARA radiation safety, positioning and restraint support, ultrasound preparation, CT/MRI and contrast readiness, emergency imaging prioritization, and a graded twelve-question final assessment.',sort_order:2,path:'assets/data/clinical-diagnostics/imaging-support.json',localOnly:true}
  ]
 };
 const bundledLessonFallbackBySlug=Object.fromEntries(Object.values(bundledCourseLessonFallbacks).flat().map(def=>[def.slug,def]));
@@ -2667,7 +2668,7 @@ function wireCanineAssessment(root){
    back.type='button';
    back.className='secondary';
    back.setAttribute('data-cc-course','');
-   back.textContent='Back to Medical Foundations';
+   back.textContent='Back to '+(currentCourse.label||'course');
    back.addEventListener('click',()=>{
     const course={slug:currentCourse.slug,label:currentCourse.label};
     closeActiveModuleToLesson({tab:'curriculum'});
@@ -2681,11 +2682,362 @@ function wireCanineAssessment(root){
  enhance();
 }
 
+/* ---- Clinical Diagnostics — Imaging Support interactions ---- */
+function imsReduced(){return !!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)}
+function imsFocus(el){if(el)el.focus({preventScroll:imsReduced()})}
+function imsFeedback(host,tone,lead,body){
+ host.hidden=false;
+ host.className='ims-feedback is-'+tone;
+ host.innerHTML='';
+ const p=document.createElement('p');
+ const strong=document.createElement('strong');
+ strong.textContent=lead;
+ p.appendChild(strong);
+ p.appendChild(document.createTextNode(' '+body));
+ host.appendChild(p);
+}
+function wireImagingWidgets(root){
+ if(!root)return;
+ wireImagingImageFallbacks(root);
+ wireImagingQuizzes(root);
+ wireImagingRoomSweep(root);
+ wireImagingSort(root);
+ wireImagingTimeouts(root);
+}
+/* Images: if an open-license asset fails to load, keep the caption and offer the source page. */
+function wireImagingImageFallbacks(root){
+ root.querySelectorAll('img[data-ims-img]').forEach(img=>{
+  if(img.dataset.imsImgReady==='1')return;
+  img.dataset.imsImgReady='1';
+  const swap=()=>{
+   if(img.dataset.imsSwapped==='1')return;
+   img.dataset.imsSwapped='1';
+   const note=document.createElement('p');
+   note.className='ims-img-fallback';
+   note.textContent='Image unavailable offline. '+(img.dataset.imsFallback||'');
+   if(img.dataset.imsFallbackUrl){
+    const a=document.createElement('a');
+    a.href=img.dataset.imsFallbackUrl;a.target='_blank';a.rel='noopener';
+    a.textContent='View the original image and its license';
+    note.appendChild(document.createTextNode(' '));
+    note.appendChild(a);
+   }
+   img.replaceWith(note);
+  };
+  img.addEventListener('error',swap);
+  if(img.complete&&img.naturalWidth===0)swap();
+ });
+}
+/* Paged single-choice practice: one decision at a time, immediate feedback, restart. */
+function wireImagingQuizzes(root){
+ root.querySelectorAll('[data-ims-quiz]').forEach(block=>{
+  if(block.dataset.imsQuizReady==='1')return;
+  block.dataset.imsQuizReady='1';
+  const items=[...block.querySelectorAll('[data-ims-q]')];
+  const total=items.length;
+  if(!total)return;
+  const counter=block.querySelector('[data-ims-counter]');
+  const bar=block.querySelector('[data-ims-bar]');
+  const prevBtn=block.querySelector('[data-ims-prev]');
+  const nextBtn=block.querySelector('[data-ims-next]');
+  const summary=block.querySelector('[data-ims-summary]');
+  const summaryText=block.querySelector('[data-ims-summary-text]');
+  const restart=block.querySelector('[data-ims-restart]');
+  const answered=new Array(total).fill(null);
+  let cur=0;
+  const paint=(focusStem)=>{
+   items.forEach((li,i)=>{li.hidden=i!==cur});
+   if(counter)counter.textContent='Item '+(cur+1)+' of '+total;
+   if(bar)bar.style.width=Math.round(((cur+1)/total)*100)+'%';
+   if(prevBtn)prevBtn.disabled=cur===0;
+   if(nextBtn){
+    const done=answered.every(a=>a!==null);
+    nextBtn.textContent=cur===total-1?'See summary':'Next';
+    nextBtn.disabled=cur===total-1?!done:answered[cur]===null;
+   }
+   if(focusStem){const stem=items[cur].querySelector('.ims-q-stem');if(stem){stem.setAttribute('tabindex','-1');imsFocus(stem)}}
+  };
+  items.forEach((li,i)=>{
+   const fb=li.querySelector('[data-ims-fb]');
+   li.querySelectorAll('[data-ims-opt]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+     if(answered[i]!==null)return;
+     const correct=btn.dataset.correct==='1';
+     answered[i]=correct;
+     li.querySelectorAll('[data-ims-opt]').forEach(b=>{
+      b.disabled=true;
+      if(b.dataset.correct==='1')b.classList.add('is-correct');
+      else if(b===btn)b.classList.add('is-wrong');
+     });
+     btn.classList.add('is-chosen');
+     imsFeedback(fb,correct?'good':'bad',correct?'Correct.':'Not quite.',btn.dataset.explain||'');
+     paint(false);
+    });
+   });
+  });
+  prevBtn?.addEventListener('click',()=>{if(cur<=0)return;cur-=1;paint(true)});
+  nextBtn?.addEventListener('click',()=>{
+   if(cur<total-1){cur+=1;paint(true);return}
+   const score=answered.filter(Boolean).length;
+   if(summary){
+    summary.hidden=false;
+    if(summaryText)summaryText.textContent='You answered '+score+' of '+total+' correctly on the first attempt. This activity is practice — it is not scored toward your progress.';
+    summary.setAttribute('tabindex','-1');
+    imsFocus(summary);
+   }
+  });
+  restart?.addEventListener('click',()=>{
+   answered.fill(null);
+   items.forEach(li=>{
+    li.querySelectorAll('[data-ims-opt]').forEach(b=>{b.disabled=false;b.classList.remove('is-correct','is-wrong','is-chosen')});
+    const fb=li.querySelector('[data-ims-fb]');
+    if(fb){fb.hidden=true;fb.innerHTML='';fb.className='ims-feedback'}
+   });
+   if(summary)summary.hidden=true;
+   cur=0;paint(true);
+  });
+  paint(false);
+ });
+}
+/* ALARA room sweep: keyboard-reachable hotspots, results written out in words. */
+function wireImagingRoomSweep(root){
+ root.querySelectorAll('[data-ims-room]').forEach(block=>{
+  if(block.dataset.imsRoomReady==='1')return;
+  block.dataset.imsRoomReady='1';
+  const spots=[...block.querySelectorAll('[data-ims-hotspot]')];
+  const hazards=spots.filter(s=>s.dataset.hazard==='1');
+  const counter=block.querySelector('[data-ims-room-counter]');
+  const bar=block.querySelector('[data-ims-room-bar]');
+  const log=block.querySelector('[data-ims-room-log]');
+  const done=block.querySelector('[data-ims-room-done]');
+  const doneText=block.querySelector('[data-ims-room-done-text]');
+  const reset=block.querySelector('[data-ims-room-reset]');
+  const paint=()=>{
+   const found=hazards.filter(s=>s.dataset.checked==='1').length;
+   if(counter)counter.textContent=found+' of '+hazards.length+' hazards found';
+   if(bar)bar.style.width=Math.round((found/hazards.length)*100)+'%';
+   if(found===hazards.length&&done){
+    done.hidden=false;
+    if(doneText)doneText.textContent='All '+hazards.length+' hazards found. Before any exposure: everyone who does not need to be at the table is behind the barrier, nobody has a body part in the primary beam, shielding is worn, the door is controlled, and monitoring badges are on the people, not the shelf.';
+   }
+  };
+  spots.forEach(spot=>{
+   spot.addEventListener('click',()=>{
+    if(spot.dataset.checked==='1')return;
+    spot.dataset.checked='1';
+    const hazard=spot.dataset.hazard==='1';
+    spot.classList.add(hazard?'is-hazard':'is-safe');
+    const status=spot.querySelector('[data-ims-hotspot-status]');
+    if(status)status.textContent=hazard?'⚠ Hazard':'✓ Safe practice';
+    const label=spot.querySelector('.ims-hotspot-label')?.textContent||'';
+    spot.setAttribute('aria-label',label+'. '+(hazard?'Hazard.':'Safe practice.')+' '+(spot.dataset.explain||''));
+    if(log){
+     const li=document.createElement('li');
+     li.className='ims-room-log-item '+(hazard?'is-hazard':'is-safe');
+     const tag=document.createElement('strong');
+     tag.textContent=(hazard?'⚠ Hazard — ':'✓ Safe practice — ')+label+'.';
+     li.appendChild(tag);
+     li.appendChild(document.createTextNode(' '+(spot.dataset.explain||'')));
+     log.appendChild(li);
+    }
+    paint();
+   });
+  });
+  reset?.addEventListener('click',()=>{
+   spots.forEach(spot=>{
+    spot.dataset.checked='0';
+    spot.classList.remove('is-hazard','is-safe');
+    const status=spot.querySelector('[data-ims-hotspot-status]');
+    if(status)status.textContent='';
+    const label=spot.querySelector('.ims-hotspot-label')?.textContent||'';
+    spot.setAttribute('aria-label',label+'. Select to check this spot.');
+   });
+   if(log)log.innerHTML='';
+   if(done)done.hidden=true;
+   paint();
+   imsFocus(spots[0]);
+  });
+  paint();
+ });
+}
+/* Ultrasound prep sort: select an item, then choose a lane. Buttons only — no drag required. */
+function wireImagingSort(root){
+ root.querySelectorAll('[data-ims-sort]').forEach(block=>{
+  if(block.dataset.imsSortReady==='1')return;
+  block.dataset.imsSortReady='1';
+  const bank=block.querySelector('[data-ims-sort-bank]');
+  const items=[...block.querySelectorAll('[data-ims-item]')];
+  const total=items.length;
+  const placeBtns=[...block.querySelectorAll('[data-ims-place]')];
+  const checkBtn=block.querySelector('[data-ims-sort-check]');
+  const resetBtn=block.querySelector('[data-ims-sort-reset]');
+  const counter=block.querySelector('[data-ims-sort-counter]');
+  const feedback=block.querySelector('[data-ims-sort-feedback]');
+  let selected=null;
+  const placedCount=()=>items.filter(i=>i.dataset.placed).length;
+  const paint=()=>{
+   const placed=placedCount();
+   if(counter)counter.textContent=placed+' of '+total+' tasks placed';
+   placeBtns.forEach(b=>{b.disabled=!selected});
+   if(checkBtn)checkBtn.disabled=placed!==total;
+  };
+  const select=item=>{
+   if(selected===item){selected=null}
+   else{selected=item}
+   items.forEach(i=>i.setAttribute('aria-pressed',i===selected?'true':'false'));
+   items.forEach(i=>i.classList.toggle('is-selected',i===selected));
+   paint();
+  };
+  items.forEach(item=>item.addEventListener('click',()=>select(item)));
+  placeBtns.forEach(btn=>{
+   btn.addEventListener('click',()=>{
+    if(!selected)return;
+    const key=btn.dataset.imsPlace;
+    const list=block.querySelector('[data-ims-bucket="'+key+'"] [data-ims-bucket-list]');
+    if(!list)return;
+    const li=selected.closest('li')||selected;
+    selected.dataset.placed=key;
+    selected.classList.remove('is-correct','is-wrong');
+    list.appendChild(li);
+    const moved=selected;
+    select(selected);
+    imsFocus(moved);
+    if(feedback){feedback.hidden=true;feedback.innerHTML='';feedback.className='ims-feedback'}
+    paint();
+   });
+  });
+  checkBtn?.addEventListener('click',()=>{
+   let right=0;
+   const misses=[];
+   items.forEach(item=>{
+    const ok=item.dataset.placed===item.dataset.bucket;
+    item.classList.toggle('is-correct',ok);
+    item.classList.toggle('is-wrong',!ok);
+    const tag=item.querySelector('.ims-sort-result')||document.createElement('span');
+    tag.className='ims-sort-result';
+    tag.textContent=ok?' ✓ Correct lane':' ✗ Wrong lane';
+    item.appendChild(tag);
+    if(ok)right+=1;else misses.push(item);
+   });
+   if(feedback){
+    feedback.hidden=false;
+    feedback.className='ims-feedback '+(right===total?'is-good':'is-bad');
+    const head=document.createElement('p');
+    const strong=document.createElement('strong');
+    strong.textContent=right+' of '+total+' tasks are in the right lane.';
+    head.appendChild(strong);
+    feedback.innerHTML='';
+    feedback.appendChild(head);
+    const list=document.createElement('ul');
+    list.className='sc-list';
+    items.forEach(item=>{
+     const li=document.createElement('li');
+     const label=document.createElement('strong');
+     label.textContent=item.childNodes[0].textContent.trim()+' — ';
+     li.appendChild(label);
+     li.appendChild(document.createTextNode(item.dataset.explain||''));
+     list.appendChild(li);
+    });
+    feedback.appendChild(list);
+    if(misses.length){
+     const again=document.createElement('p');
+     again.className='ims-summary-note';
+     again.textContent='Move any task marked “Wrong lane” and check again.';
+     feedback.appendChild(again);
+    }
+    feedback.setAttribute('tabindex','-1');
+    imsFocus(feedback);
+   }
+  });
+  resetBtn?.addEventListener('click',()=>{
+   items.forEach(item=>{
+    delete item.dataset.placed;
+    item.classList.remove('is-correct','is-wrong','is-selected');
+    item.setAttribute('aria-pressed','false');
+    item.querySelector('.ims-sort-result')?.remove();
+    bank.appendChild(item.closest('li')||item);
+   });
+   selected=null;
+   if(feedback){feedback.hidden=true;feedback.innerHTML='';feedback.className='ims-feedback'}
+   paint();
+   imsFocus(items[0]);
+  });
+  paint();
+ });
+}
+/* Advanced imaging time-out: required checks plus out-of-scope traps. */
+function wireImagingTimeouts(root){
+ root.querySelectorAll('[data-ims-timeout]').forEach(block=>{
+  if(block.dataset.imsTimeoutReady==='1')return;
+  block.dataset.imsTimeoutReady='1';
+  const boxes=[...block.querySelectorAll('[data-ims-timeout-item]')];
+  const required=boxes.filter(b=>b.dataset.required==='1');
+  const counter=block.querySelector('[data-ims-timeout-counter]');
+  const checkBtn=block.querySelector('[data-ims-timeout-check]');
+  const resetBtn=block.querySelector('[data-ims-timeout-reset]');
+  const feedback=block.querySelector('[data-ims-timeout-feedback]');
+  const paint=()=>{
+   const ticked=boxes.filter(b=>b.checked).length;
+   if(counter)counter.textContent=ticked+' of '+required.length+' required checks ticked';
+  };
+  boxes.forEach(b=>b.addEventListener('change',()=>{
+   b.closest('.ims-check')?.classList.remove('is-correct','is-wrong');
+   paint();
+  }));
+  checkBtn?.addEventListener('click',()=>{
+   const missed=[],wrong=[];
+   boxes.forEach(b=>{
+    const row=b.closest('.ims-check');
+    const need=b.dataset.required==='1';
+    const ok=b.checked===need;
+    row?.classList.toggle('is-correct',ok);
+    row?.classList.toggle('is-wrong',!ok);
+    if(!ok&&need)missed.push(b);
+    if(!ok&&!need)wrong.push(b);
+   });
+   if(!feedback)return;
+   feedback.hidden=false;
+   feedback.innerHTML='';
+   const pass=!missed.length&&!wrong.length;
+   feedback.className='ims-feedback '+(pass?'is-good':'is-bad');
+   const head=document.createElement('p');
+   const strong=document.createElement('strong');
+   strong.textContent=pass?'Time-out complete.':'Not yet — review the flagged lines.';
+   head.appendChild(strong);
+   head.appendChild(document.createTextNode(pass
+    ?' Every required check is ticked and nothing outside your scope was claimed.'
+    :' '+missed.length+' required check'+(missed.length===1?'':'s')+' missing and '+wrong.length+' item'+(wrong.length===1?'':'s')+' ticked that are outside support scope.'));
+   feedback.appendChild(head);
+   const list=document.createElement('ul');
+   list.className='sc-list';
+   [...missed,...wrong].forEach(b=>{
+    const li=document.createElement('li');
+    const label=document.createElement('strong');
+    label.textContent=(b.closest('label')?.querySelector('span')?.textContent||'')+' — ';
+    li.appendChild(label);
+    li.appendChild(document.createTextNode(b.dataset.explain||''));
+    list.appendChild(li);
+   });
+   if(list.children.length)feedback.appendChild(list);
+   feedback.setAttribute('tabindex','-1');
+   imsFocus(feedback);
+  });
+  resetBtn?.addEventListener('click',()=>{
+   boxes.forEach(b=>{b.checked=false;b.closest('.ims-check')?.classList.remove('is-correct','is-wrong')});
+   if(feedback){feedback.hidden=true;feedback.innerHTML='';feedback.className='ims-feedback'}
+   paint();
+   imsFocus(boxes[0]);
+  });
+  paint();
+ });
+}
+
 /* ---- Module modal with knowledge check ---- */
 const TRIAGE_REVIEW_LESSON_SLUG='triage-review';
 const SAMPLE_COLLECTION_LESSON_SLUG='sample-collection';
 const CANINE_COMMUNICATION_LESSON_SLUG='understanding-canine-communication';
-const CONTINUE_FLOW_LESSON_SLUGS=new Set([TRIAGE_REVIEW_LESSON_SLUG,SAMPLE_COLLECTION_LESSON_SLUG,CANINE_COMMUNICATION_LESSON_SLUG]);
+const IMAGING_SUPPORT_LESSON_SLUG='imaging-support';
+const CONTINUE_FLOW_LESSON_SLUGS=new Set([TRIAGE_REVIEW_LESSON_SLUG,SAMPLE_COLLECTION_LESSON_SLUG,CANINE_COMMUNICATION_LESSON_SLUG,IMAGING_SUPPORT_LESSON_SLUG]);
 let activeModule=null, quizAnswers={};
 const moduleModalState={saving:false,message:'',isError:false,reviewSaveStatus:'idle'};
 function resetModuleModalState(){
@@ -2862,6 +3214,7 @@ function renderModuleModal(opts={}){
  wireAnatomyWidgets(document.querySelector('#modalContent'));
  wireSampleCollectionWidgets(document.querySelector('#modalContent'));
  wireCanineWidgets(document.querySelector('#modalContent'));
+ wireImagingWidgets(document.querySelector('#modalContent'));
  if(hasQuiz&&answeredCount===total)void renderQuizResult();
  if(opts.focusHeading)focusModuleModalHeading();
 }
@@ -2954,7 +3307,9 @@ async function renderQuizResult(){
  const pct=total?Math.round((correctCount/total)*100):0;
  const review=m.mode==='review';
  const ungradedReview=moduleIsUngradedReview(m);
- const passed=review||ungradedReview?true:pct>=75;
+ /* Lessons may set a stricter pass mark per module; the shared default stays 75%. */
+ const threshold=Number.isFinite(Number(m.passThreshold))?Number(m.passThreshold):75;
+ const passed=review||ungradedReview?true:pct>=threshold;
  const snap=snapshotModuleState(st,m.id);
  if(moduleUsesScoring(m))st.moduleScores[m.id]=pct;
  if(passed)st.moduleProgress[m.id]=true;
@@ -2970,7 +3325,7 @@ async function renderQuizResult(){
    <button class="secondary" id="l2RetakeQuiz">Start the review again</button>
    <button class="primary" id="l2CloseModuleModal">Return to curriculum</button>
   </div>`
-  :`<div class="feedback-box"><strong>Score: ${pct}%</strong> (${correctCount} of ${total} correct) — ${passed?'Module marked complete.':'Retake recommended (75% needed to mark complete).'}</div>
+  :`<div class="feedback-box"><strong>Score: ${pct}%</strong> (${correctCount} of ${total} correct) — ${passed?'Module marked complete.':`Retake recommended (${threshold}% needed to mark complete).`}</div>
   <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
    ${!passed?'<button class="secondary" id="l2RetakeQuiz">Retake knowledge check</button>':''}
    <button class="primary" id="l2CloseModuleModal">Return to curriculum</button>
