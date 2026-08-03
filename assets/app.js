@@ -2469,8 +2469,85 @@ function wireLessonPlayer(){
  });
 }
 
+/* ---- Clinical Diagnostics — Sample Collection interactions ---- */
+function scReduced(){return !!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)}
+function wireSampleCollectionWidgets(root){
+ if(!root)return;
+
+ /* Click-to-reveal flashcards: key terms and colour-coded blood tubes. */
+ root.querySelectorAll('[data-sc-flip]').forEach(card=>{
+  if(card.dataset.scFlipReady==='1')return;
+  card.dataset.scFlipReady='1';
+  const front=card.querySelector('.sc-flip-face--front');
+  const back=card.querySelector('.sc-flip-face--back');
+  const term=card.dataset.scFront||'';
+  const detail=card.dataset.scBack||'';
+  const paint=open=>{
+   card.setAttribute('aria-expanded',open?'true':'false');
+   card.classList.toggle('is-flipped',open);
+   if(front)front.setAttribute('aria-hidden',open?'true':'false');
+   if(back)back.setAttribute('aria-hidden',open?'false':'true');
+   card.setAttribute('aria-label',open
+    ?`${term}. ${detail} Select to hide again.`
+    :`${term}. Select to reveal details.`);
+  };
+  paint(card.getAttribute('aria-expanded')==='true');
+  card.addEventListener('click',()=>paint(card.getAttribute('aria-expanded')!=='true'));
+ });
+
+ /* Step-through recap: one point at a time, Back / Next / counter. */
+ root.querySelectorAll('[data-sc-stepper]').forEach(w=>{
+  if(w.dataset.scStepperReady==='1')return;
+  w.dataset.scStepperReady='1';
+  const steps=[...w.querySelectorAll('[data-sc-step]')];
+  if(!steps.length)return;
+  const total=steps.length;
+  const prev=w.querySelector('[data-sc-prev]');
+  const next=w.querySelector('[data-sc-next]');
+  const counter=w.querySelector('[data-sc-counter]');
+  const bar=w.querySelector('[data-sc-step-bar]');
+  const done=w.querySelector('[data-sc-done]');
+  let index=0;
+  const show=(n,focus)=>{
+   index=Math.max(0,Math.min(total-1,n));
+   const last=index===total-1;
+   steps.forEach((step,i)=>{step.hidden=i!==index});
+   const current=steps[index];
+   current.classList.remove('is-entering');
+   if(!scReduced()){void current.offsetWidth;current.classList.add('is-entering')}
+   if(counter)counter.textContent=`Point ${index+1} of ${total}`;
+   if(bar)bar.style.width=`${((index+1)/total*100).toFixed(2)}%`;
+   if(prev){
+    prev.disabled=index===0;
+    prev.setAttribute('aria-label',index===0?'Back is unavailable on the first recap point':`Go back to recap point ${index} of ${total}`);
+   }
+   if(next){
+    next.disabled=last;
+    next.innerHTML=last?'All points reviewed':'Next <span class="sc-recap-arrow" aria-hidden="true">&rarr;</span>';
+    next.setAttribute('aria-label',last
+     ?`Point ${total} of ${total} is the final recap point`
+     :`Reveal recap point ${index+2} of ${total}`);
+   }
+   if(done)done.hidden=!last;
+   if(focus)current.focus({preventScroll:false});
+  };
+  prev?.addEventListener('click',()=>show(index-1,true));
+  next?.addEventListener('click',()=>show(index+1,true));
+  w.addEventListener('keydown',e=>{
+   if(e.altKey||e.ctrlKey||e.metaKey)return;
+   if(e.key==='ArrowRight'){e.preventDefault();show(index+1,true)}
+   else if(e.key==='ArrowLeft'){e.preventDefault();show(index-1,true)}
+   else if(e.key==='Home'){e.preventDefault();show(0,true)}
+   else if(e.key==='End'){e.preventDefault();show(total-1,true)}
+  });
+  show(0,false);
+ });
+}
+
 /* ---- Module modal with knowledge check ---- */
 const TRIAGE_REVIEW_LESSON_SLUG='triage-review';
+const SAMPLE_COLLECTION_LESSON_SLUG='sample-collection';
+const CONTINUE_FLOW_LESSON_SLUGS=new Set([TRIAGE_REVIEW_LESSON_SLUG,SAMPLE_COLLECTION_LESSON_SLUG]);
 let activeModule=null, quizAnswers={};
 const moduleModalState={saving:false,message:'',isError:false,reviewSaveStatus:'idle'};
 function resetModuleModalState(){
@@ -2483,7 +2560,7 @@ function setModuleModalMessage(message,{error=false}={}){
  moduleModalState.message=message||'';
  moduleModalState.isError=!!message&&error;
 }
-function lessonUsesTriageContinueFlow(lesson){return lesson?.slug===TRIAGE_REVIEW_LESSON_SLUG}
+function lessonUsesTriageContinueFlow(lesson){return !!lesson&&CONTINUE_FLOW_LESSON_SLUGS.has(lesson.slug)}
 function lessonModules(lesson){return Array.isArray(lesson?.content?.modules)?lesson.content.modules:[]}
 function nextLessonModule(lesson,module){
  const modules=lessonModules(lesson);
@@ -2645,6 +2722,7 @@ function renderModuleModal(opts={}){
  document.querySelector('#l2CloseModuleModal')?.addEventListener('click',()=>closeActiveModuleToLesson({focusModuleId:m.id}));
  if(m.hwWidget)wireHwWidget(m.hwWidget);
  wireAnatomyWidgets(document.querySelector('#modalContent'));
+ wireSampleCollectionWidgets(document.querySelector('#modalContent'));
  if(hasQuiz&&answeredCount===total)void renderQuizResult();
  if(opts.focusHeading)focusModuleModalHeading();
 }
