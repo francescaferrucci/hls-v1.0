@@ -1249,30 +1249,38 @@ const l5Stages=['History','Assessment','Differentials','Diagnostics','Treatment'
 let l5State=JSON.parse(localStorage.getItem('hlsTrueLevel5')||'{"tab":"overview","caseStep":0,"completed":false}');
 const persist=()=>localStorage.setItem('hlsTrueLevel5',JSON.stringify(l5State));
 
-function medicalFoundationsSnapshot(){
- const snapshot=window.getCourseProgressSnapshot?.('medical-foundations');
+function courseLevelSnapshot(slug){
+ const snapshot=window.getCourseProgressSnapshot?.(slug);
  const pct=snapshot&&Number.isFinite(snapshot.hubPct)?snapshot.hubPct:0;
  const status=pct>=100?'Complete':pct>0?'In progress':'Available';
  return{pct,status};
 }
+function medicalFoundationsSnapshot(){return courseLevelSnapshot('medical-foundations')}
 
+/* Levels wired to a generic course hub report their real course progress; the rest keep the
+   prototype figures defined above. */
+const medicalLevelCourseSlugs={1:'medical-foundations',3:'clinical-diagnostics'};
 function medicalLevelsForRender(){
- const foundations=medicalFoundationsSnapshot();
- return medicalLevels.map(level=>level.n===1?{...level,progress:foundations.pct,status:foundations.status}:level);
+ return medicalLevels.map(level=>{
+  const slug=medicalLevelCourseSlugs[level.n];
+  if(!slug)return level;
+  const snap=courseLevelSnapshot(slug);
+  return{...level,progress:snap.pct,status:snap.status};
+ });
 }
 
 function renderMedicalAcademy(){
  const grid=document.querySelector('#medicalLevelGrid'); if(!grid)return;
  const levels=medicalLevelsForRender();
  grid.innerHTML=levels.map(l=>`<article class="level-card ${l.n===10?'current':''} ${l.status==='Locked'?'locked':''}" data-medical-level="${l.n}"><div class="section-head"><div class="level-number">${l.n}</div><span class="badge ${l.status==='Complete'?'good':l.status==='Current'?'warning':l.status==='Locked'?'neutral':'warning'}">${l.status}</span></div><h2>${l.title}</h2><p>${l.desc}</p><div class="progress"><span style="width:${l.progress}%"></span></div><div class="card-footer"><strong>${l.progress}%</strong><button class="${l.n===10?'primary':'secondary'} medical-level-open" data-level="${l.n}" ${l.status==='Locked'?'disabled':''}>${l.status==='Complete'?'Review':'Open Lesson'}</button></div></article>`).join('');
- document.querySelectorAll('.medical-level-open').forEach(b=>b.onclick=()=>{const n=+b.dataset.level;if(n===1)window.openCourseHub('medical-foundations','Medical Foundations');else if(n===2)window.openCourseHub('patient-assessment','Patient Assessment');else if(n===5)openLevel5();else if(n===6)openLevel6();else if(n===7||n===9)openLevel7();else if(n>=10)openUpperLevel(n);else openModal(`<span class="eyebrow">Hannah Medical Academy</span><h1 class="modal-title">${levels[n-1].title}</h1><p>${n===8?'This course is complete and remains available for review.':'This course remains part of the same Medical Academy pathway inside the shared Hannah Learning System.'}</p><button class="primary" onclick="document.querySelector('#modal').close()">Return to pathway</button>`)});
+ document.querySelectorAll('.medical-level-open').forEach(b=>b.onclick=()=>{const n=+b.dataset.level;if(n===1)window.openCourseHub('medical-foundations','Medical Foundations');else if(n===2)window.openCourseHub('patient-assessment','Patient Assessment');else if(n===3)window.openCourseHub('clinical-diagnostics','Clinical Diagnostics');else if(n===5)openLevel5();else if(n===6)openLevel6();else if(n===7||n===9)openLevel7();else if(n>=10)openUpperLevel(n);else openModal(`<span class="eyebrow">Hannah Medical Academy</span><h1 class="modal-title">${levels[n-1].title}</h1><p>${n===8?'This course is complete and remains available for review.':'This course remains part of the same Medical Academy pathway inside the shared Hannah Learning System.'}</p><button class="primary" onclick="document.querySelector('#modal').close()">Return to pathway</button>`)});
  document.querySelector('#medicalAcademyMetrics').innerHTML=[['12','Courses available'],['31','Lessons completed'],['12','Competencies validated'],['3','Certificates earned']].map(x=>`<div class="metric-card"><strong>${x[0]}</strong><span>${x[1]}</span></div>`).join('');
 }
 async function openMedicalAcademy(){
  renderMedicalAcademy();
  switchView('medicalAcademy');
  try{
-  if(window.ensureCourseSnapshotLoaded)await window.ensureCourseSnapshotLoaded('medical-foundations');
+  if(window.ensureCourseSnapshotLoaded)await Promise.all(Object.values(medicalLevelCourseSlugs).map(slug=>window.ensureCourseSnapshotLoaded(slug)));
   renderMedicalAcademy();
  }catch(e){}
 }
@@ -1612,12 +1620,14 @@ let currentCourse={slug:'patient-assessment',label:'Patient Assessment'};
 /* Lessons still in development are not in the database yet; live lessons are loaded from Supabase. */
 const plannedLessonsBySlug={
  'patient-assessment':[],
- 'medical-foundations':[]
+ 'medical-foundations':[],
+ 'clinical-diagnostics':[]
 };
 function plannedLessonsFor(slug){return plannedLessonsBySlug[slug]||[]}
 /* Optional fixed display order per course (mixes live + planned lesson slugs/ids). Falls back to live-then-planned order when a course has no entry here. */
 const courseOrderBySlug={
- 'medical-foundations':['medical-terminology','reproductive-anatomy','anatomy-and-physiology']
+ 'medical-foundations':['medical-terminology','reproductive-anatomy','anatomy-and-physiology'],
+ 'clinical-diagnostics':['sample-collection']
 };
 function applyCourseOrder(slug,tiles){
  const order=courseOrderBySlug[slug]; if(!order)return tiles;
@@ -1812,6 +1822,11 @@ const bundledCourseLessonFallbacks={
   {slug:'medical-terminology',title:'Medical Terminology',summary:'Word roots, prefixes, and suffixes used to build and decode veterinary medical terms, organized by body system and ending with a completion-based mastery review.',sort_order:1,path:'assets/data/medical-foundations/medical-terminology.json'},
   {slug:'reproductive-anatomy',title:'Reproductive Anatomy',summary:'Female and male reproductive anatomy in dogs and cats, the four-phase estrous cycle, and clinical connections to breeding soundness, pregnancy, and reproductive health examinations.',sort_order:2,path:'assets/data/medical-foundations/reproductive-anatomy.json'},
   {slug:'anatomy-and-physiology',title:'Anatomy & Physiology',summary:'Foundational animal anatomy and physiology: levels of biological organization from cells to organ systems, directional terminology and body planes, the major organ systems, and animal classification, applied in a guided clinical scenario.',sort_order:3,path:'assets/data/medical-foundations/anatomy-and-physiology.json'}
+ ],
+ /* Bundled-only lessons ship with the package and are not published to the lessons table yet.
+    They are merged into their course hub alongside live lessons and keep progress in this browser. */
+ 'clinical-diagnostics':[
+  {slug:'sample-collection',title:'Sample Collection',summary:'Blood, urine, fecal, and ear sample collection: venipuncture sites and technique, cystocentesis and free catch urine, ear swab cytology, needles, syringes and sharps safety, blood tube selection, a fifteen-point recap, and a graded end-of-course assessment.',sort_order:1,path:'assets/data/clinical-diagnostics/sample-collection.json',localOnly:true}
  ]
 };
 const bundledLessonFallbackBySlug=Object.fromEntries(Object.values(bundledCourseLessonFallbacks).flat().map(def=>[def.slug,def]));
@@ -1852,6 +1867,62 @@ function shouldUseBundledFallback(courseSlug,error){
  return !!(defs&&defs.length&&isSupabaseUnavailable(error));
 }
 function isBundledFallbackLesson(lesson){return !!lesson?.fallbackOnly}
+function isLocalOnlyLesson(lesson){return !!lesson?.localOnly}
+/* Bundled-only lessons are merged into a course even when Supabase responds normally, because no
+   published row exists for them yet. Live rows always win if a lesson with the same slug appears. */
+function bundledOnlyDefsFor(slug){return (bundledCourseLessonFallbacks[slug]||[]).filter(def=>def.localOnly)}
+async function mergeBundledOnlyLessons(slug,lessons){
+ const defs=bundledOnlyDefsFor(slug).filter(def=>!lessons.some(lesson=>lesson.slug===def.slug));
+ if(!defs.length)return lessons;
+ const merged=[...lessons];
+ for(const def of defs){
+  const cached=lessonCache[def.slug];
+  const lesson=cached&&isBundledFallbackLesson(cached)?cached:await fetchBundledFallbackLesson(def);
+  lessonCache[def.slug]=lesson;
+  courseSlugByLessonSlug[def.slug]=slug;
+  merged.push(lesson);
+ }
+ return merged;
+}
+const LOCAL_LESSON_PROGRESS_PREFIX='hlsLocalLessonProgress:';
+function localLessonProgressKey(lesson){return LOCAL_LESSON_PROGRESS_PREFIX+lesson.slug}
+function loadLocalLessonState(lesson,st){
+ try{
+  const raw=localStorage.getItem(localLessonProgressKey(lesson));
+  if(!raw)return true;
+  const row=JSON.parse(raw);
+  const detail=row&&typeof row.detail==='object'?row.detail:{};
+  Object.assign(st.moduleProgress,detail.moduleProgress||{});
+  Object.assign(st.moduleScores,detail.moduleScores||{});
+  (detail.casesCompleted||[]).forEach(id=>{if(!st.casesCompleted.includes(id))st.casesCompleted.push(id)});
+  Object.assign(st.checklist,detail.checklist||{});
+  if(detail.attested)st.attested=true;
+  st.progressRow=row;
+ }catch(e){}
+ return true;
+}
+function saveLocalLessonProgress(lesson,st){
+ const done=allRequirementsMet(lesson,st);
+ const scores=lessonModuleScores(lesson,st);
+ const row={
+  lesson_id:lesson.id,
+  status:done?'completed':'in_progress',
+  completed_at:st.progressRow?.completed_at||(done?new Date().toISOString():null),
+  quiz_score:scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length):null,
+  detail:{
+   moduleProgress:st.moduleProgress,
+   moduleScores:st.moduleScores,
+   casesCompleted:st.casesCompleted,
+   checklist:st.checklist,
+   attested:!!st.attested
+  }
+ };
+ try{localStorage.setItem(localLessonProgressKey(lesson),JSON.stringify(row))}
+ catch(e){toast('Progress could not be saved on this device');return false}
+ st.progressRow=row;
+ refreshLevel2ProgressViews(lesson);
+ return true;
+}
 
 async function fetchBundledFallbackLesson(def){
  const res=await fetch(def.path,{cache:'no-store'});
@@ -1866,6 +1937,7 @@ async function fetchBundledFallbackLesson(def){
   status:'published',
   requires_signoff:false,
   fallbackOnly:true,
+  localOnly:!!def.localOnly,
   content
  });
 }
@@ -1895,7 +1967,8 @@ async function fetchCourseLessons(){
   if(cErr)throw cErr;
   const {data,error}=await sb.from('lessons').select('*').eq('course_id',course.id).eq('status','published').order('sort_order',{ascending:true});
   if(error)throw error;
-  courseLessons=applyCourseOrder(currentCourse.slug,filterCourseLessons(currentCourse.slug,(data||[]).map(normalizeLessonRow)));
+  const rows=await mergeBundledOnlyLessons(currentCourse.slug,(data||[]).map(normalizeLessonRow));
+  courseLessons=applyCourseOrder(currentCourse.slug,filterCourseLessons(currentCourse.slug,rows));
   courseLessons.forEach(l=>{lessonCache[l.slug]=l;courseSlugByLessonSlug[l.slug]=currentCourse.slug});
   return courseLessons;
  }catch(error){
@@ -1909,7 +1982,8 @@ async function fetchCourseLessonsBySlug(slug,opts={}){
   if(cErr)throw cErr;
   const {data,error}=await sb.from('lessons').select('*').eq('course_id',course.id).eq('status','published').order('sort_order',{ascending:true});
   if(error)throw error;
-  const lessons=applyCourseOrder(slug,filterCourseLessons(slug,(data||[]).map(normalizeLessonRow)));
+  const rows=await mergeBundledOnlyLessons(slug,(data||[]).map(normalizeLessonRow));
+  const lessons=applyCourseOrder(slug,filterCourseLessons(slug,rows));
   lessons.forEach(l=>{lessonCache[l.slug]=l;courseSlugByLessonSlug[l.slug]=slug});
   if(opts.updateActiveCourseLessons)courseLessons=lessons;
   return lessons;
@@ -1922,6 +1996,13 @@ async function fetchCourseLessonsBySlug(slug,opts={}){
 }
 async function fetchLesson(slug){
  if(lessonCache[slug]&&!isBundledFallbackLesson(lessonCache[slug]))return lessonCache[slug];
+ const bundledOnlyDef=bundledLessonFallbackBySlug[slug];
+ if(bundledOnlyDef&&bundledOnlyDef.localOnly){
+  const cached=lessonCache[slug];
+  lessonCache[slug]=cached&&isBundledFallbackLesson(cached)?cached:await fetchBundledFallbackLesson(bundledOnlyDef);
+  courseSlugByLessonSlug[slug]=fallbackCourseForLesson(slug);
+  return lessonCache[slug];
+ }
  try{
   const {data,error}=await sb.from('lessons').select('*').eq('slug',slug).single();
   if(error)throw error;
@@ -2041,6 +2122,7 @@ function moduleAnsweredPercent(m,answeredCount){
 }
 
 async function loadRemoteState(lesson,st){
+ if(isLocalOnlyLesson(lesson))return loadLocalLessonState(lesson,st);
  if(isBundledFallbackLesson(lesson))return false;
  const uid=hlsAuth.user?.id; if(!uid)return false;
  const {data:prog}=await sb.from('lesson_progress').select('*').eq('user_id',uid).eq('lesson_id',lesson.id).maybeSingle();
@@ -2146,6 +2228,7 @@ function refreshLevel2ProgressViews(lesson){
  window.refreshMedicalAcademy?.();
 }
 async function saveProgress(lesson,st,opts={}){
+ if(isLocalOnlyLesson(lesson))return saveLocalLessonProgress(lesson,st);
  if(isBundledFallbackLesson(lesson)){toast('Progress sync is unavailable while live lesson data is offline');return false}
  const uid=hlsAuth.user?.id; if(!uid)return false;
  try{
