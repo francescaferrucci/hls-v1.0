@@ -659,3 +659,99 @@ html[data-theme="dark"] .sc-tube-swatch{border-color:rgba(255,255,255,.55)}
  .sc-flip-inner,.sc-flip-face,.sc-recap-progress span{transition:none!important}
  .sc-recap-step.is-entering{animation:none!important}
 }
+
+/* ========== Medical Foundations — Understanding Canine Communication ========== */
+.cc-hero-strip p{font-size:15px}
+.cc-objectives{margin:16px 0;padding:16px 18px;border:1px solid var(--line);border-left:4px solid var(--orange);border-radius:14px;background:var(--soft2)}
+.cc-objectives .sc-kicker{margin-top:0}
+.cc-objectives .sc-list{margin-bottom:0}
+.cc-video{margin:18px 0}
+.cc-media-placeholder{margin:18px 0}
+.cc-media-placeholder code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;background:var(--soft);border-radius:6px;padding:2px 6px}
+.cc-safety{margin-top:20px}
+
+/* Progressively revealed observation checklist */
+.cc-watch{margin:20px 0;padding:18px;border:1px solid var(--line);border-radius:18px;background:var(--panel);box-shadow:var(--shadow)}
+.cc-watch-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap}
+.cc-watch-head .sc-kicker{margin:0}
+.cc-watch-head h4{margin:4px 0 0;color:var(--navy2);font-size:18px;line-height:1.3}
+.cc-watch-counter{margin:0;font-size:12px;font-weight:850;color:var(--muted);white-space:nowrap}
+.cc-watch-lead{margin:10px 0 0;color:var(--muted);line-height:1.6;font-size:14px}
+.cc-watch-progress{margin:12px 0 4px}
+.cc-watch-progress span{transition:width .3s ease}
+.cc-watch-list{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:10px}
+.cc-watch-item{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start;padding:13px 15px;border:1px solid var(--line);border-left:4px solid var(--blue);border-radius:13px;background:var(--soft);animation:ccWatchIn .28s ease both}
+.cc-watch-item:focus-visible{outline:3px solid var(--orange);outline-offset:3px}
+.cc-watch-num{display:grid;place-items:center;width:26px;height:26px;flex:0 0 auto;border-radius:50%;background:var(--navy2);color:#fff;font-size:12px;font-weight:850}
+.cc-watch-body{display:grid;gap:4px}
+.cc-watch-body strong{color:var(--navy2);font-size:15px;line-height:1.35}
+.cc-watch-body span{line-height:1.6}
+.cc-watch-controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.cc-watch-btn{min-height:44px;padding:11px 18px}
+.cc-watch-btn:disabled{opacity:.5;cursor:not-allowed}
+.cc-watch-done{margin:12px 0 0;padding:11px 13px;border-radius:11px;background:#e5f7f1;color:#08705c;font-weight:800;line-height:1.5}
+@keyframes ccWatchIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+
+/* Observation prompts */
+.cc-prompt{margin:18px 0;padding:16px 18px;border:1px solid var(--line);border-radius:16px;background:var(--soft2)}
+.cc-prompt .sc-kicker{margin-top:0}
+.cc-prompt-q{margin:6px 0 12px;font-size:16px;font-weight:800;color:var(--navy2);line-height:1.45}
+.cc-prompt-details{background:var(--panel)}
+
+/* Paged assessment */
+.cc-quiz-head{margin-top:16px}
+.cc-quiz-head-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.cc-quiz-head-row .sc-kicker{margin:0}
+.cc-quiz-counter{margin:0;font-size:13px;font-weight:850;color:var(--navy2)}
+.cc-quiz-progress{margin:8px 0 0}
+.cc-quiz-progress span{transition:width .3s ease}
+.cc-quiz-paged .l2-quiz-question{border-left:4px solid var(--blue)}
+.cc-quiz-paged .l2-quiz-question h4{font-size:16px;line-height:1.45}
+.cc-quiz-paged .l2-quiz-question:focus-visible{outline:3px solid var(--orange);outline-offset:3px}
+.l2-quiz-question.cc-quiz-current:focus,.l2-quiz-question.cc-quiz-current:focus-visible{outline:0}
+.cc-quiz-paged .decision-option{min-height:44px}
+.cc-quiz-nav{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.cc-quiz-btn{min-height:44px;padding:11px 20px}
+.cc-quiz-btn:disabled{opacity:.5;cursor:not-allowed}
+.cc-quiz-hint{margin:0;flex:1 1 180px;text-align:center;font-size:12px;color:var(--muted)}
+#l2QuizResult.cc-quiz-veiled{display:none}
+html[data-theme="dark"] .cc-watch-done{background:rgba(19,162,131,.18);color:#8fe3cd}
+html[data-theme="dark"] .cc-media-placeholder code{background:var(--soft2)}
+dialog:has(.cc-quiz-nav),dialog:has(.cc-watch),dialog:has(.cc-video){width:min(1040px,calc(100% - 32px))}
+@media(max-width:780px){
+ .cc-watch{padding:15px}
+ .cc-watch-counter{white-space:normal}
+ .cc-watch-controls .cc-watch-btn{flex:1 1 100%}
+ .cc-quiz-nav .cc-quiz-btn{flex:1 1 100%}
+ .cc-quiz-hint{order:3;flex-basis:100%;text-align:left}
+ .cc-prompt,.cc-objectives{padding:14px}
+}
+@media(prefers-reduced-motion:reduce){
+ .cc-watch-item{animation:none!important}
+ .cc-watch-progress span,.cc-quiz-progress span{transition:none!important}
+}
+
+/* Understanding Canine Communication — module modal heading scale.
+   Scoped with :has() so only this lesson's modals are affected. */
+dialog:has(.cc-hero-strip) .modal-title,
+dialog:has(.cc-quiz-nav) .modal-title,
+dialog:has(.cc-watch) .modal-title,
+dialog:has(.cc-video) .modal-title{font-size:34px;line-height:1.15;margin:2px 0 4px;max-width:100%;overflow-wrap:break-word;word-break:normal;hyphens:none}
+dialog:has(.cc-hero-strip) #l2ModuleModalTitle:focus,
+dialog:has(.cc-quiz-nav) #l2ModuleModalTitle:focus,
+dialog:has(.cc-watch) #l2ModuleModalTitle:focus,
+dialog:has(.cc-video) #l2ModuleModalTitle:focus{outline:0}
+dialog:has(.cc-hero-strip) #l2ModuleModalTitle:focus-visible,
+dialog:has(.cc-quiz-nav) #l2ModuleModalTitle:focus-visible,
+dialog:has(.cc-watch) #l2ModuleModalTitle:focus-visible,
+dialog:has(.cc-video) #l2ModuleModalTitle:focus-visible{outline:0}
+@media(max-width:780px){
+  dialog:has(.cc-hero-strip) .modal-title,
+  dialog:has(.cc-quiz-nav) .modal-title,
+  dialog:has(.cc-watch) .modal-title,
+  dialog:has(.cc-video) .modal-title{font-size:29px;line-height:1.18}
+  dialog:has(.cc-hero-strip) .section-head h2,
+  dialog:has(.cc-quiz-nav) .section-head h2,
+  dialog:has(.cc-watch) .section-head h2,
+  dialog:has(.cc-video) .section-head h2{font-size:19px;line-height:1.25}
+}

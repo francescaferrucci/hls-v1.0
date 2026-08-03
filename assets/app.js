@@ -1626,7 +1626,7 @@ const plannedLessonsBySlug={
 function plannedLessonsFor(slug){return plannedLessonsBySlug[slug]||[]}
 /* Optional fixed display order per course (mixes live + planned lesson slugs/ids). Falls back to live-then-planned order when a course has no entry here. */
 const courseOrderBySlug={
- 'medical-foundations':['medical-terminology','reproductive-anatomy','anatomy-and-physiology'],
+ 'medical-foundations':['medical-terminology','reproductive-anatomy','anatomy-and-physiology','understanding-canine-communication'],
  'clinical-diagnostics':['sample-collection']
 };
 function applyCourseOrder(slug,tiles){
@@ -1821,7 +1821,8 @@ const bundledCourseLessonFallbacks={
  'medical-foundations':[
   {slug:'medical-terminology',title:'Medical Terminology',summary:'Word roots, prefixes, and suffixes used to build and decode veterinary medical terms, organized by body system and ending with a completion-based mastery review.',sort_order:1,path:'assets/data/medical-foundations/medical-terminology.json'},
   {slug:'reproductive-anatomy',title:'Reproductive Anatomy',summary:'Female and male reproductive anatomy in dogs and cats, the four-phase estrous cycle, and clinical connections to breeding soundness, pregnancy, and reproductive health examinations.',sort_order:2,path:'assets/data/medical-foundations/reproductive-anatomy.json'},
-  {slug:'anatomy-and-physiology',title:'Anatomy & Physiology',summary:'Foundational animal anatomy and physiology: levels of biological organization from cells to organ systems, directional terminology and body planes, the major organ systems, and animal classification, applied in a guided clinical scenario.',sort_order:3,path:'assets/data/medical-foundations/anatomy-and-physiology.json'}
+  {slug:'anatomy-and-physiology',title:'Anatomy & Physiology',summary:'Foundational animal anatomy and physiology: levels of biological organization from cells to organ systems, directional terminology and body planes, the major organ systems, and animal classification, applied in a guided clinical scenario.',sort_order:3,path:'assets/data/medical-foundations/anatomy-and-physiology.json'},
+  {slug:'understanding-canine-communication',title:'Understanding Canine Communication',summary:'Reading canine body language in the clinic: the three channels dogs communicate through, ear carriage, eyes and gaze, the mouth, tail carriage, behavioural interpretation, aggressive behaviour, and a graded twenty-one question end-of-lesson assessment.',sort_order:4,path:'assets/data/medical-foundations/understanding-canine-communication.json',localOnly:true}
  ],
  /* Bundled-only lessons ship with the package and are not published to the lessons table yet.
     They are merged into their course hub alongside live lessons and keep progress in this browser. */
@@ -2544,10 +2545,147 @@ function wireSampleCollectionWidgets(root){
  });
 }
 
+/* ---- Medical Foundations — Understanding Canine Communication interactions ---- */
+function ccReduced(){return !!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)}
+function wireCanineWidgets(root){
+ if(!root)return;
+
+ /* Progressively revealed "What to watch for" observation checklists. */
+ root.querySelectorAll('[data-cc-watch]').forEach(block=>{
+  if(block.dataset.ccWatchReady==='1')return;
+  block.dataset.ccWatchReady='1';
+  const items=[...block.querySelectorAll('[data-cc-watch-item]')];
+  const total=items.length;
+  if(!total)return;
+  const counter=block.querySelector('[data-cc-watch-counter]');
+  const bar=block.querySelector('[data-cc-watch-bar]');
+  const prevBtn=block.querySelector('[data-cc-watch-prev]');
+  const nextBtn=block.querySelector('[data-cc-watch-next]');
+  const done=block.querySelector('[data-cc-watch-done]');
+  let shown=0;
+  const paint=(focusIdx)=>{
+   items.forEach((li,i)=>{li.hidden=i>=shown});
+   if(counter)counter.textContent=`${shown} of ${total} revealed`;
+   if(bar)bar.style.width=`${Math.round((shown/total)*100)}%`;
+   if(prevBtn)prevBtn.disabled=shown===0;
+   if(nextBtn){
+    nextBtn.disabled=shown>=total;
+    nextBtn.textContent=shown===0?'Reveal first cue':shown>=total?'All cues revealed':'Reveal next cue';
+   }
+   if(done)done.hidden=shown<total;
+   if(typeof focusIdx==='number'&&items[focusIdx])items[focusIdx].focus({preventScroll:ccReduced()});
+  };
+  nextBtn?.addEventListener('click',()=>{if(shown>=total)return;shown+=1;paint(shown-1)});
+  prevBtn?.addEventListener('click',()=>{if(shown<=0)return;shown-=1;paint()});
+  paint();
+ });
+
+ wireCanineAssessment(root);
+}
+/* One-question-at-a-time pager layered over the shared quiz engine. The engine still owns
+   answer handling, scoring, and progress saving — this only controls what is visible. */
+function wireCanineAssessment(root){
+ if(!root.querySelector('[data-cc-assessment]'))return;
+ const container=root.querySelector('#l2QuizContainer');
+ if(!container||container.dataset.ccPagerReady==='1')return;
+ const questions=[...container.querySelectorAll('.l2-quiz-question')];
+ const total=questions.length;
+ if(!total)return;
+ container.dataset.ccPagerReady='1';
+ container.classList.add('cc-quiz-paged');
+ const result=root.querySelector('#l2QuizResult');
+ const qiFor=(el,fallback)=>{const hit=el.querySelector('[data-qi]');return hit?+hit.dataset.qi:fallback};
+ const qids=questions.map((el,i)=>qiFor(el,i));
+ const answered=i=>!!quizAnswers[qids[i]];
+ const allAnswered=()=>qids.every(qi=>!!quizAnswers[qi]);
+
+ const head=document.createElement('div');
+ head.className='cc-quiz-head';
+ head.innerHTML=`<div class="cc-quiz-head-row"><p class="sc-kicker">Question navigator</p><p class="cc-quiz-counter" data-cc-q-counter role="status" aria-live="polite"></p></div><div class="progress cc-quiz-progress"><span data-cc-q-bar style="width:0%"></span></div>`;
+ container.parentNode.insertBefore(head,container);
+ const nav=document.createElement('div');
+ nav.className='cc-quiz-nav';
+ nav.innerHTML=`<button type="button" class="secondary cc-quiz-btn" data-cc-q-prev>Previous</button><p class="cc-quiz-hint" data-cc-q-hint role="status" aria-live="polite"></p><button type="button" class="primary cc-quiz-btn" data-cc-q-next>Next</button>`;
+ container.parentNode.insertBefore(nav,container.nextSibling);
+ const counter=head.querySelector('[data-cc-q-counter]');
+ const bar=head.querySelector('[data-cc-q-bar]');
+ const prevBtn=nav.querySelector('[data-cc-q-prev]');
+ const nextBtn=nav.querySelector('[data-cc-q-next]');
+ const hint=nav.querySelector('[data-cc-q-hint]');
+ questions.forEach(el=>{el.setAttribute('tabindex','-1')});
+
+ let cur=Math.max(0,qids.findIndex(qi=>!quizAnswers[qi]));
+ if(allAnswered())cur=total-1;
+ if(result&&!allAnswered())result.classList.add('cc-quiz-veiled');
+
+ const paint=()=>{
+  questions.forEach((el,i)=>{el.hidden=i!==cur;el.classList.toggle('cc-quiz-current',i===cur)});
+  counter.textContent=`Question ${cur+1} of ${total}`;
+  bar.style.width=`${Math.round(((cur+1)/total)*100)}%`;
+  prevBtn.disabled=cur===0;
+  const last=cur===total-1;
+  const isAnswered=answered(cur);
+  nextBtn.textContent=last?'See results':'Next question';
+  nextBtn.disabled=last?!allAnswered():!isAnswered;
+  hint.textContent=isAnswered
+   ?(last?'All questions answered.':`Answered — ${total-cur-1} question${total-cur-1===1?'':'s'} to go.`)
+   :'Select an answer to continue.';
+ };
+ prevBtn.addEventListener('click',()=>{if(cur<=0)return;cur-=1;paint();questions[cur].focus({preventScroll:ccReduced()})});
+ nextBtn.addEventListener('click',()=>{
+  if(cur<total-1){cur+=1;paint();questions[cur].focus({preventScroll:ccReduced()});return}
+  result?.classList.remove('cc-quiz-veiled');
+  result?.scrollIntoView({behavior:ccReduced()?'auto':'smooth',block:'nearest'});
+ });
+ container.addEventListener('click',()=>{window.setTimeout(paint,0)});
+ container.addEventListener('keyup',e=>{if(e.key==='Enter'||e.key===' ')window.setTimeout(paint,0)});
+ paint();
+
+ /* The shared engine writes the score panel into #l2QuizResult. Add a retry that is always
+    available (the engine only offers one on a fail) plus a route back to the course hub. */
+ if(!result)return;
+ const enhance=()=>{
+  if(!document.body.contains(result)){observer.disconnect();return}
+  if(!result.innerHTML.trim()||result.querySelector('[data-cc-retry]'))return;
+  const actions=result.querySelector('.triage-module-result-actions')||[...result.querySelectorAll('div')].find(d=>d.querySelector('button'));
+  if(!actions)return;
+  const existingRetake=actions.querySelector('#l2RetakeQuiz');
+  if(existingRetake){
+   existingRetake.setAttribute('data-cc-retry','');
+   existingRetake.textContent='Retake assessment';
+  }else{
+   const retry=document.createElement('button');
+   retry.type='button';
+   retry.className='secondary';
+   retry.setAttribute('data-cc-retry','');
+   retry.textContent='Retake assessment';
+   retry.addEventListener('click',()=>{quizAnswers={};resetModuleModalState();renderModuleModal({focusHeading:true})});
+   actions.insertBefore(retry,actions.firstChild);
+  }
+  if(!actions.querySelector('[data-cc-course]')){
+   const back=document.createElement('button');
+   back.type='button';
+   back.className='secondary';
+   back.setAttribute('data-cc-course','');
+   back.textContent='Back to Medical Foundations';
+   back.addEventListener('click',()=>{
+    const course={slug:currentCourse.slug,label:currentCourse.label};
+    closeActiveModuleToLesson({tab:'curriculum'});
+    void openCourseHub(course.slug,course.label);
+   });
+   actions.appendChild(back);
+  }
+ };
+ const observer=new MutationObserver(()=>enhance());
+ observer.observe(result,{childList:true,subtree:true});
+ enhance();
+}
+
 /* ---- Module modal with knowledge check ---- */
 const TRIAGE_REVIEW_LESSON_SLUG='triage-review';
 const SAMPLE_COLLECTION_LESSON_SLUG='sample-collection';
-const CONTINUE_FLOW_LESSON_SLUGS=new Set([TRIAGE_REVIEW_LESSON_SLUG,SAMPLE_COLLECTION_LESSON_SLUG]);
+const CANINE_COMMUNICATION_LESSON_SLUG='understanding-canine-communication';
+const CONTINUE_FLOW_LESSON_SLUGS=new Set([TRIAGE_REVIEW_LESSON_SLUG,SAMPLE_COLLECTION_LESSON_SLUG,CANINE_COMMUNICATION_LESSON_SLUG]);
 let activeModule=null, quizAnswers={};
 const moduleModalState={saving:false,message:'',isError:false,reviewSaveStatus:'idle'};
 function resetModuleModalState(){
@@ -2723,6 +2861,7 @@ function renderModuleModal(opts={}){
  if(m.hwWidget)wireHwWidget(m.hwWidget);
  wireAnatomyWidgets(document.querySelector('#modalContent'));
  wireSampleCollectionWidgets(document.querySelector('#modalContent'));
+ wireCanineWidgets(document.querySelector('#modalContent'));
  if(hasQuiz&&answeredCount===total)void renderQuizResult();
  if(opts.focusHeading)focusModuleModalHeading();
 }
