@@ -1627,7 +1627,7 @@ function plannedLessonsFor(slug){return plannedLessonsBySlug[slug]||[]}
 /* Optional fixed display order per course (mixes live + planned lesson slugs/ids). Falls back to live-then-planned order when a course has no entry here. */
 const courseOrderBySlug={
  'medical-foundations':['medical-terminology','reproductive-anatomy','anatomy-and-physiology','understanding-canine-communication'],
- 'clinical-diagnostics':['sample-collection','imaging-support']
+ 'clinical-diagnostics':['sample-collection','imaging-support','case-presentation']
 };
 function applyCourseOrder(slug,tiles){
  const order=courseOrderBySlug[slug]; if(!order)return tiles;
@@ -1828,7 +1828,8 @@ const bundledCourseLessonFallbacks={
     They are merged into their course hub alongside live lessons and keep progress in this browser. */
  'clinical-diagnostics':[
   {slug:'sample-collection',title:'Sample Collection',summary:'Blood, urine, fecal, and ear sample collection: venipuncture sites and technique, cystocentesis and free catch urine, ear swab cytology, needles, syringes and sharps safety, blood tube selection, a fifteen-point recap, and a graded end-of-course assessment.',sort_order:1,path:'assets/data/clinical-diagnostics/sample-collection.json',localOnly:true},
-  {slug:'imaging-support',title:'Imaging Support',summary:'Support the imaging team safely: radiography workflow and image quality, ALARA radiation safety, positioning and restraint support, ultrasound preparation, CT/MRI and contrast readiness, emergency imaging prioritization, and a graded twelve-question final assessment.',sort_order:2,path:'assets/data/clinical-diagnostics/imaging-support.json',localOnly:true}
+  {slug:'imaging-support',title:'Imaging Support',summary:'Support the imaging team safely: radiography workflow and image quality, ALARA radiation safety, positioning and restraint support, ultrasound preparation, CT/MRI and contrast readiness, emergency imaging prioritization, and a graded twelve-question final assessment.',sort_order:2,path:'assets/data/clinical-diagnostics/imaging-support.json',localOnly:true},
+  {slug:'case-presentation',title:'Case Presentation',summary:'Present a case clearly and safely: the anatomy of a strong presentation, sorting relevant history and objective data, SBAR and veterinary I-PASS handoffs, observation versus interpretation and scope boundaries, closed-loop communication and PACE escalation, a case presentation lab, and a graded twelve-question final assessment.',sort_order:3,path:'assets/data/clinical-diagnostics/case-presentation.json',localOnly:true}
  ]
 };
 const bundledLessonFallbackBySlug=Object.fromEntries(Object.values(bundledCourseLessonFallbacks).flat().map(def=>[def.slug,def]));
@@ -3032,12 +3033,471 @@ function wireImagingTimeouts(root){
  });
 }
 
+/* ---- Clinical Diagnostics — Case Presentation interactions ---- */
+function cpReduced(){return !!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)}
+function cpFocus(el){if(el)el.focus({preventScroll:cpReduced()})}
+function cpFeedback(host,tone,lead,body){
+ if(!host)return;
+ host.hidden=false;
+ host.className='cp-feedback is-'+tone;
+ host.innerHTML='';
+ const p=document.createElement('p');
+ const strong=document.createElement('strong');
+ strong.textContent=lead;
+ p.appendChild(strong);
+ p.appendChild(document.createTextNode(' '+body));
+ host.appendChild(p);
+}
+function wireCasePresentationWidgets(root){
+ if(!root)return;
+ wireCasePresentationQuizzes(root);
+ wireCasePresentationSorts(root);
+ wireCasePresentationBuilders(root);
+ wireCasePresentationSequences(root);
+ wireCasePresentationLadders(root);
+}
+/* Paged single-choice practice: one decision at a time, immediate feedback, restart. */
+function wireCasePresentationQuizzes(root){
+ root.querySelectorAll('[data-cp-quiz]').forEach(block=>{
+  if(block.dataset.cpQuizReady==='1')return;
+  block.dataset.cpQuizReady='1';
+  const items=[...block.querySelectorAll('[data-cp-q]')];
+  const total=items.length;
+  if(!total)return;
+  const counter=block.querySelector('[data-cp-counter]');
+  const bar=block.querySelector('[data-cp-bar]');
+  const prevBtn=block.querySelector('[data-cp-prev]');
+  const nextBtn=block.querySelector('[data-cp-next]');
+  const summary=block.querySelector('[data-cp-summary]');
+  const summaryText=block.querySelector('[data-cp-summary-text]');
+  const restart=block.querySelector('[data-cp-restart]');
+  const answered=new Array(total).fill(null);
+  let cur=0;
+  const paint=focusStem=>{
+   items.forEach((li,i)=>{li.hidden=i!==cur});
+   if(counter)counter.textContent='Item '+(cur+1)+' of '+total;
+   if(bar)bar.style.width=Math.round(((cur+1)/total)*100)+'%';
+   if(prevBtn)prevBtn.disabled=cur===0;
+   if(nextBtn){
+    const done=answered.every(a=>a!==null);
+    nextBtn.textContent=cur===total-1?'See summary':'Next';
+    nextBtn.disabled=cur===total-1?!done:answered[cur]===null;
+   }
+   if(focusStem){const stem=items[cur].querySelector('.cp-q-stem');if(stem){stem.setAttribute('tabindex','-1');cpFocus(stem)}}
+  };
+  items.forEach((li,i)=>{
+   const fb=li.querySelector('[data-cp-fb]');
+   li.querySelectorAll('[data-cp-opt]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+     if(answered[i]!==null)return;
+     const correct=btn.dataset.correct==='1';
+     answered[i]=correct;
+     li.querySelectorAll('[data-cp-opt]').forEach(b=>{
+      b.disabled=true;
+      if(b.dataset.correct==='1')b.classList.add('is-correct');
+      else if(b===btn)b.classList.add('is-wrong');
+     });
+     btn.classList.add('is-chosen');
+     cpFeedback(fb,correct?'good':'bad',correct?'Correct.':'Not quite.',btn.dataset.explain||'');
+     paint(false);
+    });
+   });
+  });
+  prevBtn?.addEventListener('click',()=>{if(cur<=0)return;cur-=1;paint(true)});
+  nextBtn?.addEventListener('click',()=>{
+   if(cur<total-1){cur+=1;paint(true);return}
+   const score=answered.filter(Boolean).length;
+   if(summary){
+    summary.hidden=false;
+    if(summaryText)summaryText.textContent='You answered '+score+' of '+total+' correctly on the first attempt. This activity is practice — it is not scored toward your progress.';
+    summary.setAttribute('tabindex','-1');
+    cpFocus(summary);
+   }
+  });
+  restart?.addEventListener('click',()=>{
+   answered.fill(null);
+   items.forEach(li=>{
+    li.querySelectorAll('[data-cp-opt]').forEach(b=>{b.disabled=false;b.classList.remove('is-correct','is-wrong','is-chosen')});
+    const fb=li.querySelector('[data-cp-fb]');
+    if(fb){fb.hidden=true;fb.innerHTML='';fb.className='cp-feedback'}
+   });
+   if(summary)summary.hidden=true;
+   cur=0;paint(true);
+  });
+  paint(false);
+ });
+}
+/* Relevance queue / statement classification: select an item, then choose a lane. Buttons only. */
+function wireCasePresentationSorts(root){
+ root.querySelectorAll('[data-cp-sort]').forEach(block=>{
+  if(block.dataset.cpSortReady==='1')return;
+  block.dataset.cpSortReady='1';
+  const bank=block.querySelector('[data-cp-sort-bank]');
+  const items=[...block.querySelectorAll('[data-cp-item]')];
+  const total=items.length;
+  if(!total)return;
+  const placeBtns=[...block.querySelectorAll('[data-cp-place]')];
+  const checkBtn=block.querySelector('[data-cp-sort-check]');
+  const resetBtn=block.querySelector('[data-cp-sort-reset]');
+  const counter=block.querySelector('[data-cp-sort-counter]');
+  const feedback=block.querySelector('[data-cp-sort-feedback]');
+  let selected=null;
+  const placedCount=()=>items.filter(i=>i.dataset.placed).length;
+  const paint=()=>{
+   const placed=placedCount();
+   if(counter)counter.textContent=placed+' of '+total+' placed';
+   placeBtns.forEach(b=>{b.disabled=!selected});
+   if(checkBtn)checkBtn.disabled=placed!==total;
+  };
+  const select=item=>{
+   selected=selected===item?null:item;
+   items.forEach(i=>{
+    i.setAttribute('aria-pressed',i===selected?'true':'false');
+    i.classList.toggle('is-selected',i===selected);
+   });
+   paint();
+  };
+  items.forEach(item=>item.addEventListener('click',()=>select(item)));
+  placeBtns.forEach(btn=>{
+   btn.addEventListener('click',()=>{
+    if(!selected)return;
+    const key=btn.dataset.cpPlace;
+    const list=block.querySelector('[data-cp-bucket="'+key+'"] [data-cp-bucket-list]');
+    if(!list)return;
+    const li=selected.closest('li')||selected;
+    selected.dataset.placed=key;
+    selected.classList.remove('is-correct','is-wrong');
+    selected.querySelector('.cp-sort-result')?.remove();
+    list.appendChild(li);
+    const moved=selected;
+    select(selected);
+    cpFocus(moved);
+    if(feedback){feedback.hidden=true;feedback.innerHTML='';feedback.className='cp-feedback'}
+    paint();
+   });
+  });
+  checkBtn?.addEventListener('click',()=>{
+   let right=0;
+   const misses=[];
+   items.forEach(item=>{
+    const ok=item.dataset.placed===item.dataset.bucket;
+    item.classList.toggle('is-correct',ok);
+    item.classList.toggle('is-wrong',!ok);
+    const tag=item.querySelector('.cp-sort-result')||document.createElement('span');
+    tag.className='cp-sort-result';
+    tag.textContent=ok?' ✓ Correct lane':' ✗ Wrong lane';
+    item.appendChild(tag);
+    if(ok)right+=1;else misses.push(item);
+   });
+   if(!feedback)return;
+   feedback.hidden=false;
+   feedback.className='cp-feedback '+(right===total?'is-good':'is-bad');
+   feedback.innerHTML='';
+   const head=document.createElement('p');
+   const strong=document.createElement('strong');
+   strong.textContent=right+' of '+total+' are in the right lane.';
+   head.appendChild(strong);
+   feedback.appendChild(head);
+   const list=document.createElement('ul');
+   list.className='sc-list';
+   items.forEach(item=>{
+    const li=document.createElement('li');
+    const label=document.createElement('strong');
+    label.textContent=(item.dataset.short||item.childNodes[0].textContent.trim())+' — ';
+    li.appendChild(label);
+    li.appendChild(document.createTextNode(item.dataset.explain||''));
+    list.appendChild(li);
+   });
+   feedback.appendChild(list);
+   if(misses.length){
+    const again=document.createElement('p');
+    again.className='cp-summary-note';
+    again.textContent='Move anything marked “Wrong lane” and check again.';
+    feedback.appendChild(again);
+   }
+   feedback.setAttribute('tabindex','-1');
+   cpFocus(feedback);
+  });
+  resetBtn?.addEventListener('click',()=>{
+   items.forEach(item=>{
+    delete item.dataset.placed;
+    item.classList.remove('is-correct','is-wrong','is-selected');
+    item.setAttribute('aria-pressed','false');
+    item.querySelector('.cp-sort-result')?.remove();
+    if(bank)bank.appendChild(item.closest('li')||item);
+   });
+   selected=null;
+   if(feedback){feedback.hidden=true;feedback.innerHTML='';feedback.className='cp-feedback'}
+   paint();
+   cpFocus(items[0]);
+  });
+  paint();
+ });
+}
+/* Presentation builder: one slot at a time, pick the line that belongs, transcript assembles live.
+   Optional practice timer is opt-in, pausable, and never blocks progress. */
+function wireCasePresentationBuilders(root){
+ root.querySelectorAll('[data-cp-builder]').forEach(block=>{
+  if(block.dataset.cpBuilderReady==='1')return;
+  block.dataset.cpBuilderReady='1';
+  const slots=[...block.querySelectorAll('[data-cp-slot]')];
+  const total=slots.length;
+  if(!total)return;
+  const counter=block.querySelector('[data-cp-builder-counter]');
+  const bar=block.querySelector('[data-cp-builder-bar]');
+  const script=block.querySelector('[data-cp-script]');
+  const scriptEmpty=block.querySelector('[data-cp-script-empty]');
+  const done=block.querySelector('[data-cp-builder-done]');
+  const doneText=block.querySelector('[data-cp-builder-done-text]');
+  const resetBtn=block.querySelector('[data-cp-builder-reset]');
+  const modelBtn=block.querySelector('[data-cp-model-toggle]');
+  const model=block.querySelector('[data-cp-model]');
+  const chosen=new Array(total).fill(null);
+  let cur=0;
+  const renderScript=()=>{
+   if(!script)return;
+   script.innerHTML='';
+   let any=false;
+   slots.forEach((slot,i)=>{
+    if(chosen[i]===null)return;
+    any=true;
+    const row=document.createElement('li');
+    row.className='cp-script-line';
+    const tag=document.createElement('span');
+    tag.className='cp-script-tag';
+    tag.textContent=slot.dataset.label||('Part '+(i+1));
+    const text=document.createElement('span');
+    text.className='cp-script-text';
+    text.textContent=chosen[i];
+    row.appendChild(tag);
+    row.appendChild(text);
+    script.appendChild(row);
+   });
+   if(scriptEmpty)scriptEmpty.hidden=any;
+  };
+  const paint=focusSlot=>{
+   slots.forEach((slot,i)=>{slot.hidden=i!==cur});
+   const filled=chosen.filter(c=>c!==null).length;
+   if(counter)counter.textContent='Part '+(cur+1)+' of '+total+' • '+filled+' chosen';
+   if(bar)bar.style.width=Math.round((filled/total)*100)+'%';
+   if(done){
+    const complete=filled===total;
+    done.hidden=!complete;
+    if(complete&&doneText)doneText.textContent=block.dataset.cpDoneText||'Your presentation is assembled. Read it out loud once — that is the real test of whether it is short enough.';
+   }
+   if(focusSlot){
+    const heading=slots[cur].querySelector('.cp-slot-title');
+    if(heading){heading.setAttribute('tabindex','-1');cpFocus(heading)}
+   }
+  };
+  slots.forEach((slot,i)=>{
+   const fb=slot.querySelector('[data-cp-slot-fb]');
+   slot.querySelectorAll('[data-cp-choice]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+     const correct=btn.dataset.correct==='1';
+     slot.querySelectorAll('[data-cp-choice]').forEach(b=>b.classList.remove('is-correct','is-wrong','is-chosen'));
+     btn.classList.add('is-chosen',correct?'is-correct':'is-wrong');
+     cpFeedback(fb,correct?'good':'bad',correct?'Good choice.':'Try another line.',btn.dataset.explain||'');
+     if(correct){
+      chosen[i]=btn.dataset.line||btn.textContent.trim();
+      renderScript();
+      paint(false);
+      if(i<total-1){
+       window.setTimeout(()=>{cur=i+1;paint(true)},cpReduced()?0:250);
+      }
+     }else{
+      chosen[i]=null;
+      renderScript();
+      paint(false);
+     }
+    });
+   });
+  });
+  block.querySelectorAll('[data-cp-slot-back]').forEach(btn=>{
+   btn.addEventListener('click',()=>{if(cur<=0)return;cur-=1;paint(true)});
+  });
+  modelBtn?.addEventListener('click',()=>{
+   if(!model)return;
+   const show=model.hidden;
+   model.hidden=!show;
+   modelBtn.setAttribute('aria-expanded',show?'true':'false');
+   modelBtn.textContent=show?'Hide the model presentation':'Show the model presentation';
+   if(show){model.setAttribute('tabindex','-1');cpFocus(model)}
+  });
+  resetBtn?.addEventListener('click',()=>{
+   chosen.fill(null);
+   slots.forEach(slot=>{
+    slot.querySelectorAll('[data-cp-choice]').forEach(b=>b.classList.remove('is-correct','is-wrong','is-chosen'));
+    const fb=slot.querySelector('[data-cp-slot-fb]');
+    if(fb){fb.hidden=true;fb.innerHTML='';fb.className='cp-feedback'}
+   });
+   renderScript();
+   cur=0;
+   paint(true);
+  });
+  wireCasePresentationTimer(block);
+  renderScript();
+  paint(false);
+ });
+}
+/* Optional 60-second delivery timer. Opt-in, stoppable, announced in text; nothing depends on it. */
+function wireCasePresentationTimer(block){
+ const timer=block.querySelector('[data-cp-timer]');
+ if(!timer||timer.dataset.cpTimerReady==='1')return;
+ timer.dataset.cpTimerReady='1';
+ const startBtn=timer.querySelector('[data-cp-timer-start]');
+ const stopBtn=timer.querySelector('[data-cp-timer-stop]');
+ const display=timer.querySelector('[data-cp-timer-display]');
+ const seconds=Number(timer.dataset.cpSeconds)||60;
+ let left=seconds,handle=null;
+ const show=msg=>{if(display)display.textContent=msg};
+ const stop=(msg)=>{
+  if(handle){window.clearInterval(handle);handle=null}
+  if(stopBtn)stopBtn.disabled=true;
+  if(startBtn){startBtn.disabled=false;startBtn.textContent='Start the 60-second timer'}
+  left=seconds;
+  show(msg||'Timer stopped. Practice untimed for as long as you like.');
+ };
+ show('Timer not started. This is optional — the module continues with or without it.');
+ startBtn?.addEventListener('click',()=>{
+  if(handle)return;
+  left=seconds;
+  startBtn.disabled=true;
+  if(stopBtn)stopBtn.disabled=false;
+  show(left+' seconds remaining.');
+  handle=window.setInterval(()=>{
+   left-=1;
+   if(left<=0){stop('Time is up. If you were still going, trim the history and the normal findings — then try again, untimed if you prefer.');return}
+   show(left+' seconds remaining.');
+  },1000);
+ });
+ stopBtn?.addEventListener('click',()=>stop());
+ if(stopBtn)stopBtn.disabled=true;
+}
+/* Ordered step sequence (closed-loop communication): choose steps in the correct order. */
+function wireCasePresentationSequences(root){
+ root.querySelectorAll('[data-cp-sequence]').forEach(block=>{
+  if(block.dataset.cpSeqReady==='1')return;
+  block.dataset.cpSeqReady='1';
+  const options=[...block.querySelectorAll('[data-cp-step]')];
+  const total=options.length;
+  if(!total)return;
+  const list=block.querySelector('[data-cp-seq-list]');
+  const counter=block.querySelector('[data-cp-seq-counter]');
+  const feedback=block.querySelector('[data-cp-seq-feedback]');
+  const resetBtn=block.querySelector('[data-cp-seq-reset]');
+  const done=block.querySelector('[data-cp-seq-done]');
+  let step=0;
+  const paint=()=>{
+   if(counter)counter.textContent=step+' of '+total+' steps placed';
+   if(done)done.hidden=step<total;
+  };
+  options.forEach(btn=>{
+   btn.addEventListener('click',()=>{
+    if(btn.disabled)return;
+    const order=Number(btn.dataset.cpStep);
+    if(order===step+1){
+     step+=1;
+     btn.disabled=true;
+     btn.classList.add('is-placed');
+     if(list){
+      const li=document.createElement('li');
+      li.className='cp-seq-placed';
+      const num=document.createElement('span');
+      num.className='cp-seq-num';
+      num.textContent=String(step);
+      const text=document.createElement('span');
+      text.textContent=btn.dataset.short||btn.textContent.trim();
+      li.appendChild(num);
+      li.appendChild(text);
+      list.appendChild(li);
+     }
+     cpFeedback(feedback,'good','Step '+step+' placed.',btn.dataset.explain||'');
+    }else{
+     cpFeedback(feedback,'bad','Not that step yet.',btn.dataset.wrong||'Closed-loop communication only works in order.');
+    }
+    paint();
+   });
+  });
+  resetBtn?.addEventListener('click',()=>{
+   step=0;
+   options.forEach(b=>{b.disabled=false;b.classList.remove('is-placed')});
+   if(list)list.innerHTML='';
+   if(feedback){feedback.hidden=true;feedback.innerHTML='';feedback.className='cp-feedback'}
+   paint();
+   cpFocus(options[0]);
+  });
+  paint();
+ });
+}
+/* PACE escalation ladder: one rung at a time, pick the phrasing that matches the rung. */
+function wireCasePresentationLadders(root){
+ root.querySelectorAll('[data-cp-ladder]').forEach(block=>{
+  if(block.dataset.cpLadderReady==='1')return;
+  block.dataset.cpLadderReady='1';
+  const rungs=[...block.querySelectorAll('[data-cp-rung]')];
+  const total=rungs.length;
+  if(!total)return;
+  const counter=block.querySelector('[data-cp-ladder-counter]');
+  const bar=block.querySelector('[data-cp-ladder-bar]');
+  const status=block.querySelector('[data-cp-ladder-status]');
+  const done=block.querySelector('[data-cp-ladder-done]');
+  const resetBtn=block.querySelector('[data-cp-ladder-reset]');
+  const cleared=new Array(total).fill(false);
+  let cur=0;
+  const paint=focusRung=>{
+   rungs.forEach((r,i)=>{
+    r.hidden=i!==cur;
+    r.classList.toggle('is-cleared',cleared[i]);
+   });
+   const count=cleared.filter(Boolean).length;
+   if(counter)counter.textContent='Rung '+(cur+1)+' of '+total+' • '+count+' cleared';
+   if(bar)bar.style.width=Math.round((count/total)*100)+'%';
+   if(status)status.textContent=rungs[cur].dataset.cpStatus||'';
+   if(done)done.hidden=count<total;
+   if(focusRung){
+    const heading=rungs[cur].querySelector('.cp-rung-title');
+    if(heading){heading.setAttribute('tabindex','-1');cpFocus(heading)}
+   }
+  };
+  rungs.forEach((rung,i)=>{
+   const fb=rung.querySelector('[data-cp-rung-fb]');
+   rung.querySelectorAll('[data-cp-rung-opt]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+     const correct=btn.dataset.correct==='1';
+     rung.querySelectorAll('[data-cp-rung-opt]').forEach(b=>b.classList.remove('is-correct','is-wrong','is-chosen'));
+     btn.classList.add('is-chosen',correct?'is-correct':'is-wrong');
+     cpFeedback(fb,correct?'good':'bad',correct?'That is the right level.':'That does not match this rung.',btn.dataset.explain||'');
+     cleared[i]=correct;
+     if(correct&&i<total-1)window.setTimeout(()=>{cur=i+1;paint(true)},cpReduced()?0:280);
+     else paint(false);
+    });
+   });
+  });
+  block.querySelectorAll('[data-cp-rung-back]').forEach(btn=>{
+   btn.addEventListener('click',()=>{if(cur<=0)return;cur-=1;paint(true)});
+  });
+  resetBtn?.addEventListener('click',()=>{
+   cleared.fill(false);
+   rungs.forEach(rung=>{
+    rung.querySelectorAll('[data-cp-rung-opt]').forEach(b=>b.classList.remove('is-correct','is-wrong','is-chosen'));
+    const fb=rung.querySelector('[data-cp-rung-fb]');
+    if(fb){fb.hidden=true;fb.innerHTML='';fb.className='cp-feedback'}
+   });
+   cur=0;
+   paint(true);
+  });
+  paint(false);
+ });
+}
+
 /* ---- Module modal with knowledge check ---- */
 const TRIAGE_REVIEW_LESSON_SLUG='triage-review';
 const SAMPLE_COLLECTION_LESSON_SLUG='sample-collection';
 const CANINE_COMMUNICATION_LESSON_SLUG='understanding-canine-communication';
 const IMAGING_SUPPORT_LESSON_SLUG='imaging-support';
-const CONTINUE_FLOW_LESSON_SLUGS=new Set([TRIAGE_REVIEW_LESSON_SLUG,SAMPLE_COLLECTION_LESSON_SLUG,CANINE_COMMUNICATION_LESSON_SLUG,IMAGING_SUPPORT_LESSON_SLUG]);
+const CASE_PRESENTATION_LESSON_SLUG='case-presentation';
+const CONTINUE_FLOW_LESSON_SLUGS=new Set([TRIAGE_REVIEW_LESSON_SLUG,SAMPLE_COLLECTION_LESSON_SLUG,CANINE_COMMUNICATION_LESSON_SLUG,IMAGING_SUPPORT_LESSON_SLUG,CASE_PRESENTATION_LESSON_SLUG]);
 let activeModule=null, quizAnswers={};
 const moduleModalState={saving:false,message:'',isError:false,reviewSaveStatus:'idle'};
 function resetModuleModalState(){
@@ -3215,6 +3675,7 @@ function renderModuleModal(opts={}){
  wireSampleCollectionWidgets(document.querySelector('#modalContent'));
  wireCanineWidgets(document.querySelector('#modalContent'));
  wireImagingWidgets(document.querySelector('#modalContent'));
+ wireCasePresentationWidgets(document.querySelector('#modalContent'));
  if(hasQuiz&&answeredCount===total)void renderQuizResult();
  if(opts.focusHeading)focusModuleModalHeading();
 }
