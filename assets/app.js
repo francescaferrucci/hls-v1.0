@@ -1629,7 +1629,7 @@ function plannedLessonsFor(slug){return plannedLessonsBySlug[slug]||[]}
 const courseOrderBySlug={
  'medical-foundations':['medical-terminology','reproductive-anatomy','anatomy-and-physiology','understanding-canine-communication'],
  'clinical-diagnostics':['sample-collection','imaging-support','case-presentation'],
- 'clinical-skills':['medication-safety','asepsis-infection-prevention']
+ 'clinical-skills':['medication-safety','asepsis-infection-prevention','catheter-care']
 };
 function applyCourseOrder(slug,tiles){
  const order=courseOrderBySlug[slug]; if(!order)return tiles;
@@ -1837,7 +1837,8 @@ const bundledCourseLessonFallbacks={
     course row yet, so its lessons load from the package and keep progress in this browser. */
  'clinical-skills':[
   {slug:'medication-safety',title:'Medication Safety',summary:'The Hannah SAFE PAWS medication workflow: how medication errors happen, DVM order verification and patient identity, safe preparation, labeling and storage, the independent concentration and dose double-check, hazardous-drug and controlled-substance safety, administration, monitoring and adverse-reaction escalation, near-miss response, Member teach-back, a printable job aid, and a graded twelve-question final assessment at 80 percent.',sort_order:1,path:'assets/data/clinical-skills/medication-safety.json',localOnly:true},
-  {slug:'asepsis-infection-prevention',title:'Asepsis and Infection Prevention',summary:'The Hannah C.L.E.A.N. Path for preventing contamination: medical versus surgical asepsis, the chain of infection, hand hygiene and PPE, cleaning, disinfection and sterilization with label-based dilution and wet contact time, room, kennel, equipment and isolation workflows, Pet skin prep, sterile supplies and sterile fields, sharps and waste, six required breach scenarios, a printable job aid, and a ten-question knowledge check at 80 percent.',sort_order:2,path:'assets/data/clinical-skills/asepsis-infection-prevention.json',localOnly:true}
+  {slug:'asepsis-infection-prevention',title:'Asepsis and Infection Prevention',summary:'The Hannah C.L.E.A.N. Path for preventing contamination: medical versus surgical asepsis, the chain of infection, hand hygiene and PPE, cleaning, disinfection and sterilization with label-based dilution and wet contact time, room, kennel, equipment and isolation workflows, Pet skin prep, sterile supplies and sterile fields, sharps and waste, six required breach scenarios, a printable job aid, and a ten-question knowledge check at 80 percent.',sort_order:2,path:'assets/data/clinical-skills/asepsis-infection-prevention.json',localOnly:true},
+  {slug:'catheter-care',title:'Catheter Care',summary:'The Hannah CLEAR LINES habit for peripheral IV and urinary catheter care: components and advanced-line recognition, hand hygiene, PPE and aseptic non-touch technique, structured IV site and dressing assessment, line tracing and order verification, closed dependent urinary drainage, contamination, disconnection, infiltration and absent-output response, sharps, spill and hazardous-drug boundaries, objective documentation, handoff and Member communication, four Hannah video placeholders, a printable job aid, and a ten-question knowledge check at 80 percent.',sort_order:3,path:'assets/data/clinical-skills/catheter-care.json',localOnly:true}
  ]
 };
 const bundledLessonFallbackBySlug=Object.fromEntries(Object.values(bundledCourseLessonFallbacks).flat().map(def=>[def.slug,def]));
@@ -5181,6 +5182,1142 @@ function wireAipRemediation(root){
  build();
 }
 
+/* ---- Clinical Skills & Treatment Delivery — Catheter Care interactions ---- */
+function ctcReduced(){return !!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)}
+function ctcFocus(el){if(el)el.focus({preventScroll:ctcReduced()})}
+function ctcSay(host,tone,lead,body){
+ if(!host)return;
+ host.hidden=false;
+ host.className='ctc-feedback is-'+tone;
+ host.innerHTML='';
+ const p=document.createElement('p');
+ const strong=document.createElement('strong');
+ strong.textContent=lead;
+ p.appendChild(strong);
+ if(body)p.appendChild(document.createTextNode(' '+body));
+ host.appendChild(p);
+}
+function ctcClear(host){if(!host)return;host.hidden=true;host.innerHTML='';host.className='ctc-feedback'}
+function ctcPush(list,text){
+ if(!list)return;
+ const li=document.createElement('li');
+ li.textContent=text;
+ list.appendChild(li);
+}
+function wireCatheterWidgets(root){
+ if(!root)return;
+ wireCtcExplorers(root);
+ wireCtcReveals(root);
+ wireCtcQuizzes(root);
+ wireCtcSorts(root);
+ wireCtcChains(root);
+ wireCtcAudits(root);
+ wireCtcSequences(root);
+ wireCtcBuilders(root);
+ wireCtcBranches(root);
+ wireCtcFields(root);
+ wireCtcVideos(root);
+ wireCtcMultis(root);
+ wireCtcPairs(root);
+ wireCtcCases(root);
+ wireCtcRecaps(root);
+ wireCtcChecklists(root);
+ wireCtcPrint(root);
+ wireCtcOptionExplanations(root);
+ wireCtcRemediation(root);
+}
+/* CLEAR LINES step explorer — tablist with roving arrow-key focus. */
+function wireCtcExplorers(root){
+ root.querySelectorAll('[data-ctc-explorer]').forEach(block=>{
+  if(block.dataset.ctcExplorerReady==='1')return;
+  block.dataset.ctcExplorerReady='1';
+  const tabs=[...block.querySelectorAll('[data-ctc-step]')];
+  const panels=[...block.querySelectorAll('[data-ctc-step-panel]')];
+  const counter=block.querySelector('[data-ctc-explorer-counter]');
+  const resetBtn=block.querySelector('[data-ctc-explorer-reset]');
+  const total=tabs.length;
+  if(!total)return;
+  const viewed=new Set();
+  let cur=-1;
+  const paint=()=>{
+   tabs.forEach((t,i)=>{
+    const on=i===cur;
+    t.setAttribute('aria-selected',on?'true':'false');
+    t.setAttribute('tabindex',on||(cur===-1&&i===0)?'0':'-1');
+    t.classList.toggle('is-open',on);
+    t.classList.toggle('is-viewed',viewed.has(i));
+   });
+   panels.forEach((p,i)=>{p.hidden=i!==cur});
+   if(counter)counter.textContent=cur===-1
+    ?'Select a letter to open that step. '+viewed.size+' of '+total+' steps viewed.'
+    :'Step '+(cur+1)+' of '+total+' open. '+viewed.size+' of '+total+' steps viewed.';
+  };
+  const open=(i,focusPanel)=>{
+   cur=i;viewed.add(i);paint();
+   if(focusPanel&&panels[i]){panels[i].setAttribute('tabindex','-1');ctcFocus(panels[i])}
+  };
+  tabs.forEach((tab,i)=>{
+   tab.addEventListener('click',()=>{cur===i?(cur=-1,paint()):open(i,true)});
+   tab.addEventListener('keydown',e=>{
+    let next=null;
+    if(e.key==='ArrowRight'||e.key==='ArrowDown')next=(i+1)%total;
+    else if(e.key==='ArrowLeft'||e.key==='ArrowUp')next=(i-1+total)%total;
+    else if(e.key==='Home')next=0;
+    else if(e.key==='End')next=total-1;
+    if(next===null)return;
+    e.preventDefault();
+    open(next,false);
+    ctcFocus(tabs[next]);
+   });
+  });
+  resetBtn?.addEventListener('click',()=>{viewed.clear();cur=-1;paint();ctcFocus(tabs[0])});
+  paint();
+ });
+}
+/* Click-to-reveal cards (standards, hand-hygiene moments, sterile danger signs). */
+function wireCtcReveals(root){
+ root.querySelectorAll('[data-ctc-reveal]').forEach(block=>{
+  if(block.dataset.ctcRevealReady==='1')return;
+  block.dataset.ctcRevealReady='1';
+  const btns=[...block.querySelectorAll('[data-ctc-reveal-btn]')];
+  const counter=block.querySelector('[data-ctc-reveal-counter]');
+  const resetBtn=block.querySelector('[data-ctc-reveal-reset]');
+  const total=btns.length;
+  if(!total)return;
+  const paint=()=>{
+   const shown=btns.filter(b=>b.getAttribute('aria-expanded')==='true').length;
+   if(counter)counter.textContent=shown+' of '+total+' revealed';
+  };
+  btns.forEach(btn=>{
+   const body=document.getElementById(btn.getAttribute('aria-controls'));
+   const label=btn.dataset.ctcRevealLabel||'Reveal';
+   btn.addEventListener('click',()=>{
+    const open=btn.getAttribute('aria-expanded')==='true';
+    btn.setAttribute('aria-expanded',open?'false':'true');
+    btn.textContent=open?label:'Hide';
+    if(body)body.hidden=open;
+    btn.closest('.ctc-reveal-card')?.classList.toggle('is-open',!open);
+    paint();
+   });
+  });
+  resetBtn?.addEventListener('click',()=>{
+   btns.forEach(btn=>{
+    const body=document.getElementById(btn.getAttribute('aria-controls'));
+    btn.setAttribute('aria-expanded','false');
+    btn.textContent=btn.dataset.ctcRevealLabel||'Reveal';
+    if(body)body.hidden=true;
+    btn.closest('.ctc-reveal-card')?.classList.remove('is-open');
+   });
+   paint();
+   ctcFocus(btns[0]);
+  });
+  paint();
+ });
+}
+/* Paged single-choice decisions and the six select-before-reveal scenarios.
+   Every option carries its own explanation, so wrong choices explain why they are unsafe. */
+function wireCtcQuizzes(root){
+ root.querySelectorAll('[data-ctc-quiz]').forEach(block=>{
+  if(block.dataset.ctcQuizReady==='1')return;
+  block.dataset.ctcQuizReady='1';
+  const items=[...block.querySelectorAll('[data-ctc-q]')];
+  const total=items.length;
+  if(!total)return;
+  const noun=block.dataset.ctcQuizNoun||'Decision';
+  const counter=block.querySelector('[data-ctc-counter]');
+  const bar=block.querySelector('[data-ctc-bar]');
+  const prevBtn=block.querySelector('[data-ctc-prev]');
+  const nextBtn=block.querySelector('[data-ctc-next]');
+  const summary=block.querySelector('[data-ctc-summary]');
+  const summaryText=block.querySelector('[data-ctc-summary-text]');
+  const restart=block.querySelector('[data-ctc-restart]');
+  const answered=new Array(total).fill(null);
+  let cur=0;
+  const paint=focusStem=>{
+   items.forEach((li,i)=>{li.hidden=i!==cur});
+   if(counter)counter.textContent=noun+' '+(cur+1)+' of '+total;
+   if(bar)bar.style.width=Math.round(((cur+1)/total)*100)+'%';
+   if(prevBtn)prevBtn.disabled=cur===0;
+   if(nextBtn){
+    const done=answered.every(a=>a!==null);
+    nextBtn.textContent=cur===total-1?'See summary':'Next';
+    nextBtn.disabled=cur===total-1?!done:answered[cur]===null;
+   }
+   if(focusStem){const stem=items[cur].querySelector('.ctc-q-stem');if(stem){stem.setAttribute('tabindex','-1');ctcFocus(stem)}}
+  };
+  items.forEach((li,i)=>{
+   const fb=li.querySelector('[data-ctc-fb]');
+   const why=li.querySelector('[data-ctc-why]');
+   const opts=[...li.querySelectorAll('[data-ctc-opt]')];
+   opts.forEach(btn=>{
+    btn.addEventListener('click',()=>{
+     if(answered[i]!==null)return;
+     const correct=btn.dataset.correct==='1';
+     answered[i]=correct;
+     opts.forEach(b=>{
+      b.disabled=true;
+      if(b.dataset.correct==='1')b.classList.add('is-correct');
+      else if(b===btn)b.classList.add('is-wrong');
+     });
+     btn.classList.add('is-chosen');
+     ctcSay(fb,correct?'good':'bad',correct?'\u2713 Correct.':'\u2715 Not the safe choice.',btn.dataset.explain||'');
+     if(why){
+      why.hidden=false;
+      why.innerHTML='';
+      const h=document.createElement('p');
+      h.className='ctc-why-head';
+      h.textContent='Why the other options are not appropriate';
+      why.appendChild(h);
+      const ul=document.createElement('ul');
+      opts.forEach(b=>{
+       if(b===btn)return;
+       const line=document.createElement('li');
+       const tag=document.createElement('strong');
+       tag.textContent=(b.dataset.correct==='1'?'\u2713 ':'\u2715 ')+(b.dataset.short||b.textContent.trim().slice(0,60));
+       line.appendChild(tag);
+       line.appendChild(document.createTextNode(' \u2014 '+(b.dataset.explain||'')));
+       ul.appendChild(line);
+      });
+      why.appendChild(ul);
+     }
+     paint(false);
+    });
+   });
+  });
+  prevBtn?.addEventListener('click',()=>{if(cur<=0)return;cur-=1;paint(true)});
+  nextBtn?.addEventListener('click',()=>{
+   if(cur<total-1){cur+=1;paint(true);return}
+   const score=answered.filter(Boolean).length;
+   if(summary){
+    summary.hidden=false;
+    if(summaryText)summaryText.textContent='You chose the safe action in '+score+' of '+total+' on the first attempt. This practice activity is not scored toward your progress \u2014 only the knowledge check is.';
+    summary.setAttribute('tabindex','-1');
+    ctcFocus(summary);
+   }
+  });
+  restart?.addEventListener('click',()=>{
+   answered.fill(null);
+   items.forEach(li=>{
+    li.querySelectorAll('[data-ctc-opt]').forEach(b=>{b.disabled=false;b.classList.remove('is-correct','is-wrong','is-chosen')});
+    ctcClear(li.querySelector('[data-ctc-fb]'));
+    const why=li.querySelector('[data-ctc-why]');
+    if(why){why.hidden=true;why.innerHTML=''}
+   });
+   if(summary)summary.hidden=true;
+   cur=0;paint(true);
+  });
+  paint(false);
+ });
+}
+/* Select-an-item then choose a lane. Used for the IV-versus-urinary care sort. */
+function wireCtcSorts(root){
+ root.querySelectorAll('[data-ctc-sort]').forEach(block=>{
+  if(block.dataset.ctcSortReady==='1')return;
+  block.dataset.ctcSortReady='1';
+  const bank=block.querySelector('[data-ctc-sort-bank]');
+  const items=[...block.querySelectorAll('[data-ctc-item]')];
+  const total=items.length;
+  if(!total)return;
+  const placeBtns=[...block.querySelectorAll('[data-ctc-place]')];
+  const checkBtn=block.querySelector('[data-ctc-sort-check]');
+  const resetBtn=block.querySelector('[data-ctc-sort-reset]');
+  const counter=block.querySelector('[data-ctc-sort-counter]');
+  const feedback=block.querySelector('[data-ctc-sort-feedback]');
+  let selected=null;
+  const placedCount=()=>items.filter(i=>i.dataset.placed).length;
+  const paint=()=>{
+   const placed=placedCount();
+   if(counter)counter.textContent=placed+' of '+total+' sorted';
+   placeBtns.forEach(b=>{b.disabled=!selected});
+   if(checkBtn)checkBtn.disabled=placed!==total;
+  };
+  const select=item=>{
+   selected=selected===item?null:item;
+   items.forEach(i=>{
+    i.setAttribute('aria-pressed',i===selected?'true':'false');
+    i.classList.toggle('is-selected',i===selected);
+   });
+   paint();
+  };
+  items.forEach(item=>item.addEventListener('click',()=>select(item)));
+  placeBtns.forEach(btn=>{
+   btn.addEventListener('click',()=>{
+    if(!selected)return;
+    const key=btn.dataset.ctcPlace;
+    const list=block.querySelector('[data-ctc-bucket="'+key+'"] [data-ctc-bucket-list]');
+    if(!list)return;
+    const li=selected.closest('li')||selected;
+    selected.dataset.placed=key;
+    selected.classList.remove('is-correct','is-wrong');
+    selected.querySelector('.ctc-sort-result')?.remove();
+    selected.querySelector('.ctc-sort-why')?.remove();
+    list.appendChild(li);
+    const moved=selected;
+    select(selected);
+    ctcFocus(moved);
+    ctcClear(feedback);
+    paint();
+   });
+  });
+  checkBtn?.addEventListener('click',()=>{
+   let right=0;
+   items.forEach(item=>{
+    const ok=item.dataset.placed===item.dataset.bucket;
+    item.classList.toggle('is-correct',ok);
+    item.classList.toggle('is-wrong',!ok);
+    let tag=item.querySelector('.ctc-sort-result');
+    if(!tag){tag=document.createElement('span');tag.className='ctc-sort-result';item.appendChild(tag)}
+    tag.textContent=ok?'\u2713 Correct level':'\u2715 Wrong level';
+    let why=item.querySelector('.ctc-sort-why');
+    if(!why){why=document.createElement('span');why.className='ctc-sort-why';item.appendChild(why)}
+    why.textContent=item.dataset.explain||'';
+    if(ok)right+=1;
+   });
+   ctcSay(feedback,right===total?'good':'bad',right+' of '+total+' are at the right level.',
+    right===total?(block.dataset.ctcSortPass||'Every item is sorted correctly. Each card now shows why.')
+     :'Each card now shows the reason. Reset and try the ones you missed again \u2014 and when an item could belong to more than one level, the answer depends on how it is used.');
+  });
+  resetBtn?.addEventListener('click',()=>{
+   items.forEach(item=>{
+    delete item.dataset.placed;
+    item.classList.remove('is-correct','is-wrong','is-selected');
+    item.setAttribute('aria-pressed','false');
+    item.querySelector('.ctc-sort-result')?.remove();
+    item.querySelector('.ctc-sort-why')?.remove();
+    if(bank)bank.appendChild(item.closest('li')||item);
+   });
+   selected=null;
+   ctcClear(feedback);
+   paint();
+   ctcFocus(items[0]);
+  });
+  paint();
+ });
+}
+/* Chain-of-infection transmission breaker: pick the action that breaks each link. */
+function wireCtcChains(root){
+ root.querySelectorAll('[data-ctc-chain]').forEach(block=>{
+  if(block.dataset.ctcChainReady==='1')return;
+  block.dataset.ctcChainReady='1';
+  const links=[...block.querySelectorAll('[data-ctc-link]')];
+  const total=links.length;
+  if(!total)return;
+  const counter=block.querySelector('[data-ctc-chain-counter]');
+  const bar=block.querySelector('[data-ctc-chain-bar]');
+  const feedback=block.querySelector('[data-ctc-chain-feedback]');
+  const panels=[...block.querySelectorAll('[data-ctc-link-panel]')];
+  const resetBtn=block.querySelector('[data-ctc-chain-reset]');
+  const done=block.querySelector('[data-ctc-chain-done]');
+  const broken=new Set();
+  const word=block.dataset.ctcChainWord||'resolved';
+  const stateOpen=block.dataset.ctcChainStateOpen||'open';
+  const stateDone=block.dataset.ctcChainStateDone||'\u2713 answered';
+  const badLead=block.dataset.ctcChainBad||'\u2715 Not the right choice here.';
+  const goodLead=block.dataset.ctcChainGood||'\u2713 Correct.';
+  let openIdx=-1;
+  const paint=()=>{
+   links.forEach((l,i)=>{
+    l.classList.toggle('is-broken',broken.has(i));
+    l.classList.toggle('is-open',i===openIdx);
+    l.setAttribute('aria-expanded',i===openIdx?'true':'false');
+    const st=l.querySelector('.ctc-link-state');
+    if(st)st.textContent=broken.has(i)?stateDone:stateOpen;
+   });
+   panels.forEach((p,i)=>{p.hidden=i!==openIdx});
+   if(counter)counter.textContent=broken.size+' of '+total+' '+word;
+   if(bar)bar.style.width=Math.round((broken.size/total)*100)+'%';
+   if(done)done.hidden=broken.size<total;
+  };
+  links.forEach((link,i)=>{
+   link.addEventListener('click',()=>{
+    openIdx=openIdx===i?-1:i;
+    paint();
+    if(openIdx===i&&panels[i]){panels[i].setAttribute('tabindex','-1');ctcFocus(panels[i])}
+   });
+  });
+  panels.forEach((panel,i)=>{
+   const opts=[...panel.querySelectorAll('[data-ctc-break]')];
+   opts.forEach(btn=>{
+    btn.addEventListener('click',()=>{
+     const correct=btn.dataset.correct==='1';
+     if(!correct){
+      btn.classList.add('is-wrong');
+      btn.disabled=true;
+      ctcSay(feedback,'bad',badLead,btn.dataset.explain||'');
+      return;
+     }
+     btn.classList.add('is-correct');
+     opts.forEach(b=>{b.disabled=true});
+     broken.add(i);
+     ctcSay(feedback,'good',goodLead,btn.dataset.explain||'');
+     paint();
+     if(broken.size===total&&done){done.setAttribute('tabindex','-1');ctcFocus(done)}
+    });
+   });
+  });
+  resetBtn?.addEventListener('click',()=>{
+   broken.clear();openIdx=-1;
+   panels.forEach(p=>p.querySelectorAll('[data-ctc-break]').forEach(b=>{b.disabled=false;b.classList.remove('is-correct','is-wrong')}));
+   ctcClear(feedback);
+   paint();
+   ctcFocus(links[0]);
+  });
+  paint();
+ });
+}
+/* Audits: product-label / dilution / contact-time audit, surface maps, contamination spotting. */
+function wireCtcAudits(root){
+ root.querySelectorAll('[data-ctc-audit]').forEach(block=>{
+  if(block.dataset.ctcAuditReady==='1')return;
+  block.dataset.ctcAuditReady='1';
+  const rows=[...block.querySelectorAll('[data-ctc-row]')];
+  const total=rows.length;
+  if(!total)return;
+  const targets=rows.filter(r=>r.dataset.flag==='1').length;
+  const checkBtn=block.querySelector('[data-ctc-audit-check]');
+  const resetBtn=block.querySelector('[data-ctc-audit-reset]');
+  const counter=block.querySelector('[data-ctc-audit-counter]');
+  const feedback=block.querySelector('[data-ctc-audit-feedback]');
+  const flagWord=block.dataset.ctcAuditWord||'flagged';
+  const paint=()=>{
+   const flagged=rows.filter(r=>r.getAttribute('aria-pressed')==='true').length;
+   if(counter)counter.textContent=flagged+' of '+total+' '+flagWord+' \u2014 '+targets+' need attention';
+  };
+  rows.forEach(row=>{
+   row.addEventListener('click',()=>{
+    if(row.disabled)return;
+    const on=row.getAttribute('aria-pressed')==='true';
+    row.setAttribute('aria-pressed',on?'false':'true');
+    row.classList.toggle('is-flagged',!on);
+    ctcClear(feedback);
+    paint();
+   });
+  });
+  checkBtn?.addEventListener('click',()=>{
+   let found=0,missed=0,wrong=0;
+   rows.forEach(row=>{
+    const flagged=row.getAttribute('aria-pressed')==='true';
+    const bad=row.dataset.flag==='1';
+    row.classList.remove('is-correct','is-wrong','is-missed');
+    let tag=row.querySelector('.ctc-audit-result');
+    if(!tag){tag=document.createElement('span');tag.className='ctc-audit-result';row.appendChild(tag)}
+    if(bad&&flagged){found+=1;row.classList.add('is-correct');tag.textContent='\u2713 Correctly flagged \u2014 '+(row.dataset.explain||'')}
+    else if(bad&&!flagged){missed+=1;row.classList.add('is-missed');tag.textContent='\u2715 Missed \u2014 '+(row.dataset.explain||'')}
+    else if(!bad&&flagged){wrong+=1;row.classList.add('is-wrong');tag.textContent='\u2715 This one is acceptable \u2014 '+(row.dataset.explain||'')}
+    else{tag.textContent='\u2713 Acceptable \u2014 '+(row.dataset.explain||'')}
+   });
+   const clean=found===targets&&wrong===0;
+   ctcSay(feedback,clean?'good':'bad',
+    'You found '+found+' of '+targets+(wrong?' and flagged '+wrong+' that were acceptable.':'.'),
+    clean?(block.dataset.ctcAuditPass||'Stop and correct every flagged item before the next Pet. If you are unsure whether something is clean or sterile, stop and ask.')
+     :'Read the reason on each line, reset, and audit again.');
+  });
+  resetBtn?.addEventListener('click',()=>{
+   rows.forEach(row=>{
+    row.setAttribute('aria-pressed','false');
+    row.classList.remove('is-flagged','is-correct','is-wrong','is-missed');
+    row.querySelector('.ctc-audit-result')?.remove();
+   });
+   ctcClear(feedback);
+   paint();
+   ctcFocus(rows[0]);
+  });
+  paint();
+ });
+}
+/* Ordered sequences: exam-room reset, instrument processing, PPE donning/doffing, Pet skin prep. */
+function wireCtcSequences(root){
+ root.querySelectorAll('[data-ctc-seq]').forEach(block=>{
+  if(block.dataset.ctcSeqReady==='1')return;
+  block.dataset.ctcSeqReady='1';
+  const steps=[...block.querySelectorAll('[data-ctc-seq-step]')];
+  const total=steps.length;
+  if(!total)return;
+  const track=block.querySelector('[data-ctc-seq-track]');
+  const counter=block.querySelector('[data-ctc-seq-counter]');
+  const feedback=block.querySelector('[data-ctc-seq-feedback]');
+  const resetBtn=block.querySelector('[data-ctc-seq-reset]');
+  const done=block.querySelector('[data-ctc-seq-done]');
+  let placed=0;
+  const paint=()=>{
+   if(counter)counter.textContent=placed+' of '+total+' steps in order';
+   if(done)done.hidden=placed<total;
+  };
+  steps.forEach(step=>{
+   step.addEventListener('click',()=>{
+    if(step.disabled)return;
+    const order=+step.dataset.ctcSeqStep;
+    if(order!==placed+1){
+     ctcSay(feedback,'bad','\u2715 Not that step yet.',step.dataset.wrong||'That step comes later in this sequence.');
+     step.classList.add('is-wrong');
+     window.setTimeout(()=>step.classList.remove('is-wrong'),ctcReduced()?0:700);
+     return;
+    }
+    placed+=1;
+    step.disabled=true;
+    step.classList.add('is-placed');
+    if(track){
+     const li=document.createElement('li');
+     li.className='ctc-seq-track-item';
+     const n=document.createElement('span');
+     n.className='ctc-seq-track-num';
+     n.textContent=String(placed);
+     const t=document.createElement('span');
+     t.textContent=step.dataset.label||step.textContent.trim();
+     li.appendChild(n);li.appendChild(t);
+     track.appendChild(li);
+    }
+    ctcSay(feedback,'good','\u2713 Step '+placed+' placed.',step.dataset.explain||'');
+    paint();
+    if(placed===total&&done){done.setAttribute('tabindex','-1');ctcFocus(done)}
+   });
+  });
+  resetBtn?.addEventListener('click',()=>{
+   placed=0;
+   steps.forEach(s=>{s.disabled=false;s.classList.remove('is-placed','is-wrong')});
+   if(track)track.innerHTML='';
+   ctcClear(feedback);
+   paint();
+   ctcFocus(steps[0]);
+  });
+  paint();
+ });
+}
+/* Builders: hand-hygiene decision path, PPE selection, isolation doorway checklist. */
+function wireCtcBuilders(root){
+ root.querySelectorAll('[data-ctc-builder]').forEach(block=>{
+  if(block.dataset.ctcBuilderReady==='1')return;
+  block.dataset.ctcBuilderReady='1';
+  const parts=[...block.querySelectorAll('[data-ctc-part]')];
+  const total=parts.length;
+  if(!total)return;
+  const out=block.querySelector('[data-ctc-out]');
+  const counter=block.querySelector('[data-ctc-builder-counter]');
+  const feedback=block.querySelector('[data-ctc-builder-feedback]');
+  const done=block.querySelector('[data-ctc-builder-done]');
+  const resetBtn=block.querySelector('[data-ctc-builder-reset]');
+  const empty=block.querySelector('[data-ctc-out-empty]');
+  let cur=0;
+  const paint=focusPart=>{
+   parts.forEach((p,i)=>{p.hidden=i!==cur||cur>=total});
+   if(counter)counter.textContent=cur>=total?'Complete \u2014 '+total+' of '+total+' steps chosen':'Step '+(cur+1)+' of '+total;
+   if(done)done.hidden=cur<total;
+   if(empty)empty.hidden=cur>0;
+   block.classList.toggle('is-complete',cur>=total);
+   if(focusPart&&cur<total){
+    const h=parts[cur].querySelector('.ctc-part-label');
+    if(h){h.setAttribute('tabindex','-1');ctcFocus(h)}
+   }
+  };
+  parts.forEach((part,i)=>{
+   part.querySelectorAll('[data-ctc-bopt]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+     if(i!==cur)return;
+     const correct=btn.dataset.correct==='1';
+     if(!correct){
+      btn.classList.add('is-wrong');
+      ctcSay(feedback,'bad','\u2715 Try another option.',btn.dataset.explain||'');
+      return;
+     }
+     btn.classList.add('is-correct');
+     ctcPush(out,btn.dataset.line||btn.textContent.trim());
+     ctcSay(feedback,'good','\u2713 Added.',btn.dataset.explain||'');
+     cur+=1;
+     paint(cur<total);
+     if(cur>=total&&done){done.setAttribute('tabindex','-1');ctcFocus(done)}
+    });
+   });
+  });
+  resetBtn?.addEventListener('click',()=>{
+   cur=0;
+   if(out)out.innerHTML='';
+   parts.forEach(p=>p.querySelectorAll('[data-ctc-bopt]').forEach(b=>b.classList.remove('is-correct','is-wrong')));
+   ctcClear(feedback);
+   paint(true);
+  });
+  paint(false);
+ });
+}
+/* Branching cases: isolation entry/exit, catheter-site contamination, surgical break. */
+function wireCtcBranches(root){
+ root.querySelectorAll('[data-ctc-branch]').forEach(block=>{
+  if(block.dataset.ctcBranchReady==='1')return;
+  block.dataset.ctcBranchReady='1';
+  const stages=[...block.querySelectorAll('[data-ctc-stage]')];
+  const total=stages.length;
+  if(!total)return;
+  const counter=block.querySelector('[data-ctc-branch-counter]');
+  const bar=block.querySelector('[data-ctc-branch-bar]');
+  const feedback=block.querySelector('[data-ctc-branch-feedback]');
+  const log=block.querySelector('[data-ctc-branch-log]');
+  const done=block.querySelector('[data-ctc-branch-done]');
+  const resetBtn=block.querySelector('[data-ctc-branch-reset]');
+  let cur=0;
+  const paint=focusStage=>{
+   stages.forEach((s,i)=>{s.hidden=i!==cur||cur>=total});
+   if(counter)counter.textContent=cur>=total?'Complete \u2014 all '+total+' decisions made':'Decision '+(cur+1)+' of '+total;
+   if(bar)bar.style.width=Math.round((Math.min(cur,total)/total)*100)+'%';
+   if(done)done.hidden=cur<total;
+   if(focusStage&&cur<total){
+    const h=stages[cur].querySelector('.ctc-stage-title');
+    if(h){h.setAttribute('tabindex','-1');ctcFocus(h)}
+   }
+  };
+  stages.forEach((stage,i)=>{
+   stage.querySelectorAll('[data-ctc-choice]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+     if(i!==cur)return;
+     const correct=btn.dataset.correct==='1';
+     if(!correct){
+      btn.classList.add('is-wrong');
+      btn.disabled=true;
+      ctcSay(feedback,'bad','\u2715 That is not the safe next action.',btn.dataset.explain||'');
+      return;
+     }
+     btn.classList.add('is-correct');
+     stage.querySelectorAll('[data-ctc-choice]').forEach(b=>{b.disabled=true});
+     ctcSay(feedback,'good','\u2713 Safe action.',btn.dataset.explain||'');
+     ctcPush(log,btn.dataset.line||btn.textContent.trim());
+     cur+=1;
+     paint(cur<total);
+     if(cur>=total&&done){done.setAttribute('tabindex','-1');ctcFocus(done)}
+    });
+   });
+  });
+  resetBtn?.addEventListener('click',()=>{
+   cur=0;
+   if(log)log.innerHTML='';
+   stages.forEach(s=>s.querySelectorAll('[data-ctc-choice]').forEach(b=>{b.disabled=false;b.classList.remove('is-correct','is-wrong')}));
+   ctcClear(feedback);
+   paint(true);
+  });
+  paint(false);
+ });
+}
+/* Sterile field: open packages in the safe way, then spot contamination zones on the field map. */
+function wireCtcFields(root){
+ root.querySelectorAll('[data-ctc-field]').forEach(block=>{
+  if(block.dataset.ctcFieldReady==='1')return;
+  block.dataset.ctcFieldReady='1';
+  const zones=[...block.querySelectorAll('[data-ctc-zone]')];
+  const total=zones.length;
+  if(!total)return;
+  const targets=zones.filter(z=>z.dataset.contaminated==='1').length;
+  const counter=block.querySelector('[data-ctc-field-counter]');
+  const feedback=block.querySelector('[data-ctc-field-feedback]');
+  const checkBtn=block.querySelector('[data-ctc-field-check]');
+  const resetBtn=block.querySelector('[data-ctc-field-reset]');
+  const done=block.querySelector('[data-ctc-field-done]');
+  const paint=()=>{
+   const marked=zones.filter(z=>z.getAttribute('aria-pressed')==='true').length;
+   if(counter)counter.textContent=marked+' zone'+(marked===1?'':'s')+' marked contaminated of '+total+' \u2014 '+targets+' are contaminated';
+  };
+  zones.forEach(zone=>{
+   zone.addEventListener('click',()=>{
+    const on=zone.getAttribute('aria-pressed')==='true';
+    zone.setAttribute('aria-pressed',on?'false':'true');
+    zone.classList.toggle('is-marked',!on);
+    const st=zone.querySelector('.ctc-zone-state');
+    if(st)st.textContent=on?'unmarked':'marked contaminated';
+    ctcClear(feedback);
+    paint();
+   });
+  });
+  checkBtn?.addEventListener('click',()=>{
+   let found=0,wrong=0;
+   zones.forEach(zone=>{
+    const marked=zone.getAttribute('aria-pressed')==='true';
+    const bad=zone.dataset.contaminated==='1';
+    zone.classList.remove('is-correct','is-wrong','is-missed');
+    let tag=zone.querySelector('.ctc-zone-result');
+    if(!tag){tag=document.createElement('span');tag.className='ctc-zone-result';zone.appendChild(tag)}
+    if(bad&&marked){found+=1;zone.classList.add('is-correct');tag.textContent='\u2713 Contaminated \u2014 '+(zone.dataset.explain||'')}
+    else if(bad&&!marked){zone.classList.add('is-missed');tag.textContent='\u2715 Missed contaminated zone \u2014 '+(zone.dataset.explain||'')}
+    else if(!bad&&marked){wrong+=1;zone.classList.add('is-wrong');tag.textContent='\u2715 This zone is sterile \u2014 '+(zone.dataset.explain||'')}
+    else{tag.textContent='\u2713 Sterile \u2014 '+(zone.dataset.explain||'')}
+   });
+   const clean=found===targets&&wrong===0;
+   ctcSay(feedback,clean?'good':'bad','You identified '+found+' of '+targets+' contaminated zones'+(wrong?' and marked '+wrong+' sterile zone'+(wrong===1?'':'s')+' by mistake.':'.'),
+    clean?'Sterile touches sterile. Anything else is contaminated and is replaced or corrected per protocol.'
+     :'Read each zone reason, reset, and try again.');
+   if(done)done.hidden=!clean;
+   if(clean&&done){done.setAttribute('tabindex','-1');ctcFocus(done)}
+  });
+  resetBtn?.addEventListener('click',()=>{
+   zones.forEach(zone=>{
+    zone.setAttribute('aria-pressed','false');
+    zone.classList.remove('is-marked','is-correct','is-wrong','is-missed');
+    zone.querySelector('.ctc-zone-result')?.remove();
+    const st=zone.querySelector('.ctc-zone-state');
+    if(st)st.textContent='unmarked';
+   });
+   if(done)done.hidden=true;
+   ctcClear(feedback);
+   paint();
+   ctcFocus(zones[0]);
+  });
+  paint();
+ });
+}
+/* Progressive recap. */
+function wireCtcRecaps(root){
+ root.querySelectorAll('[data-ctc-recap]').forEach(block=>{
+  if(block.dataset.ctcRecapReady==='1')return;
+  block.dataset.ctcRecapReady='1';
+  const items=[...block.querySelectorAll('[data-ctc-recap-item]')];
+  const total=items.length;
+  if(!total)return;
+  const counter=block.querySelector('[data-ctc-recap-counter]');
+  const bar=block.querySelector('[data-ctc-recap-bar]');
+  const nextBtn=block.querySelector('[data-ctc-recap-next]');
+  const prevBtn=block.querySelector('[data-ctc-recap-prev]');
+  const resetBtn=block.querySelector('[data-ctc-recap-reset]');
+  const done=block.querySelector('[data-ctc-recap-done]');
+  let shown=0;
+  const paint=focusIdx=>{
+   items.forEach((it,i)=>{it.hidden=i>=shown});
+   if(counter)counter.textContent=shown+' of '+total+' recap points revealed';
+   if(bar)bar.style.width=Math.round((shown/total)*100)+'%';
+   if(prevBtn)prevBtn.disabled=shown===0;
+   if(nextBtn){
+    nextBtn.disabled=shown>=total;
+    nextBtn.textContent=shown===0?'Reveal the first point':shown>=total?'All points revealed':'Reveal the next point';
+   }
+   if(done)done.hidden=shown<total;
+   if(typeof focusIdx==='number'&&items[focusIdx]){items[focusIdx].setAttribute('tabindex','-1');ctcFocus(items[focusIdx])}
+  };
+  nextBtn?.addEventListener('click',()=>{if(shown>=total)return;shown+=1;paint(shown-1)});
+  prevBtn?.addEventListener('click',()=>{if(shown<=0)return;shown-=1;paint()});
+  resetBtn?.addEventListener('click',()=>{shown=0;paint();ctcFocus(nextBtn)});
+  paint();
+ });
+}
+/* Ungraded self-check list. */
+function wireCtcChecklists(root){
+ root.querySelectorAll('[data-ctc-checklist]').forEach(block=>{
+  if(block.dataset.ctcChecklistReady==='1')return;
+  block.dataset.ctcChecklistReady='1';
+  const boxes=[...block.querySelectorAll('input[type="checkbox"]')];
+  const total=boxes.length;
+  if(!total)return;
+  const counter=block.querySelector('[data-ctc-checklist-counter]');
+  const bar=block.querySelector('[data-ctc-checklist-bar]');
+  const feedback=block.querySelector('[data-ctc-checklist-feedback]');
+  const resetBtn=block.querySelector('[data-ctc-checklist-reset]');
+  const paint=()=>{
+   const n=boxes.filter(b=>b.checked).length;
+   if(counter)counter.textContent=n+' of '+total+' ready for observation';
+   if(bar)bar.style.width=Math.round((n/total)*100)+'%';
+   if(n===total)ctcSay(feedback,'good','\u2713 All '+total+' statements checked.','Ask your DVM, RVT, or lead PetNurse to observe each item in practice. Self-assessment does not replace observed validation, and this checklist is not scored.');
+   else ctcClear(feedback);
+  };
+  boxes.forEach(b=>b.addEventListener('change',paint));
+  resetBtn?.addEventListener('click',()=>{boxes.forEach(b=>{b.checked=false});paint();ctcFocus(boxes[0])});
+  paint();
+ });
+}
+/* Printable one-page job aid. */
+function wireCtcPrint(root){
+ root.querySelectorAll('[data-ctc-print]').forEach(btn=>{
+  if(btn.dataset.ctcPrintReady==='1')return;
+  btn.dataset.ctcPrintReady='1';
+  const status=root.querySelector('[data-ctc-print-status]');
+  btn.addEventListener('click',()=>{
+   const source=document.getElementById(btn.dataset.ctcPrint);
+   if(!source){if(status)status.textContent='The job aid could not be found on this page.';return}
+   document.getElementById('ctcPrintSheet')?.remove();
+   const sheet=document.createElement('div');
+   sheet.id='ctcPrintSheet';
+   sheet.className='ctc-print-sheet';
+   sheet.setAttribute('aria-hidden','true');
+   sheet.appendChild(source.cloneNode(true));
+   document.body.appendChild(sheet);
+   document.documentElement.classList.add('ctc-printing');
+   if(status)status.textContent='Print dialog opened. The one-page CLEAR LINES job aid prints on its own, without the rest of the app.';
+   const cleanup=()=>{
+    document.documentElement.classList.remove('ctc-printing');
+    document.getElementById('ctcPrintSheet')?.remove();
+    window.removeEventListener('afterprint',cleanup);
+   };
+   window.addEventListener('afterprint',cleanup);
+   window.setTimeout(()=>{
+    try{window.print()}catch(e){if(status)status.textContent='This browser blocked printing. Use your browser menu: File then Print.'}
+    window.setTimeout(cleanup,1500);
+   },ctcReduced()?0:60);
+  });
+ });
+}
+/* Option-level explanations on the shared quiz engine. The engine renders one explanation per
+   question; this lesson appends why the chosen option is right or wrong and why each alternative
+   is not appropriate. Scoped to this lesson: it only runs when the marker element is present. */
+function wireCtcOptionExplanations(root){
+ const marker=root.querySelector('[data-ctc-optexp]');
+ if(!marker||marker.dataset.ctcOptexpReady==='1')return;
+ marker.dataset.ctcOptexpReady='1';
+ let map=[];
+ try{map=JSON.parse(marker.dataset.ctcOptexp||'[]')}catch(e){map=[]}
+ const container=root.querySelector('#l2QuizContainer');
+ if(!container||!map.length)return;
+ const build=()=>{
+  Object.keys(quizAnswers).forEach(key=>{
+   const qi=+key;
+   const entry=map[qi];
+   if(!entry)return;
+   const host=document.querySelector('#l2fb-'+qi);
+   if(!host||!host.innerHTML.trim()||host.querySelector('[data-ctc-optexp-panel]'))return;
+   const answer=quizAnswers[key];
+   const chosen=typeof answer?.oi==='number'?answer.oi:null;
+   const panel=document.createElement('div');
+   panel.className='ctc-optexp';
+   panel.setAttribute('data-ctc-optexp-panel','');
+   if(chosen!==null&&entry.options[chosen]){
+    const mine=document.createElement('p');
+    mine.className='ctc-optexp-mine';
+    const lead=document.createElement('strong');
+    const isRight=chosen===entry.correct;
+    lead.textContent=(isRight?'\u2713 Your answer was correct \u2014 ':'\u2715 Your answer was not correct \u2014 ')+entry.options[chosen].label+': ';
+    mine.appendChild(lead);
+    mine.appendChild(document.createTextNode(entry.options[chosen].why));
+    panel.appendChild(mine);
+    if(!isRight){
+     const right=document.createElement('p');
+     right.className='ctc-optexp-right';
+     const rl=document.createElement('strong');
+     rl.textContent='\u2713 The correct answer is '+entry.options[entry.correct].label+': ';
+     right.appendChild(rl);
+     right.appendChild(document.createTextNode(entry.options[entry.correct].why));
+     panel.appendChild(right);
+    }
+   }
+   const head=document.createElement('p');
+   head.className='ctc-optexp-head';
+   head.textContent='Why the other options are not appropriate';
+   panel.appendChild(head);
+   const ul=document.createElement('ul');
+   entry.options.forEach((opt,idx)=>{
+    if(idx===chosen)return;
+    const li=document.createElement('li');
+    const tag=document.createElement('strong');
+    tag.textContent=(idx===entry.correct?'\u2713 ':'\u2715 ')+opt.label+': ';
+    li.appendChild(tag);
+    li.appendChild(document.createTextNode(opt.why));
+    if(idx===entry.correct)li.className='is-correct';
+    ul.appendChild(li);
+   });
+   panel.appendChild(ul);
+   host.appendChild(panel);
+  });
+ };
+ const observer=new MutationObserver(()=>build());
+ observer.observe(container,{childList:true,subtree:true});
+ build();
+}
+/* Knowledge-check remediation: names the critical catheter-care domains missed. */
+function wireCtcRemediation(root){
+ const marker=root.querySelector('[data-ctc-remediation]');
+ if(!marker||marker.dataset.ctcRemediationReady==='1')return;
+ marker.dataset.ctcRemediationReady='1';
+ let map=[];
+ try{map=JSON.parse(marker.dataset.ctcRemediation||'[]')}catch(e){map=[]}
+ const result=root.querySelector('#l2QuizResult');
+ if(!result)return;
+ const finishLabel=()=>{
+  const box=result.querySelector('.feedback-box');
+  const btn=result.querySelector('#l2CloseModuleModal');
+  if(!box||!btn)return;
+  if(/marked complete/i.test(box.textContent||'')&&btn.textContent!=='Finish lesson'){
+   btn.textContent='Finish lesson';
+   btn.setAttribute('aria-label','Finish Catheter Care and return to the curriculum');
+  }
+ };
+ const build=()=>{
+  if(!document.body.contains(result)){observer.disconnect();return}
+  if(!result.innerHTML.trim())return;
+  finishLabel();
+  if(result.querySelector('[data-ctc-remediation-panel]'))return;
+  const missed=[];
+  Object.keys(quizAnswers).forEach(key=>{
+   const a=quizAnswers[key];
+   if(a&&a.correct===false&&map[+key])missed.push(map[+key]);
+  });
+  const panel=document.createElement('section');
+  panel.className='ctc-remediation';
+  panel.setAttribute('data-ctc-remediation-panel','');
+  panel.setAttribute('role','status');
+  panel.setAttribute('aria-live','polite');
+  const h=document.createElement('h3');
+  const body=document.createElement('p');
+  if(!missed.length){
+   panel.classList.add('is-clear');
+   h.textContent='No critical domain gaps on this attempt';
+   body.textContent='You answered every item correctly across all six critical catheter-care domains: clean in and aseptic access, IV site assessment and escalation, order verification and line tracing, urinary closed drainage, contamination and disconnection response, and hazardous-drug, sharps and communication boundaries. Keep the CLEAR LINES job aid where you work.';
+   panel.appendChild(h);panel.appendChild(body);
+  }else{
+   const critical=missed.filter(m=>m.critical);
+   panel.classList.toggle('is-critical',critical.length>0);
+   h.textContent=critical.length
+    ?'Required remediation \u2014 '+critical.length+' critical domain'+(critical.length===1?'':'s')+' missed'
+    :'Recommended review \u2014 '+missed.length+' area'+(missed.length===1?'':'s')+' to revisit';
+   body.textContent=critical.length
+    ?'Hannah requires remediation before you perform these tasks unsupervised: re-open the modules listed below, repeat the required scenarios, then retake the knowledge check and ask your DVM, RVT, or lead PetNurse to observe the workflow.'
+    :'Re-open the modules listed below and repeat the matching scenarios before your next shift.';
+   panel.appendChild(h);panel.appendChild(body);
+   const ul=document.createElement('ul');
+   ul.className='ctc-remediation-list';
+   const seen=new Set();
+   missed.forEach(m=>{
+    if(seen.has(m.domain))return;
+    seen.add(m.domain);
+    const li=document.createElement('li');
+    if(m.critical)li.className='is-critical';
+    const strong=document.createElement('strong');
+    strong.textContent=(m.critical?'Critical \u2022 ':'')+m.domain;
+    li.appendChild(strong);
+    li.appendChild(document.createTextNode(' \u2014 revisit '+m.module+'. '+m.action));
+    ul.appendChild(li);
+   });
+   panel.appendChild(ul);
+  }
+  result.appendChild(panel);
+ };
+ const observer=new MutationObserver(()=>build());
+ observer.observe(result,{childList:true,subtree:true});
+ build();
+}
+/* Hannah video placeholder: accessible disclosure for purpose, shot list and transcript status.
+   No <video> element is created, so there is never a broken player. */
+function wireCtcVideos(root){
+ root.querySelectorAll('[data-ctc-video]').forEach(block=>{
+  if(block.dataset.ctcVideoReady==='1')return;
+  block.dataset.ctcVideoReady='1';
+  const toggles=[...block.querySelectorAll('[data-ctc-video-toggle]')];
+  const status=block.querySelector('[data-ctc-video-status]');
+  const viewed=new Set();
+  toggles.forEach((btn,i)=>{
+   const panel=block.querySelector('#'+btn.getAttribute('aria-controls'));
+   if(!panel)return;
+   panel.hidden=true;
+   btn.setAttribute('aria-expanded','false');
+   btn.addEventListener('click',()=>{
+    const open=btn.getAttribute('aria-expanded')==='true';
+    btn.setAttribute('aria-expanded',open?'false':'true');
+    panel.hidden=open;
+    btn.classList.toggle('is-open',!open);
+    if(!open){viewed.add(i);panel.setAttribute('tabindex','-1');ctcFocus(panel)}
+    if(status)status.textContent=viewed.size+' of '+toggles.length+' production details open for this placeholder.';
+   });
+  });
+  if(status)status.textContent='0 of '+toggles.length+' production details open for this placeholder.';
+ });
+}
+/* Select all that apply: multi-select with per-option reasoning and an explicit check step. */
+function wireCtcMultis(root){
+ root.querySelectorAll('[data-ctc-multi]').forEach(block=>{
+  if(block.dataset.ctcMultiReady==='1')return;
+  block.dataset.ctcMultiReady='1';
+  const opts=[...block.querySelectorAll('[data-ctc-multi-opt]')];
+  const checkBtn=block.querySelector('[data-ctc-multi-check]');
+  const resetBtn=block.querySelector('[data-ctc-multi-reset]');
+  const counter=block.querySelector('[data-ctc-multi-counter]');
+  const fb=block.querySelector('[data-ctc-fb]');
+  const done=block.querySelector('[data-ctc-done]');
+  const total=opts.filter(o=>o.dataset.correct==='1').length;
+  if(!opts.length)return;
+  const paint=()=>{
+   const picked=opts.filter(o=>o.getAttribute('aria-pressed')==='true').length;
+   if(counter)counter.textContent=picked+' selected. '+total+' of these findings belong in the answer.';
+   if(checkBtn)checkBtn.disabled=picked===0;
+  };
+  opts.forEach(btn=>{
+   btn.setAttribute('aria-pressed','false');
+   btn.addEventListener('click',()=>{
+    if(btn.disabled)return;
+    btn.setAttribute('aria-pressed',btn.getAttribute('aria-pressed')==='true'?'false':'true');
+    btn.classList.toggle('is-picked',btn.getAttribute('aria-pressed')==='true');
+    paint();
+   });
+  });
+  checkBtn?.addEventListener('click',()=>{
+   let hit=0,miss=0,extra=0;
+   opts.forEach(o=>{
+    const picked=o.getAttribute('aria-pressed')==='true';
+    const should=o.dataset.correct==='1';
+    o.disabled=true;
+    if(picked&&should){hit++;o.classList.add('is-correct')}
+    else if(!picked&&should){miss++;o.classList.add('is-missed')}
+    else if(picked&&!should){extra++;o.classList.add('is-wrong')}
+    const note=o.parentElement.querySelector('[data-ctc-multi-why]');
+    if(note){note.hidden=false;note.textContent=(should?'\u2713 Belongs in the answer \u2014 ':'\u2715 Does not belong \u2014 ')+(o.dataset.explain||'')}
+   });
+   const perfect=hit===total&&extra===0;
+   ctcSay(fb,perfect?'good':'bad',
+    perfect?'\u2713 You selected all '+total+' and nothing extra.':'\u2715 Not the full set yet.',
+    perfect?'':'You found '+hit+' of '+total+(miss?', missed '+miss:'')+(extra?', and selected '+extra+(extra===1?' that does not belong':' that do not belong'):'')+'. Read each line below.');
+   if(done&&perfect){done.hidden=false;done.setAttribute('tabindex','-1');ctcFocus(done)}
+   if(checkBtn)checkBtn.disabled=true;
+  });
+  resetBtn?.addEventListener('click',()=>{
+   opts.forEach(o=>{
+    o.disabled=false;
+    o.setAttribute('aria-pressed','false');
+    o.classList.remove('is-picked','is-correct','is-wrong','is-missed');
+    const note=o.parentElement.querySelector('[data-ctc-multi-why]');
+    if(note){note.hidden=true;note.textContent=''}
+   });
+   ctcClear(fb);
+   if(done)done.hidden=true;
+   paint();
+   ctcFocus(opts[0]);
+  });
+  paint();
+ });
+}
+/* Matching: pick an observation, then pick its first action. Buttons only, no drag-and-drop. */
+function wireCtcPairs(root){
+ root.querySelectorAll('[data-ctc-pair]').forEach(block=>{
+  if(block.dataset.ctcPairReady==='1')return;
+  block.dataset.ctcPairReady='1';
+  const lefts=[...block.querySelectorAll('[data-ctc-pair-left]')];
+  const rights=[...block.querySelectorAll('[data-ctc-pair-right]')];
+  const counter=block.querySelector('[data-ctc-pair-counter]');
+  const fb=block.querySelector('[data-ctc-fb]');
+  const done=block.querySelector('[data-ctc-done]');
+  const resetBtn=block.querySelector('[data-ctc-pair-reset]');
+  const total=lefts.length;
+  if(!total||!rights.length)return;
+  let sel=null,matched=0;
+  const paint=()=>{
+   if(counter)counter.textContent=matched+' of '+total+' matched.'+(sel?' Now choose the first action for the selected observation.':' Select an observation to begin.');
+  };
+  const clearSel=()=>{lefts.forEach(l=>{l.setAttribute('aria-pressed','false');l.classList.remove('is-picked')});sel=null};
+  lefts.forEach(l=>{
+   l.setAttribute('aria-pressed','false');
+   l.addEventListener('click',()=>{
+    if(l.disabled)return;
+    const was=l.getAttribute('aria-pressed')==='true';
+    clearSel();
+    if(!was){l.setAttribute('aria-pressed','true');l.classList.add('is-picked');sel=l}
+    paint();
+   });
+  });
+  rights.forEach(r=>{
+   r.addEventListener('click',()=>{
+    if(!sel){ctcSay(fb,'bad','\u2715 Select an observation first.','Choose one observation on the left, then choose the first action.');return}
+    if(r.dataset.pairKey===sel.dataset.pairKey){
+     matched++;
+     sel.disabled=true;
+     sel.classList.remove('is-picked');
+     sel.classList.add('is-correct');
+     const slot=sel.parentElement.querySelector('[data-ctc-pair-slot]');
+     if(slot){slot.hidden=false;slot.textContent=(r.dataset.short||r.textContent.trim())+' \u2014 '+(r.dataset.explain||'')}
+     ctcSay(fb,'good','\u2713 Correct match.',sel.dataset.explain||'');
+     clearSel();
+     if(matched===total&&done){done.hidden=false;done.setAttribute('tabindex','-1');ctcFocus(done)}
+    }else{
+     ctcSay(fb,'bad','\u2715 That is not the first action for this observation.',r.dataset.explain||'');
+    }
+    paint();
+   });
+  });
+  resetBtn?.addEventListener('click',()=>{
+   matched=0;
+   lefts.forEach(l=>{
+    l.disabled=false;
+    l.classList.remove('is-correct','is-picked');
+    l.setAttribute('aria-pressed','false');
+    const slot=l.parentElement.querySelector('[data-ctc-pair-slot]');
+    if(slot){slot.hidden=true;slot.textContent=''}
+   });
+   ctcClear(fb);
+   if(done)done.hidden=true;
+   sel=null;paint();
+   ctcFocus(lefts[0]);
+  });
+  paint();
+ });
+}
+/* Two-stage recap cases: choose the CLEAR LINES step, then choose the action. */
+function wireCtcCases(root){
+ root.querySelectorAll('[data-ctc-cases]').forEach(block=>{
+  if(block.dataset.ctcCasesReady==='1')return;
+  block.dataset.ctcCasesReady='1';
+  const cases=[...block.querySelectorAll('[data-ctc-case]')];
+  const counter=block.querySelector('[data-ctc-cases-counter]');
+  const bar=block.querySelector('[data-ctc-cases-bar]');
+  const done=block.querySelector('[data-ctc-done]');
+  const restart=block.querySelector('[data-ctc-cases-restart]');
+  const total=cases.length;
+  if(!total)return;
+  let cur=0,cleared=0;
+  const paint=focusStem=>{
+   cases.forEach((c,i)=>{c.hidden=i!==cur});
+   if(counter)counter.textContent='Case '+(cur+1)+' of '+total+'. '+cleared+' completed.';
+   if(bar)bar.style.width=Math.round((cleared/total)*100)+'%';
+   if(focusStem){const s=cases[cur].querySelector('.ctc-case-stem');if(s){s.setAttribute('tabindex','-1');ctcFocus(s)}}
+  };
+  cases.forEach((c,idx)=>{
+   const stepBtns=[...c.querySelectorAll('[data-ctc-case-step]')];
+   const actionWrap=c.querySelector('[data-ctc-case-actions]');
+   const actionBtns=[...c.querySelectorAll('[data-ctc-case-action]')];
+   const fb=c.querySelector('[data-ctc-fb]');
+   const solved=c.querySelector('[data-ctc-case-solved]');
+   if(actionWrap)actionWrap.hidden=true;
+   stepBtns.forEach(b=>{
+    b.addEventListener('click',()=>{
+     if(b.disabled)return;
+     const ok=b.dataset.correct==='1';
+     if(!ok){
+      b.classList.add('is-wrong');
+      ctcSay(fb,'bad','\u2715 That is not the CLEAR LINES step here.',b.dataset.explain||'');
+      return;
+     }
+     stepBtns.forEach(x=>{x.disabled=true;if(x!==b)x.classList.remove('is-wrong')});
+     b.classList.add('is-correct');
+     ctcSay(fb,'good','\u2713 Right step.',b.dataset.explain||'');
+     if(actionWrap){
+      actionWrap.hidden=false;
+      const h=actionWrap.querySelector('.ctc-case-substep');
+      if(h){h.setAttribute('tabindex','-1');ctcFocus(h)}
+     }
+    });
+   });
+   actionBtns.forEach(b=>{
+    b.addEventListener('click',()=>{
+     if(b.disabled)return;
+     const ok=b.dataset.correct==='1';
+     if(!ok){
+      b.classList.add('is-wrong');
+      ctcSay(fb,'bad','\u2715 Not the safe action.',b.dataset.explain||'');
+      return;
+     }
+     actionBtns.forEach(x=>{x.disabled=true});
+     b.classList.add('is-correct');
+     ctcSay(fb,'good','\u2713 Safe action.',b.dataset.explain||'');
+     if(solved)solved.hidden=false;
+     cleared++;
+     if(cur<total-1){cur+=1;paint(true)}
+     else{
+      paint(false);
+      if(done){done.hidden=false;done.setAttribute('tabindex','-1');ctcFocus(done)}
+     }
+    });
+   });
+  });
+  restart?.addEventListener('click',()=>{
+   cur=0;cleared=0;
+   cases.forEach(c=>{
+    c.querySelectorAll('[data-ctc-case-step],[data-ctc-case-action]').forEach(b=>{b.disabled=false;b.classList.remove('is-correct','is-wrong')});
+    const aw=c.querySelector('[data-ctc-case-actions]');if(aw)aw.hidden=true;
+    const sv=c.querySelector('[data-ctc-case-solved]');if(sv)sv.hidden=true;
+    ctcClear(c.querySelector('[data-ctc-fb]'));
+   });
+   if(done)done.hidden=true;
+   paint(true);
+  });
+  paint(false);
+ });
+}
+
 /* ---- Module modal with knowledge check ---- */
 const TRIAGE_REVIEW_LESSON_SLUG='triage-review';
 const SAMPLE_COLLECTION_LESSON_SLUG='sample-collection';
@@ -5189,7 +6326,8 @@ const IMAGING_SUPPORT_LESSON_SLUG='imaging-support';
 const CASE_PRESENTATION_LESSON_SLUG='case-presentation';
 const MEDICATION_SAFETY_LESSON_SLUG='medication-safety';
 const ASEPSIS_LESSON_SLUG='asepsis-infection-prevention';
-const CONTINUE_FLOW_LESSON_SLUGS=new Set([TRIAGE_REVIEW_LESSON_SLUG,SAMPLE_COLLECTION_LESSON_SLUG,CANINE_COMMUNICATION_LESSON_SLUG,IMAGING_SUPPORT_LESSON_SLUG,CASE_PRESENTATION_LESSON_SLUG,MEDICATION_SAFETY_LESSON_SLUG,ASEPSIS_LESSON_SLUG]);
+const CATHETER_CARE_LESSON_SLUG='catheter-care';
+const CONTINUE_FLOW_LESSON_SLUGS=new Set([TRIAGE_REVIEW_LESSON_SLUG,SAMPLE_COLLECTION_LESSON_SLUG,CANINE_COMMUNICATION_LESSON_SLUG,IMAGING_SUPPORT_LESSON_SLUG,CASE_PRESENTATION_LESSON_SLUG,MEDICATION_SAFETY_LESSON_SLUG,ASEPSIS_LESSON_SLUG,CATHETER_CARE_LESSON_SLUG]);
 let activeModule=null, quizAnswers={};
 const moduleModalState={saving:false,message:'',isError:false,reviewSaveStatus:'idle'};
 function resetModuleModalState(){
@@ -5370,6 +6508,7 @@ function renderModuleModal(opts={}){
  wireCasePresentationWidgets(document.querySelector('#modalContent'));
  wireMedicationSafetyWidgets(document.querySelector('#modalContent'));
  wireAsepsisWidgets(document.querySelector('#modalContent'));
+ wireCatheterWidgets(document.querySelector('#modalContent'));
  if(hasQuiz&&answeredCount===total)void renderQuizResult();
  if(opts.focusHeading)focusModuleModalHeading();
 }
