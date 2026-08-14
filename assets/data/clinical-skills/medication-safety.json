@@ -108,21 +108,21 @@
     {
      "q": "<span class=\"ms-q-group\">Part 1 &middot; Order verification</span><span class=\"ms-q-text\">A medication order for a canine patient lists the Pet, the drug and the amount, but no route. What do you do?</span>",
      "opts": [
-      "Hold the medication and clarify the route with the DVM or RVT before anything is prepared.",
-      "Give it by mouth, because oral is the most common route.",
       "Use the route from the same medication on the previous visit.",
-      "Prepare it now and ask about the route at administration."
+      "Prepare it now and ask about the route at administration.",
+      "Hold the medication and clarify the route with the DVM or RVT before anything is prepared.",
+      "Give it by mouth, because oral is the most common route."
      ],
-     "correct": 0,
+     "correct": 2,
      "exp": "Route is part of the directions for use. FDA's extra-label guidance lists species and animal identification, dosage, frequency, route and duration among required directions, so an order without a route is incomplete. Hold and clarify; do not infer it."
     },
     {
      "q": "<span class=\"ms-q-group\">Part 1 &middot; Order verification</span><span class=\"ms-q-text\">An order reads &ldquo;5.0 mg.&rdquo; What is the safest response?</span>",
      "opts": [
       "Ask for the order to be clarified or rewritten per policy, because a trailing zero can be misread as a tenfold higher dose.",
+      "Round to the nearest whole number and continue.",
       "Prepare 5 mg, since the trailing zero does not change the value.",
-      "Prepare 50 mg, because the zero indicates tens.",
-      "Round to the nearest whole number and continue."
+      "Prepare 50 mg, because the zero indicates tens."
      ],
      "correct": 0,
      "exp": "FDA warns that &ldquo;5.0 mg&rdquo; can be misread as &ldquo;50 mg&rdquo; and that a missing leading zero turns &ldquo;.5 mg&rdquo; into &ldquo;5 mg.&rdquo; Both are tenfold risks. The value may well be 5 mg, but you clarify rather than assume."
@@ -130,54 +130,54 @@
     {
      "q": "<span class=\"ms-q-group\">Part 2 &middot; Concentration and dose</span><span class=\"ms-q-text\">The order specifies an oral suspension at 50 mg/mL. The bottle in your hand reads 25 mg/mL. What do you do?</span>",
      "opts": [
-      "Stop and escalate the concentration mismatch to the DVM or RVT without preparing anything.",
       "Double the volume so the total milligrams match the order.",
       "Halve the volume to stay on the safe side.",
-      "Prepare the ordered volume from the bottle you have and note the difference in the record."
+      "Prepare the ordered volume from the bottle you have and note the difference in the record.",
+      "Stop and escalate the concentration mismatch to the DVM or RVT without preparing anything."
      ],
-     "correct": 0,
+     "correct": 3,
      "exp": "Recalculating around a mismatch is a substitution you are not authorized to make. You verify DVM-authorized math; changing a product or a volume is prescribing. Stop, escalate, and let the DVM issue a corrected order."
     },
     {
      "q": "<span class=\"ms-q-group\">Part 2 &middot; Patient identity</span><span class=\"ms-q-text\">Which is the strongest patient-identity check before a medication?</span>",
      "opts": [
-      "Compare Pet name, species, signalment, the weight the order was written on, the encounter, the Member or Pet Parent, and the cage or board identifier against the order and the label &mdash; before preparation and again at the Pet.",
-      "Confirm the Pet's name with whoever is closest to the cage.",
       "Match the cage card to the treatment board once at the start of the shift.",
-      "Check the Pet's name and the drug name on the label."
+      "Compare Pet name, species, signalment, the weight the order was written on, the encounter, the Member or Pet Parent, and the cage or board identifier against the order and the label &mdash; before preparation and again at the Pet.",
+      "Check the Pet's name and the drug name on the label.",
+      "Confirm the Pet's name with whoever is closest to the cage."
      ],
-     "correct": 0,
+     "correct": 1,
      "exp": "Wrong drug, wrong dose and wrong frequency are all reportable medication-error scenarios, and every one of them can start with a patient-identity gap. Identity is checked twice: at preparation and again at the Pet."
     },
     {
      "q": "<span class=\"ms-q-group\">Part 3 &middot; Communication</span><span class=\"ms-q-text\">A verbal order sounds like one drug, but the chart context suggests a different, similarly named medication. What happens next?</span>",
      "opts": [
-      "Read the order back, say the drug name and strength out loud, and get explicit confirmation before proceeding.",
+      "Ask a colleague which one they would prepare.",
       "Prepare the one that fits the chart context, since that is clinically sensible.",
       "Prepare the one you heard, because the DVM said it.",
-      "Ask a colleague which one they would prepare."
+      "Read the order back, say the drug name and strength out loud, and get explicit confirmation before proceeding."
      ],
-     "correct": 0,
+     "correct": 3,
      "exp": "FDA describes a verbal-order mix-up between two similarly named products that harmed a dog. Read-back with the name and strength spoken aloud is the control for look-alike and sound-alike names, and ISMP maintains a confused-drug-name list for exactly this risk."
     },
     {
      "q": "<span class=\"ms-q-group\">Part 3 &middot; Aseptic practice</span><span class=\"ms-q-text\">When should hand hygiene happen in a medication task?</span>",
      "opts": [
-      "Immediately before the aseptic preparation task and immediately before touching the patient.",
       "Only after handling the patient, to protect yourself.",
       "Once at the start of the medication round.",
+      "Immediately before the aseptic preparation task and immediately before touching the patient.",
       "Only when hands are visibly soiled."
      ],
-     "correct": 0,
+     "correct": 2,
      "exp": "CDC recommends cleaning hands immediately before touching a patient and before performing an aseptic task. Medication preparation is an aseptic task, so hand hygiene happens before it and again before patient contact."
     },
     {
      "q": "<span class=\"ms-q-group\">Part 3 &middot; Injection and sharps safety</span><span class=\"ms-q-text\">What does &ldquo;One Needle, One Syringe, Only One Time&rdquo; mean?</span>",
      "opts": [
       "A needle and syringe are used for one patient and one entry into a medication, then discarded &mdash; never reused across patients or re-entered into a vial.",
-      "One needle per shift is acceptable if it is capped between uses.",
       "You may reuse a syringe on the same patient with a new needle for any purpose.",
-      "It applies only to controlled substances."
+      "It applies only to controlled substances.",
+      "One needle per shift is acceptable if it is capped between uses."
      ],
      "correct": 0,
      "exp": "CDC uses this rule to summarize safe injection practice. Alongside it, OSHA advises not passing used sharps between workers, not recapping, shearing or breaking contaminated needles, and disposing of them immediately in a puncture-resistant sharps container."
@@ -185,45 +185,45 @@
     {
      "q": "<span class=\"ms-q-group\">Part 4 &middot; Hazardous drugs</span><span class=\"ms-q-text\">A hazardous oral medication arrives for a patient and the required PPE is not available in the designated area. What do you do?</span>",
      "opts": [
+      "Split the task with a colleague so each person's exposure is halved.",
       "Do not handle it outside the protocol &mdash; escalate so the hazardous-drug workflow, PPE and spill supplies are in place first.",
       "Handle it quickly with gloves you already have on, since it is only a tablet.",
-      "Move it to a quiet area and prepare it there to limit exposure to others.",
-      "Split the task with a colleague so each person's exposure is halved."
+      "Move it to a quiet area and prepare it there to limit exposure to others."
      ],
-     "correct": 0,
+     "correct": 1,
      "exp": "NIOSH states that veterinary healthcare employees handling hazardous drugs may face health risks and recommends a protective program; OSHA's hazardous-drug guidance applies to veterinary practices; and USP &lt;800&gt; applies wherever patients, workers or the environment may be exposed. Missing PPE is a stop-and-escalate condition."
     },
     {
      "q": "<span class=\"ms-q-group\">Part 4 &middot; Controlled substances</span><span class=\"ms-q-text\">A controlled-substance log entry is missing the witness initials for a wasted amount. What is the safest action?</span>",
      "opts": [
-      "Notify the authorized DVM, RVT or manager per policy and correct it through the approved documentation process.",
       "Add your own initials as the witness so the log balances.",
       "Ask a colleague to initial it now as if they had witnessed it.",
+      "Notify the authorized DVM, RVT or manager per policy and correct it through the approved documentation process.",
       "Leave it and mention it at the next inventory count."
      ],
-     "correct": 0,
+     "correct": 2,
      "exp": "AAHA's controlled-substance materials support DEA recordkeeping and include inventory reconciliation and near-miss incident logs. Backfilling or borrowing a witness signature falsifies a federal record. Escalate the discrepancy instead."
     },
     {
      "q": "<span class=\"ms-q-group\">Part 5 &middot; Monitoring and escalation</span><span class=\"ms-q-text\">A Pet vomits and develops facial swelling shortly after an authorized medication. What do you do first?</span>",
      "opts": [
-      "Stay with the Pet if it is safe, escalate to the DVM or RVT immediately, and record the times and what you observed.",
-      "Look up the medication's side-effect profile so your report is complete.",
       "Give an antihistamine you have seen used for reactions before.",
-      "Wait ten minutes to see whether the signs worsen."
+      "Wait ten minutes to see whether the signs worsen.",
+      "Look up the medication's side-effect profile so your report is complete.",
+      "Stay with the Pet if it is safe, escalate to the DVM or RVT immediately, and record the times and what you observed."
      ],
-     "correct": 0,
+     "correct": 3,
      "exp": "FDA lists side effects such as vomiting, diarrhea, colic and seizures among reportable adverse events. You do not need a diagnosis to escalate: recognize, escalate immediately, preserve the evidence, and document facts and times."
     },
     {
      "q": "<span class=\"ms-q-group\">Part 5 &middot; Member communication</span><span class=\"ms-q-text\">A Member asks whether they can give their own pain reliever to their Pet. What do you say?</span>",
      "opts": [
+      "Tell them you are not allowed to answer and end the conversation.",
       "Explain that human medication should not be given to a Pet unless the veterinarian directs it, and offer to get an answer from the hospital.",
       "Suggest a small dose is usually fine for a Pet that size.",
-      "Say that most human medications are safe if given with food.",
-      "Tell them you are not allowed to answer and end the conversation."
+      "Say that most human medications are safe if given with food."
      ],
-     "correct": 0,
+     "correct": 1,
      "exp": "FDA advises Members and Pet Parents not to give human medications to an animal unless directed by the veterinarian, and to store human and animal medications separately. Routing the question to the DVM keeps you inside your scope without leaving the Member without a path."
     },
     {
