@@ -1189,3 +1189,26 @@ html[data-theme="dark"] dialog:has(.cp-scope) .sc-callout h4,
 html[data-theme="dark"] dialog:has(.cp-scope) .cp-sort-bucket h4,
 html[data-theme="dark"] dialog:has(.cp-scope) .cp-column h4,
 html[data-theme="dark"] dialog:has(.cp-scope) .cp-credits h4{color:#7fd0f0}
+
+/* Case Presentation — demonstration video and transcript */
+.cp-video-demo{margin:18px 0 16px}
+.cp-video-demo .video-frame{border:1px solid var(--line)}
+.cp-video-demo video{display:block;background:#001f31}
+.cp-transcript{margin:0 0 18px}
+.cp-transcript-note{margin:0 0 12px;font-size:12.5px;line-height:1.55;color:#596b79}
+.cp-transcript-turn{border-left:4px solid var(--line);padding:2px 0 2px 12px;margin:0 0 14px}
+.cp-transcript-turn:last-child{margin-bottom:0}
+.cp-transcript-turn p{margin:0 0 8px;font-size:13.5px;line-height:1.65;overflow-wrap:break-word}
+.cp-transcript-turn p:last-child{margin-bottom:0}
+.cp-transcript-speaker{font-size:10.5px;font-weight:850;letter-spacing:.11em;text-transform:uppercase;color:var(--navy2)}
+.cp-transcript-turn--narrator{border-left-color:var(--muted)}
+.cp-transcript-turn--petnurse{border-left-color:var(--blue)}
+.cp-transcript-turn--veterinarian{border-left-color:var(--green)}
+.cp-transcript-turn--petnurse .cp-transcript-speaker::after{content:" · presenting"}
+.cp-transcript-turn--veterinarian .cp-transcript-speaker::after{content:" · receiving"}
+html[data-theme="dark"] .cp-transcript-note{color:var(--muted)}
+html[data-theme="dark"] .cp-transcript-speaker{color:#7fd0f0}
+@media(max-width:780px){
+ .cp-transcript-turn{padding-left:10px}
+ .cp-video-demo{margin:14px 0}
+}
