@@ -1629,7 +1629,7 @@ function plannedLessonsFor(slug){return plannedLessonsBySlug[slug]||[]}
 const courseOrderBySlug={
  'medical-foundations':['medical-terminology','reproductive-anatomy','anatomy-and-physiology','understanding-canine-communication'],
  'clinical-diagnostics':['sample-collection','imaging-support','case-presentation'],
- 'clinical-skills':['medication-safety']
+ 'clinical-skills':['medication-safety','asepsis-infection-prevention']
 };
 function applyCourseOrder(slug,tiles){
  const order=courseOrderBySlug[slug]; if(!order)return tiles;
@@ -1836,7 +1836,8 @@ const bundledCourseLessonFallbacks={
  /* Clinical Skills & Treatment Delivery ships bundled-only for now: the course has no Supabase
     course row yet, so its lessons load from the package and keep progress in this browser. */
  'clinical-skills':[
-  {slug:'medication-safety',title:'Medication Safety',summary:'The Hannah SAFE PAWS medication workflow: how medication errors happen, DVM order verification and patient identity, safe preparation, labeling and storage, the independent concentration and dose double-check, hazardous-drug and controlled-substance safety, administration, monitoring and adverse-reaction escalation, near-miss response, Member teach-back, a printable job aid, and a graded twelve-question final assessment at 80 percent.',sort_order:1,path:'assets/data/clinical-skills/medication-safety.json',localOnly:true}
+  {slug:'medication-safety',title:'Medication Safety',summary:'The Hannah SAFE PAWS medication workflow: how medication errors happen, DVM order verification and patient identity, safe preparation, labeling and storage, the independent concentration and dose double-check, hazardous-drug and controlled-substance safety, administration, monitoring and adverse-reaction escalation, near-miss response, Member teach-back, a printable job aid, and a graded twelve-question final assessment at 80 percent.',sort_order:1,path:'assets/data/clinical-skills/medication-safety.json',localOnly:true},
+  {slug:'asepsis-infection-prevention',title:'Asepsis and Infection Prevention',summary:'The Hannah C.L.E.A.N. Path for preventing contamination: medical versus surgical asepsis, the chain of infection, hand hygiene and PPE, cleaning, disinfection and sterilization with label-based dilution and wet contact time, room, kennel, equipment and isolation workflows, Pet skin prep, sterile supplies and sterile fields, sharps and waste, six required breach scenarios, a printable job aid, and a ten-question knowledge check at 80 percent.',sort_order:2,path:'assets/data/clinical-skills/asepsis-infection-prevention.json',localOnly:true}
  ]
 };
 const bundledLessonFallbackBySlug=Object.fromEntries(Object.values(bundledCourseLessonFallbacks).flat().map(def=>[def.slug,def]));
@@ -4176,6 +4177,1010 @@ function wireMsRemediation(root){
  build();
 }
 
+/* ---- Clinical Skills & Treatment Delivery — Asepsis and Infection Prevention interactions ---- */
+function aipReduced(){return !!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)}
+function aipFocus(el){if(el)el.focus({preventScroll:aipReduced()})}
+function aipSay(host,tone,lead,body){
+ if(!host)return;
+ host.hidden=false;
+ host.className='aip-feedback is-'+tone;
+ host.innerHTML='';
+ const p=document.createElement('p');
+ const strong=document.createElement('strong');
+ strong.textContent=lead;
+ p.appendChild(strong);
+ if(body)p.appendChild(document.createTextNode(' '+body));
+ host.appendChild(p);
+}
+function aipClear(host){if(!host)return;host.hidden=true;host.innerHTML='';host.className='aip-feedback'}
+function aipPush(list,text){
+ if(!list)return;
+ const li=document.createElement('li');
+ li.textContent=text;
+ list.appendChild(li);
+}
+function wireAsepsisWidgets(root){
+ if(!root)return;
+ wireAipExplorers(root);
+ wireAipReveals(root);
+ wireAipQuizzes(root);
+ wireAipSorts(root);
+ wireAipChains(root);
+ wireAipAudits(root);
+ wireAipSequences(root);
+ wireAipBuilders(root);
+ wireAipBranches(root);
+ wireAipFields(root);
+ wireAipTimers(root);
+ wireAipRecaps(root);
+ wireAipChecklists(root);
+ wireAipPrint(root);
+ wireAipOptionExplanations(root);
+ wireAipRemediation(root);
+}
+/* C.L.E.A.N. Path step explorer — tablist with roving arrow-key focus. */
+function wireAipExplorers(root){
+ root.querySelectorAll('[data-aip-explorer]').forEach(block=>{
+  if(block.dataset.aipExplorerReady==='1')return;
+  block.dataset.aipExplorerReady='1';
+  const tabs=[...block.querySelectorAll('[data-aip-step]')];
+  const panels=[...block.querySelectorAll('[data-aip-step-panel]')];
+  const counter=block.querySelector('[data-aip-explorer-counter]');
+  const resetBtn=block.querySelector('[data-aip-explorer-reset]');
+  const total=tabs.length;
+  if(!total)return;
+  const viewed=new Set();
+  let cur=-1;
+  const paint=()=>{
+   tabs.forEach((t,i)=>{
+    const on=i===cur;
+    t.setAttribute('aria-selected',on?'true':'false');
+    t.setAttribute('tabindex',on||(cur===-1&&i===0)?'0':'-1');
+    t.classList.toggle('is-open',on);
+    t.classList.toggle('is-viewed',viewed.has(i));
+   });
+   panels.forEach((p,i)=>{p.hidden=i!==cur});
+   if(counter)counter.textContent=cur===-1
+    ?'Select a letter to open that step. '+viewed.size+' of '+total+' steps viewed.'
+    :'Step '+(cur+1)+' of '+total+' open. '+viewed.size+' of '+total+' steps viewed.';
+  };
+  const open=(i,focusPanel)=>{
+   cur=i;viewed.add(i);paint();
+   if(focusPanel&&panels[i]){panels[i].setAttribute('tabindex','-1');aipFocus(panels[i])}
+  };
+  tabs.forEach((tab,i)=>{
+   tab.addEventListener('click',()=>{cur===i?(cur=-1,paint()):open(i,true)});
+   tab.addEventListener('keydown',e=>{
+    let next=null;
+    if(e.key==='ArrowRight'||e.key==='ArrowDown')next=(i+1)%total;
+    else if(e.key==='ArrowLeft'||e.key==='ArrowUp')next=(i-1+total)%total;
+    else if(e.key==='Home')next=0;
+    else if(e.key==='End')next=total-1;
+    if(next===null)return;
+    e.preventDefault();
+    open(next,false);
+    aipFocus(tabs[next]);
+   });
+  });
+  resetBtn?.addEventListener('click',()=>{viewed.clear();cur=-1;paint();aipFocus(tabs[0])});
+  paint();
+ });
+}
+/* Click-to-reveal cards (standards, hand-hygiene moments, sterile danger signs). */
+function wireAipReveals(root){
+ root.querySelectorAll('[data-aip-reveal]').forEach(block=>{
+  if(block.dataset.aipRevealReady==='1')return;
+  block.dataset.aipRevealReady='1';
+  const btns=[...block.querySelectorAll('[data-aip-reveal-btn]')];
+  const counter=block.querySelector('[data-aip-reveal-counter]');
+  const resetBtn=block.querySelector('[data-aip-reveal-reset]');
+  const total=btns.length;
+  if(!total)return;
+  const paint=()=>{
+   const shown=btns.filter(b=>b.getAttribute('aria-expanded')==='true').length;
+   if(counter)counter.textContent=shown+' of '+total+' revealed';
+  };
+  btns.forEach(btn=>{
+   const body=document.getElementById(btn.getAttribute('aria-controls'));
+   const label=btn.dataset.aipRevealLabel||'Reveal';
+   btn.addEventListener('click',()=>{
+    const open=btn.getAttribute('aria-expanded')==='true';
+    btn.setAttribute('aria-expanded',open?'false':'true');
+    btn.textContent=open?label:'Hide';
+    if(body)body.hidden=open;
+    btn.closest('.aip-reveal-card')?.classList.toggle('is-open',!open);
+    paint();
+   });
+  });
+  resetBtn?.addEventListener('click',()=>{
+   btns.forEach(btn=>{
+    const body=document.getElementById(btn.getAttribute('aria-controls'));
+    btn.setAttribute('aria-expanded','false');
+    btn.textContent=btn.dataset.aipRevealLabel||'Reveal';
+    if(body)body.hidden=true;
+    btn.closest('.aip-reveal-card')?.classList.remove('is-open');
+   });
+   paint();
+   aipFocus(btns[0]);
+  });
+  paint();
+ });
+}
+/* Paged single-choice decisions and the six select-before-reveal scenarios.
+   Every option carries its own explanation, so wrong choices explain why they are unsafe. */
+function wireAipQuizzes(root){
+ root.querySelectorAll('[data-aip-quiz]').forEach(block=>{
+  if(block.dataset.aipQuizReady==='1')return;
+  block.dataset.aipQuizReady='1';
+  const items=[...block.querySelectorAll('[data-aip-q]')];
+  const total=items.length;
+  if(!total)return;
+  const noun=block.dataset.aipQuizNoun||'Decision';
+  const counter=block.querySelector('[data-aip-counter]');
+  const bar=block.querySelector('[data-aip-bar]');
+  const prevBtn=block.querySelector('[data-aip-prev]');
+  const nextBtn=block.querySelector('[data-aip-next]');
+  const summary=block.querySelector('[data-aip-summary]');
+  const summaryText=block.querySelector('[data-aip-summary-text]');
+  const restart=block.querySelector('[data-aip-restart]');
+  const answered=new Array(total).fill(null);
+  let cur=0;
+  const paint=focusStem=>{
+   items.forEach((li,i)=>{li.hidden=i!==cur});
+   if(counter)counter.textContent=noun+' '+(cur+1)+' of '+total;
+   if(bar)bar.style.width=Math.round(((cur+1)/total)*100)+'%';
+   if(prevBtn)prevBtn.disabled=cur===0;
+   if(nextBtn){
+    const done=answered.every(a=>a!==null);
+    nextBtn.textContent=cur===total-1?'See summary':'Next';
+    nextBtn.disabled=cur===total-1?!done:answered[cur]===null;
+   }
+   if(focusStem){const stem=items[cur].querySelector('.aip-q-stem');if(stem){stem.setAttribute('tabindex','-1');aipFocus(stem)}}
+  };
+  items.forEach((li,i)=>{
+   const fb=li.querySelector('[data-aip-fb]');
+   const why=li.querySelector('[data-aip-why]');
+   const opts=[...li.querySelectorAll('[data-aip-opt]')];
+   opts.forEach(btn=>{
+    btn.addEventListener('click',()=>{
+     if(answered[i]!==null)return;
+     const correct=btn.dataset.correct==='1';
+     answered[i]=correct;
+     opts.forEach(b=>{
+      b.disabled=true;
+      if(b.dataset.correct==='1')b.classList.add('is-correct');
+      else if(b===btn)b.classList.add('is-wrong');
+     });
+     btn.classList.add('is-chosen');
+     aipSay(fb,correct?'good':'bad',correct?'\u2713 Correct.':'\u2715 Not the safe choice.',btn.dataset.explain||'');
+     if(why){
+      why.hidden=false;
+      why.innerHTML='';
+      const h=document.createElement('p');
+      h.className='aip-why-head';
+      h.textContent='Why the other options are not appropriate';
+      why.appendChild(h);
+      const ul=document.createElement('ul');
+      opts.forEach(b=>{
+       if(b===btn)return;
+       const line=document.createElement('li');
+       const tag=document.createElement('strong');
+       tag.textContent=(b.dataset.correct==='1'?'\u2713 ':'\u2715 ')+(b.dataset.short||b.textContent.trim().slice(0,60));
+       line.appendChild(tag);
+       line.appendChild(document.createTextNode(' \u2014 '+(b.dataset.explain||'')));
+       ul.appendChild(line);
+      });
+      why.appendChild(ul);
+     }
+     paint(false);
+    });
+   });
+  });
+  prevBtn?.addEventListener('click',()=>{if(cur<=0)return;cur-=1;paint(true)});
+  nextBtn?.addEventListener('click',()=>{
+   if(cur<total-1){cur+=1;paint(true);return}
+   const score=answered.filter(Boolean).length;
+   if(summary){
+    summary.hidden=false;
+    if(summaryText)summaryText.textContent='You chose the safe action in '+score+' of '+total+' on the first attempt. This practice activity is not scored toward your progress \u2014 only the knowledge check is.';
+    summary.setAttribute('tabindex','-1');
+    aipFocus(summary);
+   }
+  });
+  restart?.addEventListener('click',()=>{
+   answered.fill(null);
+   items.forEach(li=>{
+    li.querySelectorAll('[data-aip-opt]').forEach(b=>{b.disabled=false;b.classList.remove('is-correct','is-wrong','is-chosen')});
+    aipClear(li.querySelector('[data-aip-fb]'));
+    const why=li.querySelector('[data-aip-why]');
+    if(why){why.hidden=true;why.innerHTML=''}
+   });
+   if(summary)summary.hidden=true;
+   cur=0;paint(true);
+  });
+  paint(false);
+ });
+}
+/* Select-an-item then choose a lane. Used for asepsis level sorting and the Spaulding sort. */
+function wireAipSorts(root){
+ root.querySelectorAll('[data-aip-sort]').forEach(block=>{
+  if(block.dataset.aipSortReady==='1')return;
+  block.dataset.aipSortReady='1';
+  const bank=block.querySelector('[data-aip-sort-bank]');
+  const items=[...block.querySelectorAll('[data-aip-item]')];
+  const total=items.length;
+  if(!total)return;
+  const placeBtns=[...block.querySelectorAll('[data-aip-place]')];
+  const checkBtn=block.querySelector('[data-aip-sort-check]');
+  const resetBtn=block.querySelector('[data-aip-sort-reset]');
+  const counter=block.querySelector('[data-aip-sort-counter]');
+  const feedback=block.querySelector('[data-aip-sort-feedback]');
+  let selected=null;
+  const placedCount=()=>items.filter(i=>i.dataset.placed).length;
+  const paint=()=>{
+   const placed=placedCount();
+   if(counter)counter.textContent=placed+' of '+total+' sorted';
+   placeBtns.forEach(b=>{b.disabled=!selected});
+   if(checkBtn)checkBtn.disabled=placed!==total;
+  };
+  const select=item=>{
+   selected=selected===item?null:item;
+   items.forEach(i=>{
+    i.setAttribute('aria-pressed',i===selected?'true':'false');
+    i.classList.toggle('is-selected',i===selected);
+   });
+   paint();
+  };
+  items.forEach(item=>item.addEventListener('click',()=>select(item)));
+  placeBtns.forEach(btn=>{
+   btn.addEventListener('click',()=>{
+    if(!selected)return;
+    const key=btn.dataset.aipPlace;
+    const list=block.querySelector('[data-aip-bucket="'+key+'"] [data-aip-bucket-list]');
+    if(!list)return;
+    const li=selected.closest('li')||selected;
+    selected.dataset.placed=key;
+    selected.classList.remove('is-correct','is-wrong');
+    selected.querySelector('.aip-sort-result')?.remove();
+    selected.querySelector('.aip-sort-why')?.remove();
+    list.appendChild(li);
+    const moved=selected;
+    select(selected);
+    aipFocus(moved);
+    aipClear(feedback);
+    paint();
+   });
+  });
+  checkBtn?.addEventListener('click',()=>{
+   let right=0;
+   items.forEach(item=>{
+    const ok=item.dataset.placed===item.dataset.bucket;
+    item.classList.toggle('is-correct',ok);
+    item.classList.toggle('is-wrong',!ok);
+    let tag=item.querySelector('.aip-sort-result');
+    if(!tag){tag=document.createElement('span');tag.className='aip-sort-result';item.appendChild(tag)}
+    tag.textContent=ok?'\u2713 Correct level':'\u2715 Wrong level';
+    let why=item.querySelector('.aip-sort-why');
+    if(!why){why=document.createElement('span');why.className='aip-sort-why';item.appendChild(why)}
+    why.textContent=item.dataset.explain||'';
+    if(ok)right+=1;
+   });
+   aipSay(feedback,right===total?'good':'bad',right+' of '+total+' are at the right level.',
+    right===total?(block.dataset.aipSortPass||'Every item is sorted correctly. Each card now shows why.')
+     :'Each card now shows the reason. Reset and try the ones you missed again \u2014 and when an item could belong to more than one level, the answer depends on how it is used.');
+  });
+  resetBtn?.addEventListener('click',()=>{
+   items.forEach(item=>{
+    delete item.dataset.placed;
+    item.classList.remove('is-correct','is-wrong','is-selected');
+    item.setAttribute('aria-pressed','false');
+    item.querySelector('.aip-sort-result')?.remove();
+    item.querySelector('.aip-sort-why')?.remove();
+    if(bank)bank.appendChild(item.closest('li')||item);
+   });
+   selected=null;
+   aipClear(feedback);
+   paint();
+   aipFocus(items[0]);
+  });
+  paint();
+ });
+}
+/* Chain-of-infection transmission breaker: pick the action that breaks each link. */
+function wireAipChains(root){
+ root.querySelectorAll('[data-aip-chain]').forEach(block=>{
+  if(block.dataset.aipChainReady==='1')return;
+  block.dataset.aipChainReady='1';
+  const links=[...block.querySelectorAll('[data-aip-link]')];
+  const total=links.length;
+  if(!total)return;
+  const counter=block.querySelector('[data-aip-chain-counter]');
+  const bar=block.querySelector('[data-aip-chain-bar]');
+  const feedback=block.querySelector('[data-aip-chain-feedback]');
+  const panels=[...block.querySelectorAll('[data-aip-link-panel]')];
+  const resetBtn=block.querySelector('[data-aip-chain-reset]');
+  const done=block.querySelector('[data-aip-chain-done]');
+  const broken=new Set();
+  let openIdx=-1;
+  const paint=()=>{
+   links.forEach((l,i)=>{
+    l.classList.toggle('is-broken',broken.has(i));
+    l.classList.toggle('is-open',i===openIdx);
+    l.setAttribute('aria-expanded',i===openIdx?'true':'false');
+    const st=l.querySelector('.aip-link-state');
+    if(st)st.textContent=broken.has(i)?'\u2713 broken':'intact';
+   });
+   panels.forEach((p,i)=>{p.hidden=i!==openIdx});
+   if(counter)counter.textContent=broken.size+' of '+total+' links broken';
+   if(bar)bar.style.width=Math.round((broken.size/total)*100)+'%';
+   if(done)done.hidden=broken.size<total;
+  };
+  links.forEach((link,i)=>{
+   link.addEventListener('click',()=>{
+    openIdx=openIdx===i?-1:i;
+    paint();
+    if(openIdx===i&&panels[i]){panels[i].setAttribute('tabindex','-1');aipFocus(panels[i])}
+   });
+  });
+  panels.forEach((panel,i)=>{
+   const opts=[...panel.querySelectorAll('[data-aip-break]')];
+   opts.forEach(btn=>{
+    btn.addEventListener('click',()=>{
+     const correct=btn.dataset.correct==='1';
+     if(!correct){
+      btn.classList.add('is-wrong');
+      btn.disabled=true;
+      aipSay(feedback,'bad','\u2715 That does not break this link.',btn.dataset.explain||'');
+      return;
+     }
+     btn.classList.add('is-correct');
+     opts.forEach(b=>{b.disabled=true});
+     broken.add(i);
+     aipSay(feedback,'good','\u2713 Link broken.',btn.dataset.explain||'');
+     paint();
+     if(broken.size===total&&done){done.setAttribute('tabindex','-1');aipFocus(done)}
+    });
+   });
+  });
+  resetBtn?.addEventListener('click',()=>{
+   broken.clear();openIdx=-1;
+   panels.forEach(p=>p.querySelectorAll('[data-aip-break]').forEach(b=>{b.disabled=false;b.classList.remove('is-correct','is-wrong')}));
+   aipClear(feedback);
+   paint();
+   aipFocus(links[0]);
+  });
+  paint();
+ });
+}
+/* Audits: product-label / dilution / contact-time audit, surface maps, contamination spotting. */
+function wireAipAudits(root){
+ root.querySelectorAll('[data-aip-audit]').forEach(block=>{
+  if(block.dataset.aipAuditReady==='1')return;
+  block.dataset.aipAuditReady='1';
+  const rows=[...block.querySelectorAll('[data-aip-row]')];
+  const total=rows.length;
+  if(!total)return;
+  const targets=rows.filter(r=>r.dataset.flag==='1').length;
+  const checkBtn=block.querySelector('[data-aip-audit-check]');
+  const resetBtn=block.querySelector('[data-aip-audit-reset]');
+  const counter=block.querySelector('[data-aip-audit-counter]');
+  const feedback=block.querySelector('[data-aip-audit-feedback]');
+  const flagWord=block.dataset.aipAuditWord||'flagged';
+  const paint=()=>{
+   const flagged=rows.filter(r=>r.getAttribute('aria-pressed')==='true').length;
+   if(counter)counter.textContent=flagged+' of '+total+' '+flagWord+' \u2014 '+targets+' need attention';
+  };
+  rows.forEach(row=>{
+   row.addEventListener('click',()=>{
+    if(row.disabled)return;
+    const on=row.getAttribute('aria-pressed')==='true';
+    row.setAttribute('aria-pressed',on?'false':'true');
+    row.classList.toggle('is-flagged',!on);
+    aipClear(feedback);
+    paint();
+   });
+  });
+  checkBtn?.addEventListener('click',()=>{
+   let found=0,missed=0,wrong=0;
+   rows.forEach(row=>{
+    const flagged=row.getAttribute('aria-pressed')==='true';
+    const bad=row.dataset.flag==='1';
+    row.classList.remove('is-correct','is-wrong','is-missed');
+    let tag=row.querySelector('.aip-audit-result');
+    if(!tag){tag=document.createElement('span');tag.className='aip-audit-result';row.appendChild(tag)}
+    if(bad&&flagged){found+=1;row.classList.add('is-correct');tag.textContent='\u2713 Correctly flagged \u2014 '+(row.dataset.explain||'')}
+    else if(bad&&!flagged){missed+=1;row.classList.add('is-missed');tag.textContent='\u2715 Missed \u2014 '+(row.dataset.explain||'')}
+    else if(!bad&&flagged){wrong+=1;row.classList.add('is-wrong');tag.textContent='\u2715 This one is acceptable \u2014 '+(row.dataset.explain||'')}
+    else{tag.textContent='\u2713 Acceptable \u2014 '+(row.dataset.explain||'')}
+   });
+   const clean=found===targets&&wrong===0;
+   aipSay(feedback,clean?'good':'bad',
+    'You found '+found+' of '+targets+(wrong?' and flagged '+wrong+' that were acceptable.':'.'),
+    clean?(block.dataset.aipAuditPass||'Stop and correct every flagged item before the next Pet. If you are unsure whether something is clean or sterile, stop and ask.')
+     :'Read the reason on each line, reset, and audit again.');
+  });
+  resetBtn?.addEventListener('click',()=>{
+   rows.forEach(row=>{
+    row.setAttribute('aria-pressed','false');
+    row.classList.remove('is-flagged','is-correct','is-wrong','is-missed');
+    row.querySelector('.aip-audit-result')?.remove();
+   });
+   aipClear(feedback);
+   paint();
+   aipFocus(rows[0]);
+  });
+  paint();
+ });
+}
+/* Ordered sequences: exam-room reset, instrument processing, PPE donning/doffing, Pet skin prep. */
+function wireAipSequences(root){
+ root.querySelectorAll('[data-aip-seq]').forEach(block=>{
+  if(block.dataset.aipSeqReady==='1')return;
+  block.dataset.aipSeqReady='1';
+  const steps=[...block.querySelectorAll('[data-aip-seq-step]')];
+  const total=steps.length;
+  if(!total)return;
+  const track=block.querySelector('[data-aip-seq-track]');
+  const counter=block.querySelector('[data-aip-seq-counter]');
+  const feedback=block.querySelector('[data-aip-seq-feedback]');
+  const resetBtn=block.querySelector('[data-aip-seq-reset]');
+  const done=block.querySelector('[data-aip-seq-done]');
+  let placed=0;
+  const paint=()=>{
+   if(counter)counter.textContent=placed+' of '+total+' steps in order';
+   if(done)done.hidden=placed<total;
+  };
+  steps.forEach(step=>{
+   step.addEventListener('click',()=>{
+    if(step.disabled)return;
+    const order=+step.dataset.aipSeqStep;
+    if(order!==placed+1){
+     aipSay(feedback,'bad','\u2715 Not that step yet.',step.dataset.wrong||'That step comes later in this sequence.');
+     step.classList.add('is-wrong');
+     window.setTimeout(()=>step.classList.remove('is-wrong'),aipReduced()?0:700);
+     return;
+    }
+    placed+=1;
+    step.disabled=true;
+    step.classList.add('is-placed');
+    if(track){
+     const li=document.createElement('li');
+     li.className='aip-seq-track-item';
+     const n=document.createElement('span');
+     n.className='aip-seq-track-num';
+     n.textContent=String(placed);
+     const t=document.createElement('span');
+     t.textContent=step.dataset.label||step.textContent.trim();
+     li.appendChild(n);li.appendChild(t);
+     track.appendChild(li);
+    }
+    aipSay(feedback,'good','\u2713 Step '+placed+' placed.',step.dataset.explain||'');
+    paint();
+    if(placed===total&&done){done.setAttribute('tabindex','-1');aipFocus(done)}
+   });
+  });
+  resetBtn?.addEventListener('click',()=>{
+   placed=0;
+   steps.forEach(s=>{s.disabled=false;s.classList.remove('is-placed','is-wrong')});
+   if(track)track.innerHTML='';
+   aipClear(feedback);
+   paint();
+   aipFocus(steps[0]);
+  });
+  paint();
+ });
+}
+/* Builders: hand-hygiene decision path, PPE selection, isolation doorway checklist. */
+function wireAipBuilders(root){
+ root.querySelectorAll('[data-aip-builder]').forEach(block=>{
+  if(block.dataset.aipBuilderReady==='1')return;
+  block.dataset.aipBuilderReady='1';
+  const parts=[...block.querySelectorAll('[data-aip-part]')];
+  const total=parts.length;
+  if(!total)return;
+  const out=block.querySelector('[data-aip-out]');
+  const counter=block.querySelector('[data-aip-builder-counter]');
+  const feedback=block.querySelector('[data-aip-builder-feedback]');
+  const done=block.querySelector('[data-aip-builder-done]');
+  const resetBtn=block.querySelector('[data-aip-builder-reset]');
+  const empty=block.querySelector('[data-aip-out-empty]');
+  let cur=0;
+  const paint=focusPart=>{
+   parts.forEach((p,i)=>{p.hidden=i!==cur||cur>=total});
+   if(counter)counter.textContent=cur>=total?'Complete \u2014 '+total+' of '+total+' steps chosen':'Step '+(cur+1)+' of '+total;
+   if(done)done.hidden=cur<total;
+   if(empty)empty.hidden=cur>0;
+   block.classList.toggle('is-complete',cur>=total);
+   if(focusPart&&cur<total){
+    const h=parts[cur].querySelector('.aip-part-label');
+    if(h){h.setAttribute('tabindex','-1');aipFocus(h)}
+   }
+  };
+  parts.forEach((part,i)=>{
+   part.querySelectorAll('[data-aip-bopt]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+     if(i!==cur)return;
+     const correct=btn.dataset.correct==='1';
+     if(!correct){
+      btn.classList.add('is-wrong');
+      aipSay(feedback,'bad','\u2715 Try another option.',btn.dataset.explain||'');
+      return;
+     }
+     btn.classList.add('is-correct');
+     aipPush(out,btn.dataset.line||btn.textContent.trim());
+     aipSay(feedback,'good','\u2713 Added.',btn.dataset.explain||'');
+     cur+=1;
+     paint(cur<total);
+     if(cur>=total&&done){done.setAttribute('tabindex','-1');aipFocus(done)}
+    });
+   });
+  });
+  resetBtn?.addEventListener('click',()=>{
+   cur=0;
+   if(out)out.innerHTML='';
+   parts.forEach(p=>p.querySelectorAll('[data-aip-bopt]').forEach(b=>b.classList.remove('is-correct','is-wrong')));
+   aipClear(feedback);
+   paint(true);
+  });
+  paint(false);
+ });
+}
+/* Branching cases: isolation entry/exit, catheter-site contamination, surgical break. */
+function wireAipBranches(root){
+ root.querySelectorAll('[data-aip-branch]').forEach(block=>{
+  if(block.dataset.aipBranchReady==='1')return;
+  block.dataset.aipBranchReady='1';
+  const stages=[...block.querySelectorAll('[data-aip-stage]')];
+  const total=stages.length;
+  if(!total)return;
+  const counter=block.querySelector('[data-aip-branch-counter]');
+  const bar=block.querySelector('[data-aip-branch-bar]');
+  const feedback=block.querySelector('[data-aip-branch-feedback]');
+  const log=block.querySelector('[data-aip-branch-log]');
+  const done=block.querySelector('[data-aip-branch-done]');
+  const resetBtn=block.querySelector('[data-aip-branch-reset]');
+  let cur=0;
+  const paint=focusStage=>{
+   stages.forEach((s,i)=>{s.hidden=i!==cur||cur>=total});
+   if(counter)counter.textContent=cur>=total?'Complete \u2014 all '+total+' decisions made':'Decision '+(cur+1)+' of '+total;
+   if(bar)bar.style.width=Math.round((Math.min(cur,total)/total)*100)+'%';
+   if(done)done.hidden=cur<total;
+   if(focusStage&&cur<total){
+    const h=stages[cur].querySelector('.aip-stage-title');
+    if(h){h.setAttribute('tabindex','-1');aipFocus(h)}
+   }
+  };
+  stages.forEach((stage,i)=>{
+   stage.querySelectorAll('[data-aip-choice]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+     if(i!==cur)return;
+     const correct=btn.dataset.correct==='1';
+     if(!correct){
+      btn.classList.add('is-wrong');
+      btn.disabled=true;
+      aipSay(feedback,'bad','\u2715 That is not the safe next action.',btn.dataset.explain||'');
+      return;
+     }
+     btn.classList.add('is-correct');
+     stage.querySelectorAll('[data-aip-choice]').forEach(b=>{b.disabled=true});
+     aipSay(feedback,'good','\u2713 Safe action.',btn.dataset.explain||'');
+     aipPush(log,btn.dataset.line||btn.textContent.trim());
+     cur+=1;
+     paint(cur<total);
+     if(cur>=total&&done){done.setAttribute('tabindex','-1');aipFocus(done)}
+    });
+   });
+  });
+  resetBtn?.addEventListener('click',()=>{
+   cur=0;
+   if(log)log.innerHTML='';
+   stages.forEach(s=>s.querySelectorAll('[data-aip-choice]').forEach(b=>{b.disabled=false;b.classList.remove('is-correct','is-wrong')}));
+   aipClear(feedback);
+   paint(true);
+  });
+  paint(false);
+ });
+}
+/* Sterile field: open packages in the safe way, then spot contamination zones on the field map. */
+function wireAipFields(root){
+ root.querySelectorAll('[data-aip-field]').forEach(block=>{
+  if(block.dataset.aipFieldReady==='1')return;
+  block.dataset.aipFieldReady='1';
+  const zones=[...block.querySelectorAll('[data-aip-zone]')];
+  const total=zones.length;
+  if(!total)return;
+  const targets=zones.filter(z=>z.dataset.contaminated==='1').length;
+  const counter=block.querySelector('[data-aip-field-counter]');
+  const feedback=block.querySelector('[data-aip-field-feedback]');
+  const checkBtn=block.querySelector('[data-aip-field-check]');
+  const resetBtn=block.querySelector('[data-aip-field-reset]');
+  const done=block.querySelector('[data-aip-field-done]');
+  const paint=()=>{
+   const marked=zones.filter(z=>z.getAttribute('aria-pressed')==='true').length;
+   if(counter)counter.textContent=marked+' zone'+(marked===1?'':'s')+' marked contaminated of '+total+' \u2014 '+targets+' are contaminated';
+  };
+  zones.forEach(zone=>{
+   zone.addEventListener('click',()=>{
+    const on=zone.getAttribute('aria-pressed')==='true';
+    zone.setAttribute('aria-pressed',on?'false':'true');
+    zone.classList.toggle('is-marked',!on);
+    const st=zone.querySelector('.aip-zone-state');
+    if(st)st.textContent=on?'unmarked':'marked contaminated';
+    aipClear(feedback);
+    paint();
+   });
+  });
+  checkBtn?.addEventListener('click',()=>{
+   let found=0,wrong=0;
+   zones.forEach(zone=>{
+    const marked=zone.getAttribute('aria-pressed')==='true';
+    const bad=zone.dataset.contaminated==='1';
+    zone.classList.remove('is-correct','is-wrong','is-missed');
+    let tag=zone.querySelector('.aip-zone-result');
+    if(!tag){tag=document.createElement('span');tag.className='aip-zone-result';zone.appendChild(tag)}
+    if(bad&&marked){found+=1;zone.classList.add('is-correct');tag.textContent='\u2713 Contaminated \u2014 '+(zone.dataset.explain||'')}
+    else if(bad&&!marked){zone.classList.add('is-missed');tag.textContent='\u2715 Missed contaminated zone \u2014 '+(zone.dataset.explain||'')}
+    else if(!bad&&marked){wrong+=1;zone.classList.add('is-wrong');tag.textContent='\u2715 This zone is sterile \u2014 '+(zone.dataset.explain||'')}
+    else{tag.textContent='\u2713 Sterile \u2014 '+(zone.dataset.explain||'')}
+   });
+   const clean=found===targets&&wrong===0;
+   aipSay(feedback,clean?'good':'bad','You identified '+found+' of '+targets+' contaminated zones'+(wrong?' and marked '+wrong+' sterile zone'+(wrong===1?'':'s')+' by mistake.':'.'),
+    clean?'Sterile touches sterile. Anything else is contaminated and is replaced or corrected per protocol.'
+     :'Read each zone reason, reset, and try again.');
+   if(done)done.hidden=!clean;
+   if(clean&&done){done.setAttribute('tabindex','-1');aipFocus(done)}
+  });
+  resetBtn?.addEventListener('click',()=>{
+   zones.forEach(zone=>{
+    zone.setAttribute('aria-pressed','false');
+    zone.classList.remove('is-marked','is-correct','is-wrong','is-missed');
+    zone.querySelector('.aip-zone-result')?.remove();
+    const st=zone.querySelector('.aip-zone-state');
+    if(st)st.textContent='unmarked';
+   });
+   if(done)done.hidden=true;
+   aipClear(feedback);
+   paint();
+   aipFocus(zones[0]);
+  });
+  paint();
+ });
+}
+/* Wet contact-time simulation. The duration comes from a learner-selected mock label,
+   never from a built-in universal value, and the label value is always shown as the source. */
+function wireAipTimers(root){
+ root.querySelectorAll('[data-aip-timer]').forEach(block=>{
+  if(block.dataset.aipTimerReady==='1')return;
+  block.dataset.aipTimerReady='1';
+  const labels=[...block.querySelectorAll('[data-aip-label-pick]')];
+  const startBtn=block.querySelector('[data-aip-timer-start]');
+  const wipeBtn=block.querySelector('[data-aip-timer-wipe]');
+  const reapplyBtn=block.querySelector('[data-aip-timer-reapply]');
+  const resetBtn=block.querySelector('[data-aip-timer-reset]');
+  const status=block.querySelector('[data-aip-timer-status]');
+  const meter=block.querySelector('[data-aip-timer-meter]');
+  const meterLabel=block.querySelector('[data-aip-timer-meter-label]');
+  const readout=block.querySelector('[data-aip-timer-readout]');
+  const feedback=block.querySelector('[data-aip-timer-feedback]');
+  const surface=block.querySelector('[data-aip-timer-surface]');
+  const done=block.querySelector('[data-aip-timer-done]');
+  let picked=null,required=0,elapsed=0,handle=null,state='idle',dryAt=0;
+  const say=(tone,lead,body)=>aipSay(feedback,tone,lead,body);
+  const paintMeter=()=>{
+   const pct=required?Math.min(100,Math.round((elapsed/required)*100)):0;
+   if(meter)meter.style.width=pct+'%';
+   if(meterLabel)meterLabel.textContent=pct+'% of the label contact time completed';
+   if(surface){
+    surface.classList.toggle('is-wet',state==='running');
+    surface.classList.toggle('is-dry',state==='dry'||state==='wiped');
+    surface.classList.toggle('is-done',state==='complete');
+   }
+   if(readout)readout.textContent=picked
+    ?'Label selected: '+picked.dataset.aipLabelName+' \u2014 stay wet '+required+' seconds (this simulation runs in real seconds; your product label is the only authority for the real value).'
+    :'No label selected yet.';
+  };
+  const stop=()=>{if(handle){window.clearInterval(handle);handle=null}};
+  const setStatus=txt=>{if(status)status.textContent=txt};
+  const tick=()=>{
+   elapsed+=1;
+   if(elapsed>=dryAt&&state==='running'&&dryAt>0&&dryAt<required){
+    state='dry';stop();paintMeter();
+    setStatus('The surface dried at '+elapsed+' seconds, before the '+required+'-second label contact time was complete.');
+    say('bad','\u2715 The surface dried early.','Contact time only counts while the surface stays visibly wet. Reapply so the surface stays wet for the full label contact time \u2014 do not count the time already elapsed as complete, do not add water, and do not wipe it dry to finish faster.');
+    return;
+   }
+   if(elapsed>=required){
+    state='complete';stop();elapsed=required;paintMeter();
+    setStatus('Full label contact time complete at '+required+' seconds. The surface stayed wet the whole time.');
+    say('good','\u2713 Full wet contact time completed.','The surface stayed visibly wet for the entire time the label required. Now dry or wipe only if the label and Hannah protocol allow it.');
+    if(done){done.hidden=false;done.setAttribute('tabindex','-1');aipFocus(done)}
+    return;
+   }
+   setStatus('Surface wet \u2014 '+elapsed+' of '+required+' seconds of label contact time.');
+   paintMeter();
+  };
+  labels.forEach(btn=>{
+   btn.addEventListener('click',()=>{
+    stop();
+    picked=btn;
+    required=+btn.dataset.aipLabelSeconds;
+    dryAt=+btn.dataset.aipLabelDry||0;
+    elapsed=0;state='idle';
+    labels.forEach(b=>{b.setAttribute('aria-pressed',b===btn?'true':'false');b.classList.toggle('is-selected',b===btn)});
+    if(startBtn)startBtn.disabled=false;
+    if(done)done.hidden=true;
+    aipClear(feedback);
+    setStatus('Label selected. Apply the product and start the wet contact time.');
+    paintMeter();
+   });
+  });
+  startBtn?.addEventListener('click',()=>{
+   if(!picked)return;
+   stop();
+   elapsed=0;state='running';
+   if(done)done.hidden=true;
+   aipClear(feedback);
+   setStatus('Surface wet \u2014 0 of '+required+' seconds of label contact time.');
+   paintMeter();
+   handle=window.setInterval(tick,1000);
+  });
+  wipeBtn?.addEventListener('click',()=>{
+   if(state!=='running'){say('bad','\u2715 Nothing is wet right now.','Select a mock label and start the contact time first.');return}
+   stop();state='wiped';paintMeter();
+   setStatus('You wiped the surface dry at '+elapsed+' of '+required+' seconds.');
+   say('bad','\u2715 Wiped dry before contact time was complete.','Wiping before the label contact time is finished interrupts disinfection. The surface must stay visibly wet for the full label-required time; reapply and start again.');
+  });
+  reapplyBtn?.addEventListener('click',()=>{
+   if(!picked){say('bad','\u2715 Select a mock label first.','The contact time comes from the product label, so choose a label before reapplying.');return}
+   stop();elapsed=0;state='running';
+   aipClear(feedback);
+   setStatus('Reapplied \u2014 surface wet again, 0 of '+required+' seconds.');
+   paintMeter();
+   handle=window.setInterval(tick,1000);
+   say('good','\u2713 Reapplied.','This is the correct correction: reapply so the surface stays wet for the full label-required contact time, then dry or wipe only as the label and Hannah protocol allow.');
+  });
+  resetBtn?.addEventListener('click',()=>{
+   stop();
+   picked=null;required=0;elapsed=0;dryAt=0;state='idle';
+   labels.forEach(b=>{b.setAttribute('aria-pressed','false');b.classList.remove('is-selected')});
+   if(startBtn)startBtn.disabled=true;
+   if(done)done.hidden=true;
+   aipClear(feedback);
+   setStatus('Simulation reset. Select a mock product label to begin.');
+   paintMeter();
+   aipFocus(labels[0]);
+  });
+  if(startBtn)startBtn.disabled=true;
+  setStatus('Select a mock product label to begin.');
+  paintMeter();
+ });
+}
+/* Progressive recap. */
+function wireAipRecaps(root){
+ root.querySelectorAll('[data-aip-recap]').forEach(block=>{
+  if(block.dataset.aipRecapReady==='1')return;
+  block.dataset.aipRecapReady='1';
+  const items=[...block.querySelectorAll('[data-aip-recap-item]')];
+  const total=items.length;
+  if(!total)return;
+  const counter=block.querySelector('[data-aip-recap-counter]');
+  const bar=block.querySelector('[data-aip-recap-bar]');
+  const nextBtn=block.querySelector('[data-aip-recap-next]');
+  const prevBtn=block.querySelector('[data-aip-recap-prev]');
+  const resetBtn=block.querySelector('[data-aip-recap-reset]');
+  const done=block.querySelector('[data-aip-recap-done]');
+  let shown=0;
+  const paint=focusIdx=>{
+   items.forEach((it,i)=>{it.hidden=i>=shown});
+   if(counter)counter.textContent=shown+' of '+total+' recap points revealed';
+   if(bar)bar.style.width=Math.round((shown/total)*100)+'%';
+   if(prevBtn)prevBtn.disabled=shown===0;
+   if(nextBtn){
+    nextBtn.disabled=shown>=total;
+    nextBtn.textContent=shown===0?'Reveal the first point':shown>=total?'All points revealed':'Reveal the next point';
+   }
+   if(done)done.hidden=shown<total;
+   if(typeof focusIdx==='number'&&items[focusIdx]){items[focusIdx].setAttribute('tabindex','-1');aipFocus(items[focusIdx])}
+  };
+  nextBtn?.addEventListener('click',()=>{if(shown>=total)return;shown+=1;paint(shown-1)});
+  prevBtn?.addEventListener('click',()=>{if(shown<=0)return;shown-=1;paint()});
+  resetBtn?.addEventListener('click',()=>{shown=0;paint();aipFocus(nextBtn)});
+  paint();
+ });
+}
+/* Ungraded self-check list. */
+function wireAipChecklists(root){
+ root.querySelectorAll('[data-aip-checklist]').forEach(block=>{
+  if(block.dataset.aipChecklistReady==='1')return;
+  block.dataset.aipChecklistReady='1';
+  const boxes=[...block.querySelectorAll('input[type="checkbox"]')];
+  const total=boxes.length;
+  if(!total)return;
+  const counter=block.querySelector('[data-aip-checklist-counter]');
+  const bar=block.querySelector('[data-aip-checklist-bar]');
+  const feedback=block.querySelector('[data-aip-checklist-feedback]');
+  const resetBtn=block.querySelector('[data-aip-checklist-reset]');
+  const paint=()=>{
+   const n=boxes.filter(b=>b.checked).length;
+   if(counter)counter.textContent=n+' of '+total+' ready for observation';
+   if(bar)bar.style.width=Math.round((n/total)*100)+'%';
+   if(n===total)aipSay(feedback,'good','\u2713 All '+total+' statements checked.','Ask your DVM, RVT, or lead PetNurse to observe each item in practice. Self-assessment does not replace observed validation, and this checklist is not scored.');
+   else aipClear(feedback);
+  };
+  boxes.forEach(b=>b.addEventListener('change',paint));
+  resetBtn?.addEventListener('click',()=>{boxes.forEach(b=>{b.checked=false});paint();aipFocus(boxes[0])});
+  paint();
+ });
+}
+/* Printable one-page job aid. */
+function wireAipPrint(root){
+ root.querySelectorAll('[data-aip-print]').forEach(btn=>{
+  if(btn.dataset.aipPrintReady==='1')return;
+  btn.dataset.aipPrintReady='1';
+  const status=root.querySelector('[data-aip-print-status]');
+  btn.addEventListener('click',()=>{
+   const source=document.getElementById(btn.dataset.aipPrint);
+   if(!source){if(status)status.textContent='The job aid could not be found on this page.';return}
+   document.getElementById('aipPrintSheet')?.remove();
+   const sheet=document.createElement('div');
+   sheet.id='aipPrintSheet';
+   sheet.className='aip-print-sheet';
+   sheet.setAttribute('aria-hidden','true');
+   sheet.appendChild(source.cloneNode(true));
+   document.body.appendChild(sheet);
+   document.documentElement.classList.add('aip-printing');
+   if(status)status.textContent='Print dialog opened. The one-page C.L.E.A.N. Path job aid prints on its own, without the rest of the app.';
+   const cleanup=()=>{
+    document.documentElement.classList.remove('aip-printing');
+    document.getElementById('aipPrintSheet')?.remove();
+    window.removeEventListener('afterprint',cleanup);
+   };
+   window.addEventListener('afterprint',cleanup);
+   window.setTimeout(()=>{
+    try{window.print()}catch(e){if(status)status.textContent='This browser blocked printing. Use your browser menu: File then Print.'}
+    window.setTimeout(cleanup,1500);
+   },aipReduced()?0:60);
+  });
+ });
+}
+/* Option-level explanations on the shared quiz engine. The engine renders one explanation per
+   question; this lesson appends why the chosen option is right or wrong and why each alternative
+   is not appropriate. Scoped to this lesson: it only runs when the marker element is present. */
+function wireAipOptionExplanations(root){
+ const marker=root.querySelector('[data-aip-optexp]');
+ if(!marker||marker.dataset.aipOptexpReady==='1')return;
+ marker.dataset.aipOptexpReady='1';
+ let map=[];
+ try{map=JSON.parse(marker.dataset.aipOptexp||'[]')}catch(e){map=[]}
+ const container=root.querySelector('#l2QuizContainer');
+ if(!container||!map.length)return;
+ const build=()=>{
+  Object.keys(quizAnswers).forEach(key=>{
+   const qi=+key;
+   const entry=map[qi];
+   if(!entry)return;
+   const host=document.querySelector('#l2fb-'+qi);
+   if(!host||!host.innerHTML.trim()||host.querySelector('[data-aip-optexp-panel]'))return;
+   const answer=quizAnswers[key];
+   const chosen=typeof answer?.oi==='number'?answer.oi:null;
+   const panel=document.createElement('div');
+   panel.className='aip-optexp';
+   panel.setAttribute('data-aip-optexp-panel','');
+   if(chosen!==null&&entry.options[chosen]){
+    const mine=document.createElement('p');
+    mine.className='aip-optexp-mine';
+    const lead=document.createElement('strong');
+    const isRight=chosen===entry.correct;
+    lead.textContent=(isRight?'\u2713 Your answer was correct \u2014 ':'\u2715 Your answer was not correct \u2014 ')+entry.options[chosen].label+': ';
+    mine.appendChild(lead);
+    mine.appendChild(document.createTextNode(entry.options[chosen].why));
+    panel.appendChild(mine);
+    if(!isRight){
+     const right=document.createElement('p');
+     right.className='aip-optexp-right';
+     const rl=document.createElement('strong');
+     rl.textContent='\u2713 The correct answer is '+entry.options[entry.correct].label+': ';
+     right.appendChild(rl);
+     right.appendChild(document.createTextNode(entry.options[entry.correct].why));
+     panel.appendChild(right);
+    }
+   }
+   const head=document.createElement('p');
+   head.className='aip-optexp-head';
+   head.textContent='Why the other options are not appropriate';
+   panel.appendChild(head);
+   const ul=document.createElement('ul');
+   entry.options.forEach((opt,idx)=>{
+    if(idx===chosen)return;
+    const li=document.createElement('li');
+    const tag=document.createElement('strong');
+    tag.textContent=(idx===entry.correct?'\u2713 ':'\u2715 ')+opt.label+': ';
+    li.appendChild(tag);
+    li.appendChild(document.createTextNode(opt.why));
+    if(idx===entry.correct)li.className='is-correct';
+    ul.appendChild(li);
+   });
+   panel.appendChild(ul);
+   host.appendChild(panel);
+  });
+ };
+ const observer=new MutationObserver(()=>build());
+ observer.observe(container,{childList:true,subtree:true});
+ build();
+}
+/* Knowledge-check remediation: names the critical infection-prevention domains missed. */
+function wireAipRemediation(root){
+ const marker=root.querySelector('[data-aip-remediation]');
+ if(!marker||marker.dataset.aipRemediationReady==='1')return;
+ marker.dataset.aipRemediationReady='1';
+ let map=[];
+ try{map=JSON.parse(marker.dataset.aipRemediation||'[]')}catch(e){map=[]}
+ const result=root.querySelector('#l2QuizResult');
+ if(!result)return;
+ const finishLabel=()=>{
+  const box=result.querySelector('.feedback-box');
+  const btn=result.querySelector('#l2CloseModuleModal');
+  if(!box||!btn)return;
+  if(/marked complete/i.test(box.textContent||'')&&btn.textContent!=='Finish lesson'){
+   btn.textContent='Finish lesson';
+   btn.setAttribute('aria-label','Finish Asepsis and Infection Prevention and return to the curriculum');
+  }
+ };
+ const build=()=>{
+  if(!document.body.contains(result)){observer.disconnect();return}
+  if(!result.innerHTML.trim())return;
+  finishLabel();
+  if(result.querySelector('[data-aip-remediation-panel]'))return;
+  const missed=[];
+  Object.keys(quizAnswers).forEach(key=>{
+   const a=quizAnswers[key];
+   if(a&&a.correct===false&&map[+key])missed.push(map[+key]);
+  });
+  const panel=document.createElement('section');
+  panel.className='aip-remediation';
+  panel.setAttribute('data-aip-remediation-panel','');
+  panel.setAttribute('role','status');
+  panel.setAttribute('aria-live','polite');
+  const h=document.createElement('h3');
+  const body=document.createElement('p');
+  if(!missed.length){
+   panel.classList.add('is-clear');
+   h.textContent='No critical domain gaps on this attempt';
+   body.textContent='You answered every item correctly across all five critical infection-prevention domains: hand hygiene, sterile-field breaks, PPE and isolation, disinfectant label and contact time, and sharps and waste safety. Keep the C.L.E.A.N. Path job aid where you work.';
+   panel.appendChild(h);panel.appendChild(body);
+  }else{
+   const critical=missed.filter(m=>m.critical);
+   panel.classList.toggle('is-critical',critical.length>0);
+   h.textContent=critical.length
+    ?'Required remediation \u2014 '+critical.length+' critical domain'+(critical.length===1?'':'s')+' missed'
+    :'Recommended review \u2014 '+missed.length+' area'+(missed.length===1?'':'s')+' to revisit';
+   body.textContent=critical.length
+    ?'Hannah requires remediation before you perform these tasks unsupervised: re-open the modules listed below, repeat the required scenarios, then retake the knowledge check and ask your DVM, RVT, or lead PetNurse to observe the workflow.'
+    :'Re-open the modules listed below and repeat the matching scenarios before your next shift.';
+   panel.appendChild(h);panel.appendChild(body);
+   const ul=document.createElement('ul');
+   ul.className='aip-remediation-list';
+   const seen=new Set();
+   missed.forEach(m=>{
+    if(seen.has(m.domain))return;
+    seen.add(m.domain);
+    const li=document.createElement('li');
+    if(m.critical)li.className='is-critical';
+    const strong=document.createElement('strong');
+    strong.textContent=(m.critical?'Critical \u2022 ':'')+m.domain;
+    li.appendChild(strong);
+    li.appendChild(document.createTextNode(' \u2014 revisit '+m.module+'. '+m.action));
+    ul.appendChild(li);
+   });
+   panel.appendChild(ul);
+  }
+  result.appendChild(panel);
+ };
+ const observer=new MutationObserver(()=>build());
+ observer.observe(result,{childList:true,subtree:true});
+ build();
+}
+
 /* ---- Module modal with knowledge check ---- */
 const TRIAGE_REVIEW_LESSON_SLUG='triage-review';
 const SAMPLE_COLLECTION_LESSON_SLUG='sample-collection';
@@ -4183,7 +5188,8 @@ const CANINE_COMMUNICATION_LESSON_SLUG='understanding-canine-communication';
 const IMAGING_SUPPORT_LESSON_SLUG='imaging-support';
 const CASE_PRESENTATION_LESSON_SLUG='case-presentation';
 const MEDICATION_SAFETY_LESSON_SLUG='medication-safety';
-const CONTINUE_FLOW_LESSON_SLUGS=new Set([TRIAGE_REVIEW_LESSON_SLUG,SAMPLE_COLLECTION_LESSON_SLUG,CANINE_COMMUNICATION_LESSON_SLUG,IMAGING_SUPPORT_LESSON_SLUG,CASE_PRESENTATION_LESSON_SLUG,MEDICATION_SAFETY_LESSON_SLUG]);
+const ASEPSIS_LESSON_SLUG='asepsis-infection-prevention';
+const CONTINUE_FLOW_LESSON_SLUGS=new Set([TRIAGE_REVIEW_LESSON_SLUG,SAMPLE_COLLECTION_LESSON_SLUG,CANINE_COMMUNICATION_LESSON_SLUG,IMAGING_SUPPORT_LESSON_SLUG,CASE_PRESENTATION_LESSON_SLUG,MEDICATION_SAFETY_LESSON_SLUG,ASEPSIS_LESSON_SLUG]);
 let activeModule=null, quizAnswers={};
 const moduleModalState={saving:false,message:'',isError:false,reviewSaveStatus:'idle'};
 function resetModuleModalState(){
@@ -4363,6 +5369,7 @@ function renderModuleModal(opts={}){
  wireImagingWidgets(document.querySelector('#modalContent'));
  wireCasePresentationWidgets(document.querySelector('#modalContent'));
  wireMedicationSafetyWidgets(document.querySelector('#modalContent'));
+ wireAsepsisWidgets(document.querySelector('#modalContent'));
  if(hasQuiz&&answeredCount===total)void renderQuizResult();
  if(opts.focusHeading)focusModuleModalHeading();
 }
