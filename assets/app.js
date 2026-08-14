@@ -1259,7 +1259,7 @@ function medicalFoundationsSnapshot(){return courseLevelSnapshot('medical-founda
 
 /* Levels wired to a generic course hub report their real course progress; the rest keep the
    prototype figures defined above. */
-const medicalLevelCourseSlugs={1:'medical-foundations',3:'clinical-diagnostics'};
+const medicalLevelCourseSlugs={1:'medical-foundations',3:'clinical-diagnostics',4:'clinical-skills'};
 function medicalLevelsForRender(){
  return medicalLevels.map(level=>{
   const slug=medicalLevelCourseSlugs[level.n];
@@ -1273,7 +1273,7 @@ function renderMedicalAcademy(){
  const grid=document.querySelector('#medicalLevelGrid'); if(!grid)return;
  const levels=medicalLevelsForRender();
  grid.innerHTML=levels.map(l=>`<article class="level-card ${l.n===10?'current':''} ${l.status==='Locked'?'locked':''}" data-medical-level="${l.n}"><div class="section-head"><div class="level-number">${l.n}</div><span class="badge ${l.status==='Complete'?'good':l.status==='Current'?'warning':l.status==='Locked'?'neutral':'warning'}">${l.status}</span></div><h2>${l.title}</h2><p>${l.desc}</p><div class="progress"><span style="width:${l.progress}%"></span></div><div class="card-footer"><strong>${l.progress}%</strong><button class="${l.n===10?'primary':'secondary'} medical-level-open" data-level="${l.n}" ${l.status==='Locked'?'disabled':''}>${l.status==='Complete'?'Review':'Open Lesson'}</button></div></article>`).join('');
- document.querySelectorAll('.medical-level-open').forEach(b=>b.onclick=()=>{const n=+b.dataset.level;if(n===1)window.openCourseHub('medical-foundations','Medical Foundations');else if(n===2)window.openCourseHub('patient-assessment','Patient Assessment');else if(n===3)window.openCourseHub('clinical-diagnostics','Clinical Diagnostics');else if(n===5)openLevel5();else if(n===6)openLevel6();else if(n===7||n===9)openLevel7();else if(n>=10)openUpperLevel(n);else openModal(`<span class="eyebrow">Hannah Medical Academy</span><h1 class="modal-title">${levels[n-1].title}</h1><p>${n===8?'This course is complete and remains available for review.':'This course remains part of the same Medical Academy pathway inside the shared Hannah Learning System.'}</p><button class="primary" onclick="document.querySelector('#modal').close()">Return to pathway</button>`)});
+ document.querySelectorAll('.medical-level-open').forEach(b=>b.onclick=()=>{const n=+b.dataset.level;if(n===1)window.openCourseHub('medical-foundations','Medical Foundations');else if(n===2)window.openCourseHub('patient-assessment','Patient Assessment');else if(n===3)window.openCourseHub('clinical-diagnostics','Clinical Diagnostics');else if(n===4)window.openCourseHub('clinical-skills','Clinical Skills & Treatment Delivery');else if(n===5)openLevel5();else if(n===6)openLevel6();else if(n===7||n===9)openLevel7();else if(n>=10)openUpperLevel(n);else openModal(`<span class="eyebrow">Hannah Medical Academy</span><h1 class="modal-title">${levels[n-1].title}</h1><p>${n===8?'This course is complete and remains available for review.':'This course remains part of the same Medical Academy pathway inside the shared Hannah Learning System.'}</p><button class="primary" onclick="document.querySelector('#modal').close()">Return to pathway</button>`)});
  document.querySelector('#medicalAcademyMetrics').innerHTML=[['12','Courses available'],['31','Lessons completed'],['12','Competencies validated'],['3','Certificates earned']].map(x=>`<div class="metric-card"><strong>${x[0]}</strong><span>${x[1]}</span></div>`).join('');
 }
 async function openMedicalAcademy(){
@@ -1621,13 +1621,15 @@ let currentCourse={slug:'patient-assessment',label:'Patient Assessment'};
 const plannedLessonsBySlug={
  'patient-assessment':[],
  'medical-foundations':[],
- 'clinical-diagnostics':[]
+ 'clinical-diagnostics':[],
+ 'clinical-skills':[]
 };
 function plannedLessonsFor(slug){return plannedLessonsBySlug[slug]||[]}
 /* Optional fixed display order per course (mixes live + planned lesson slugs/ids). Falls back to live-then-planned order when a course has no entry here. */
 const courseOrderBySlug={
  'medical-foundations':['medical-terminology','reproductive-anatomy','anatomy-and-physiology','understanding-canine-communication'],
- 'clinical-diagnostics':['sample-collection','imaging-support','case-presentation']
+ 'clinical-diagnostics':['sample-collection','imaging-support','case-presentation'],
+ 'clinical-skills':['medication-safety']
 };
 function applyCourseOrder(slug,tiles){
  const order=courseOrderBySlug[slug]; if(!order)return tiles;
@@ -1830,6 +1832,11 @@ const bundledCourseLessonFallbacks={
   {slug:'sample-collection',title:'Sample Collection',summary:'Blood, urine, fecal, and ear sample collection: venipuncture sites and technique, cystocentesis and free catch urine, ear swab cytology, needles, syringes and sharps safety, blood tube selection, a fifteen-point recap, and a graded end-of-course assessment.',sort_order:1,path:'assets/data/clinical-diagnostics/sample-collection.json',localOnly:true},
   {slug:'imaging-support',title:'Imaging Support',summary:'Support the imaging team safely: radiography workflow and image quality, ALARA radiation safety, positioning and restraint support, ultrasound preparation, CT/MRI and contrast readiness, emergency imaging prioritization, and a graded twelve-question final assessment.',sort_order:2,path:'assets/data/clinical-diagnostics/imaging-support.json',localOnly:true},
   {slug:'case-presentation',title:'Case Presentation',summary:'Present a case clearly and safely: the anatomy of a strong presentation, sorting relevant history and objective data, SBAR and veterinary I-PASS handoffs, observation versus interpretation and scope boundaries, closed-loop communication and PACE escalation, a case presentation lab, and a graded twelve-question final assessment.',sort_order:3,path:'assets/data/clinical-diagnostics/case-presentation.json',localOnly:true}
+ ],
+ /* Clinical Skills & Treatment Delivery ships bundled-only for now: the course has no Supabase
+    course row yet, so its lessons load from the package and keep progress in this browser. */
+ 'clinical-skills':[
+  {slug:'medication-safety',title:'Medication Safety',summary:'The Hannah SAFE PAWS medication workflow: how medication errors happen, DVM order verification and patient identity, safe preparation, labeling and storage, the independent concentration and dose double-check, hazardous-drug and controlled-substance safety, administration, monitoring and adverse-reaction escalation, near-miss response, Member teach-back, a printable job aid, and a graded twelve-question final assessment at 80 percent.',sort_order:1,path:'assets/data/clinical-skills/medication-safety.json',localOnly:true}
  ]
 };
 const bundledLessonFallbackBySlug=Object.fromEntries(Object.values(bundledCourseLessonFallbacks).flat().map(def=>[def.slug,def]));
@@ -1854,6 +1861,9 @@ function normalizeLessonRow(row){
  return row;
 }
 
+/* Courses with no published Supabase course row load entirely from the bundled package. */
+const BUNDLED_ONLY_COURSE_SLUGS=new Set(['clinical-skills']);
+function isBundledOnlyCourse(slug){return BUNDLED_ONLY_COURSE_SLUGS.has(slug)&&!!(bundledCourseLessonFallbacks[slug]||[]).length}
 function allowedCourseLessonsFor(slug){return courseOrderBySlug[slug]||null}
 function filterCourseLessons(slug,lessons){
  const allow=allowedCourseLessonsFor(slug);
@@ -1965,6 +1975,7 @@ function activeLesson(){return lessonCache[activeSlug]}
 function activeState(){return stateFor(activeSlug)}
 
 async function fetchCourseLessons(){
+ if(isBundledOnlyCourse(currentCourse.slug))return fetchBundledFallbackCourseLessons(currentCourse.slug);
  try{
   const {data:course,error:cErr}=await sb.from('courses').select('id,slug,title').eq('slug',currentCourse.slug).single();
   if(cErr)throw cErr;
@@ -1980,6 +1991,12 @@ async function fetchCourseLessons(){
  }
 }
 async function fetchCourseLessonsBySlug(slug,opts={}){
+ if(isBundledOnlyCourse(slug)){
+  const prev=courseLessons;
+  const lessons=await fetchBundledFallbackCourseLessons(slug);
+  if(!(opts.updateActiveCourseLessons||currentCourse?.slug===slug))courseLessons=prev;
+  return lessons;
+ }
  try{
   const {data:course,error:cErr}=await sb.from('courses').select('id,slug,title').eq('slug',slug).single();
   if(cErr)throw cErr;
@@ -3491,13 +3508,682 @@ function wireCasePresentationLadders(root){
  });
 }
 
+/* ---- Clinical Skills & Treatment Delivery — Medication Safety interactions ---- */
+function msReduced(){return !!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)}
+function msFocus(el){if(el)el.focus({preventScroll:msReduced()})}
+function msSay(host,tone,lead,body){
+ if(!host)return;
+ host.hidden=false;
+ host.className='ms-feedback is-'+tone;
+ host.innerHTML='';
+ const p=document.createElement('p');
+ const strong=document.createElement('strong');
+ strong.textContent=lead;
+ p.appendChild(strong);
+ if(body)p.appendChild(document.createTextNode(' '+body));
+ host.appendChild(p);
+}
+function msClear(host){if(!host)return;host.hidden=true;host.innerHTML='';host.className='ms-feedback'}
+function msLine(host,text){
+ if(!host)return;
+ const li=document.createElement('li');
+ li.textContent=text;
+ host.appendChild(li);
+}
+function wireMedicationSafetyWidgets(root){
+ if(!root)return;
+ wireMsExplorers(root);
+ wireMsReveals(root);
+ wireMsQuizzes(root);
+ wireMsSorts(root);
+ wireMsAudits(root);
+ wireMsSequences(root);
+ wireMsBuilders(root);
+ wireMsBranches(root);
+ wireMsRecaps(root);
+ wireMsChecklists(root);
+ wireMsPrint(root);
+ wireMsRemediation(root);
+}
+/* SAFE PAWS step explorer — button tablist, arrow-key roving focus, viewed-step counter. */
+function wireMsExplorers(root){
+ root.querySelectorAll('[data-ms-explorer]').forEach(block=>{
+  if(block.dataset.msExplorerReady==='1')return;
+  block.dataset.msExplorerReady='1';
+  const tabs=[...block.querySelectorAll('[data-ms-step]')];
+  const panels=[...block.querySelectorAll('[data-ms-step-panel]')];
+  const counter=block.querySelector('[data-ms-explorer-counter]');
+  const resetBtn=block.querySelector('[data-ms-explorer-reset]');
+  const total=tabs.length;
+  if(!total)return;
+  const viewed=new Set();
+  let cur=-1;
+  const paint=()=>{
+   tabs.forEach((t,i)=>{
+    const on=i===cur;
+    t.setAttribute('aria-selected',on?'true':'false');
+    t.setAttribute('tabindex',on||(cur===-1&&i===0)?'0':'-1');
+    t.classList.toggle('is-open',on);
+    t.classList.toggle('is-viewed',viewed.has(i));
+   });
+   panels.forEach((p,i)=>{p.hidden=i!==cur});
+   if(counter)counter.textContent=cur===-1
+    ?'Select a letter to open that step. '+viewed.size+' of '+total+' steps viewed.'
+    :'Step '+(cur+1)+' of '+total+' open. '+viewed.size+' of '+total+' steps viewed.';
+  };
+  const open=(i,focusPanel)=>{
+   cur=i;viewed.add(i);paint();
+   if(focusPanel&&panels[i]){panels[i].setAttribute('tabindex','-1');msFocus(panels[i])}
+  };
+  tabs.forEach((tab,i)=>{
+   tab.addEventListener('click',()=>{cur===i?(cur=-1,paint()):open(i,true)});
+   tab.addEventListener('keydown',e=>{
+    let next=null;
+    if(e.key==='ArrowRight'||e.key==='ArrowDown')next=(i+1)%total;
+    else if(e.key==='ArrowLeft'||e.key==='ArrowUp')next=(i-1+total)%total;
+    else if(e.key==='Home')next=0;
+    else if(e.key==='End')next=total-1;
+    if(next===null)return;
+    e.preventDefault();
+    open(next,false);
+    msFocus(tabs[next]);
+   });
+  });
+  resetBtn?.addEventListener('click',()=>{viewed.clear();cur=-1;paint();msFocus(tabs[0])});
+  paint();
+ });
+}
+/* Click-to-reveal safety cards. */
+function wireMsReveals(root){
+ root.querySelectorAll('[data-ms-reveal]').forEach(block=>{
+  if(block.dataset.msRevealReady==='1')return;
+  block.dataset.msRevealReady='1';
+  const btns=[...block.querySelectorAll('[data-ms-reveal-btn]')];
+  const counter=block.querySelector('[data-ms-reveal-counter]');
+  const resetBtn=block.querySelector('[data-ms-reveal-reset]');
+  const total=btns.length;
+  if(!total)return;
+  const paint=()=>{
+   const shown=btns.filter(b=>b.getAttribute('aria-expanded')==='true').length;
+   if(counter)counter.textContent=shown+' of '+total+' safety rules revealed';
+  };
+  btns.forEach(btn=>{
+   const body=document.getElementById(btn.getAttribute('aria-controls'));
+   const label=btn.dataset.msRevealLabel||'Reveal the safety rule';
+   btn.addEventListener('click',()=>{
+    const open=btn.getAttribute('aria-expanded')==='true';
+    btn.setAttribute('aria-expanded',open?'false':'true');
+    btn.textContent=open?label:'Hide';
+    if(body)body.hidden=open;
+    btn.closest('.ms-reveal-card')?.classList.toggle('is-open',!open);
+    paint();
+   });
+  });
+  resetBtn?.addEventListener('click',()=>{
+   btns.forEach(btn=>{
+    const body=document.getElementById(btn.getAttribute('aria-controls'));
+    btn.setAttribute('aria-expanded','false');
+    btn.textContent=btn.dataset.msRevealLabel||'Reveal the safety rule';
+    if(body)body.hidden=true;
+    btn.closest('.ms-reveal-card')?.classList.remove('is-open');
+   });
+   paint();
+   msFocus(btns[0]);
+  });
+  paint();
+ });
+}
+/* Paged single-choice decisions: one item at a time, immediate explanation, restart. */
+function wireMsQuizzes(root){
+ root.querySelectorAll('[data-ms-quiz]').forEach(block=>{
+  if(block.dataset.msQuizReady==='1')return;
+  block.dataset.msQuizReady='1';
+  const items=[...block.querySelectorAll('[data-ms-q]')];
+  const total=items.length;
+  if(!total)return;
+  const counter=block.querySelector('[data-ms-counter]');
+  const bar=block.querySelector('[data-ms-bar]');
+  const prevBtn=block.querySelector('[data-ms-prev]');
+  const nextBtn=block.querySelector('[data-ms-next]');
+  const summary=block.querySelector('[data-ms-summary]');
+  const summaryText=block.querySelector('[data-ms-summary-text]');
+  const restart=block.querySelector('[data-ms-restart]');
+  const answered=new Array(total).fill(null);
+  let cur=0;
+  const paint=focusStem=>{
+   items.forEach((li,i)=>{li.hidden=i!==cur});
+   if(counter)counter.textContent='Decision '+(cur+1)+' of '+total;
+   if(bar)bar.style.width=Math.round(((cur+1)/total)*100)+'%';
+   if(prevBtn)prevBtn.disabled=cur===0;
+   if(nextBtn){
+    const done=answered.every(a=>a!==null);
+    nextBtn.textContent=cur===total-1?'See summary':'Next';
+    nextBtn.disabled=cur===total-1?!done:answered[cur]===null;
+   }
+   if(focusStem){const stem=items[cur].querySelector('.ms-q-stem');if(stem){stem.setAttribute('tabindex','-1');msFocus(stem)}}
+  };
+  items.forEach((li,i)=>{
+   const fb=li.querySelector('[data-ms-fb]');
+   li.querySelectorAll('[data-ms-opt]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+     if(answered[i]!==null)return;
+     const correct=btn.dataset.correct==='1';
+     answered[i]=correct;
+     li.querySelectorAll('[data-ms-opt]').forEach(b=>{
+      b.disabled=true;
+      if(b.dataset.correct==='1')b.classList.add('is-correct');
+      else if(b===btn)b.classList.add('is-wrong');
+     });
+     btn.classList.add('is-chosen');
+     msSay(fb,correct?'good':'bad',correct?'✓ Correct.':'✕ Not the safe choice.',btn.dataset.explain||'');
+     paint(false);
+    });
+   });
+  });
+  prevBtn?.addEventListener('click',()=>{if(cur<=0)return;cur-=1;paint(true)});
+  nextBtn?.addEventListener('click',()=>{
+   if(cur<total-1){cur+=1;paint(true);return}
+   const score=answered.filter(Boolean).length;
+   if(summary){
+    summary.hidden=false;
+    if(summaryText)summaryText.textContent='You answered '+score+' of '+total+' correctly on the first attempt. This practice activity is not scored toward your progress — only the final assessment is.';
+    summary.setAttribute('tabindex','-1');
+    msFocus(summary);
+   }
+  });
+  restart?.addEventListener('click',()=>{
+   answered.fill(null);
+   items.forEach(li=>{
+    li.querySelectorAll('[data-ms-opt]').forEach(b=>{b.disabled=false;b.classList.remove('is-correct','is-wrong','is-chosen')});
+    msClear(li.querySelector('[data-ms-fb]'));
+   });
+   if(summary)summary.hidden=true;
+   cur=0;paint(true);
+  });
+  paint(false);
+ });
+}
+/* Risk sort: select an item, then choose a lane. Buttons only — no drag-and-drop. */
+function wireMsSorts(root){
+ root.querySelectorAll('[data-ms-sort]').forEach(block=>{
+  if(block.dataset.msSortReady==='1')return;
+  block.dataset.msSortReady='1';
+  const bank=block.querySelector('[data-ms-sort-bank]');
+  const items=[...block.querySelectorAll('[data-ms-item]')];
+  const total=items.length;
+  if(!total)return;
+  const placeBtns=[...block.querySelectorAll('[data-ms-place]')];
+  const checkBtn=block.querySelector('[data-ms-sort-check]');
+  const resetBtn=block.querySelector('[data-ms-sort-reset]');
+  const counter=block.querySelector('[data-ms-sort-counter]');
+  const feedback=block.querySelector('[data-ms-sort-feedback]');
+  let selected=null;
+  const placedCount=()=>items.filter(i=>i.dataset.placed).length;
+  const paint=()=>{
+   const placed=placedCount();
+   if(counter)counter.textContent=placed+' of '+total+' sorted';
+   placeBtns.forEach(b=>{b.disabled=!selected});
+   if(checkBtn)checkBtn.disabled=placed!==total;
+  };
+  const select=item=>{
+   selected=selected===item?null:item;
+   items.forEach(i=>{
+    i.setAttribute('aria-pressed',i===selected?'true':'false');
+    i.classList.toggle('is-selected',i===selected);
+   });
+   paint();
+  };
+  items.forEach(item=>item.addEventListener('click',()=>select(item)));
+  placeBtns.forEach(btn=>{
+   btn.addEventListener('click',()=>{
+    if(!selected)return;
+    const key=btn.dataset.msPlace;
+    const list=block.querySelector('[data-ms-bucket="'+key+'"] [data-ms-bucket-list]');
+    if(!list)return;
+    const li=selected.closest('li')||selected;
+    selected.dataset.placed=key;
+    selected.classList.remove('is-correct','is-wrong');
+    selected.querySelector('.ms-sort-result')?.remove();
+    list.appendChild(li);
+    const moved=selected;
+    select(selected);
+    msFocus(moved);
+    msClear(feedback);
+    paint();
+   });
+  });
+  checkBtn?.addEventListener('click',()=>{
+   let right=0;
+   items.forEach(item=>{
+    const ok=item.dataset.placed===item.dataset.bucket;
+    item.classList.toggle('is-correct',ok);
+    item.classList.toggle('is-wrong',!ok);
+    const tag=item.querySelector('.ms-sort-result')||document.createElement('span');
+    tag.className='ms-sort-result';
+    tag.textContent=ok?' ✓ Correct lane':' ✕ Wrong lane';
+    item.appendChild(tag);
+    let why=item.querySelector('.ms-sort-why');
+    if(!why){why=document.createElement('span');why.className='ms-sort-why';item.appendChild(why)}
+    why.textContent=item.dataset.explain||'';
+    if(ok)right+=1;
+   });
+   if(!feedback)return;
+   msSay(feedback,right===total?'good':'bad',right+' of '+total+' are in the right lane.',right===total?'Every item is sorted correctly. Each card now shows why.':'Each card now shows the reason. Reset and try the ones you missed again.');
+  });
+  resetBtn?.addEventListener('click',()=>{
+   items.forEach(item=>{
+    delete item.dataset.placed;
+    item.classList.remove('is-correct','is-wrong','is-selected');
+    item.setAttribute('aria-pressed','false');
+    item.querySelector('.ms-sort-result')?.remove();
+    item.querySelector('.ms-sort-why')?.remove();
+    if(bank)bank.appendChild(item.closest('li')||item);
+   });
+   selected=null;
+   msClear(feedback);
+   paint();
+   msFocus(items[0]);
+  });
+  paint();
+ });
+}
+/* Order / chart / controlled-log audit: flag the lines that do not match, then check. */
+function wireMsAudits(root){
+ root.querySelectorAll('[data-ms-audit]').forEach(block=>{
+  if(block.dataset.msAuditReady==='1')return;
+  block.dataset.msAuditReady='1';
+  const rows=[...block.querySelectorAll('[data-ms-row]')];
+  const total=rows.length;
+  if(!total)return;
+  const targets=rows.filter(r=>r.dataset.discrepancy==='1').length;
+  const checkBtn=block.querySelector('[data-ms-audit-check]');
+  const resetBtn=block.querySelector('[data-ms-audit-reset]');
+  const counter=block.querySelector('[data-ms-audit-counter]');
+  const feedback=block.querySelector('[data-ms-audit-feedback]');
+  const paint=()=>{
+   const flagged=rows.filter(r=>r.getAttribute('aria-pressed')==='true').length;
+   if(counter)counter.textContent=flagged+' line'+(flagged===1?'':'s')+' flagged of '+total+' — '+targets+' need a flag';
+  };
+  rows.forEach(row=>{
+   row.addEventListener('click',()=>{
+    if(row.disabled)return;
+    const on=row.getAttribute('aria-pressed')==='true';
+    row.setAttribute('aria-pressed',on?'false':'true');
+    row.classList.toggle('is-flagged',!on);
+    msClear(feedback);
+    paint();
+   });
+  });
+  checkBtn?.addEventListener('click',()=>{
+   let found=0,missed=0,wrong=0;
+   rows.forEach(row=>{
+    const flagged=row.getAttribute('aria-pressed')==='true';
+    const bad=row.dataset.discrepancy==='1';
+    row.classList.remove('is-correct','is-wrong','is-missed');
+    let tag=row.querySelector('.ms-audit-result');
+    if(!tag){tag=document.createElement('span');tag.className='ms-audit-result';row.appendChild(tag)}
+    if(bad&&flagged){found+=1;row.classList.add('is-correct');tag.textContent='✓ Correctly flagged — '+(row.dataset.explain||'')}
+    else if(bad&&!flagged){missed+=1;row.classList.add('is-missed');tag.textContent='✕ Missed discrepancy — '+(row.dataset.explain||'')}
+    else if(!bad&&flagged){wrong+=1;row.classList.add('is-wrong');tag.textContent='✕ This line matches — '+(row.dataset.explain||'')}
+    else{tag.textContent='✓ Matches — '+(row.dataset.explain||'')}
+   });
+   const clean=found===targets&&wrong===0;
+   msSay(feedback,clean?'good':'bad',
+    'You found '+found+' of '+targets+' discrepancies'+(wrong?' and flagged '+wrong+' line'+(wrong===1?'':'s')+' that actually matched.':'.'),
+    clean?(block.dataset.msAuditPass||'Hold the medication and escalate every flagged line to the DVM or RVT before anything is prepared. Do not correct the order yourself.')
+     :'Read the reason on each line, reset, and audit again. Missing a discrepancy is how a wrong-drug or wrong-dose event reaches a patient.');
+  });
+  resetBtn?.addEventListener('click',()=>{
+   rows.forEach(row=>{
+    row.setAttribute('aria-pressed','false');
+    row.classList.remove('is-flagged','is-correct','is-wrong','is-missed');
+    row.querySelector('.ms-audit-result')?.remove();
+   });
+   msClear(feedback);
+   paint();
+   msFocus(rows[0]);
+  });
+  paint();
+ });
+}
+/* Medication-prep tray: click the steps in the correct order. */
+function wireMsSequences(root){
+ root.querySelectorAll('[data-ms-seq]').forEach(block=>{
+  if(block.dataset.msSeqReady==='1')return;
+  block.dataset.msSeqReady='1';
+  const steps=[...block.querySelectorAll('[data-ms-seq-step]')];
+  const total=steps.length;
+  if(!total)return;
+  const track=block.querySelector('[data-ms-seq-track]');
+  const counter=block.querySelector('[data-ms-seq-counter]');
+  const feedback=block.querySelector('[data-ms-seq-feedback]');
+  const resetBtn=block.querySelector('[data-ms-seq-reset]');
+  const done=block.querySelector('[data-ms-seq-done]');
+  let placed=0;
+  const paint=()=>{
+   if(counter)counter.textContent=placed+' of '+total+' steps placed';
+   if(done)done.hidden=placed<total;
+  };
+  steps.forEach(step=>{
+   step.addEventListener('click',()=>{
+    if(step.disabled)return;
+    const order=+step.dataset.msSeqStep;
+    if(order!==placed+1){
+     msSay(feedback,'bad','✕ Not that step yet.',step.dataset.wrong||'That step comes later in the preparation sequence.');
+     step.classList.add('is-wrong');
+     window.setTimeout(()=>step.classList.remove('is-wrong'),msReduced()?0:700);
+     return;
+    }
+    placed+=1;
+    step.disabled=true;
+    step.classList.add('is-placed');
+    if(track){
+     const li=document.createElement('li');
+     li.className='ms-seq-track-item';
+     const n=document.createElement('span');
+     n.className='ms-seq-track-num';
+     n.textContent=String(placed);
+     const t=document.createElement('span');
+     t.textContent=step.dataset.label||step.textContent.trim();
+     li.appendChild(n);li.appendChild(t);
+     track.appendChild(li);
+    }
+    msSay(feedback,'good','✓ Step '+placed+' placed.',step.dataset.explain||'');
+    paint();
+    if(placed===total&&done){done.setAttribute('tabindex','-1');msFocus(done)}
+   });
+  });
+  resetBtn?.addEventListener('click',()=>{
+   placed=0;
+   steps.forEach(s=>{s.disabled=false;s.classList.remove('is-placed','is-wrong')});
+   if(track)track.innerHTML='';
+   msClear(feedback);
+   paint();
+   msFocus(steps[0]);
+  });
+  paint();
+ });
+}
+/* Builders: label builder, dose double-check, and Member teach-back. Part by part, live output. */
+function wireMsBuilders(root){
+ root.querySelectorAll('[data-ms-builder]').forEach(block=>{
+  if(block.dataset.msBuilderReady==='1')return;
+  block.dataset.msBuilderReady='1';
+  const parts=[...block.querySelectorAll('[data-ms-part]')];
+  const total=parts.length;
+  if(!total)return;
+  const out=block.querySelector('[data-ms-out]');
+  const counter=block.querySelector('[data-ms-builder-counter]');
+  const feedback=block.querySelector('[data-ms-builder-feedback]');
+  const done=block.querySelector('[data-ms-builder-done]');
+  const resetBtn=block.querySelector('[data-ms-builder-reset]');
+  const empty=block.querySelector('[data-ms-out-empty]');
+  let cur=0;
+  const paint=focusPart=>{
+   parts.forEach((p,i)=>{p.hidden=i!==cur||cur>=total});
+   if(counter)counter.textContent=cur>=total?'Complete — '+total+' of '+total+' lines built':'Line '+(cur+1)+' of '+total;
+   if(done)done.hidden=cur<total;
+   if(empty)empty.hidden=cur>0;
+   block.classList.toggle('is-complete',cur>=total);
+   if(focusPart&&cur<total){
+    const h=parts[cur].querySelector('.ms-part-label');
+    if(h){h.setAttribute('tabindex','-1');msFocus(h)}
+   }
+  };
+  parts.forEach((part,i)=>{
+   part.querySelectorAll('[data-ms-bopt]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+     if(i!==cur)return;
+     const correct=btn.dataset.correct==='1';
+     if(!correct){
+      btn.classList.add('is-wrong');
+      msSay(feedback,'bad','✕ Try another option.',btn.dataset.explain||'');
+      return;
+     }
+     btn.classList.add('is-correct');
+     msLine(out,btn.dataset.line||btn.textContent.trim());
+     msSay(feedback,'good','✓ Added.',btn.dataset.explain||'');
+     cur+=1;
+     paint(cur<total);
+     if(cur>=total&&done){done.setAttribute('tabindex','-1');msFocus(done)}
+    });
+   });
+  });
+  resetBtn?.addEventListener('click',()=>{
+   cur=0;
+   if(out)out.innerHTML='';
+   parts.forEach(p=>p.querySelectorAll('[data-ms-bopt]').forEach(b=>b.classList.remove('is-correct','is-wrong')));
+   msClear(feedback);
+   paint(true);
+  });
+  paint(false);
+ });
+}
+/* Branching cases: adverse-reaction escalation and the near-miss response. */
+function wireMsBranches(root){
+ root.querySelectorAll('[data-ms-branch]').forEach(block=>{
+  if(block.dataset.msBranchReady==='1')return;
+  block.dataset.msBranchReady='1';
+  const stages=[...block.querySelectorAll('[data-ms-stage]')];
+  const total=stages.length;
+  if(!total)return;
+  const counter=block.querySelector('[data-ms-branch-counter]');
+  const bar=block.querySelector('[data-ms-branch-bar]');
+  const feedback=block.querySelector('[data-ms-branch-feedback]');
+  const log=block.querySelector('[data-ms-branch-log]');
+  const done=block.querySelector('[data-ms-branch-done]');
+  const resetBtn=block.querySelector('[data-ms-branch-reset]');
+  let cur=0;
+  const paint=focusStage=>{
+   stages.forEach((s,i)=>{s.hidden=i!==cur||cur>=total});
+   if(counter)counter.textContent=cur>=total?'Case complete — all '+total+' decisions made':'Decision '+(cur+1)+' of '+total;
+   if(bar)bar.style.width=Math.round((Math.min(cur,total)/total)*100)+'%';
+   if(done)done.hidden=cur<total;
+   if(focusStage&&cur<total){
+    const h=stages[cur].querySelector('.ms-stage-title');
+    if(h){h.setAttribute('tabindex','-1');msFocus(h)}
+   }
+  };
+  stages.forEach((stage,i)=>{
+   stage.querySelectorAll('[data-ms-choice]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+     if(i!==cur)return;
+     const correct=btn.dataset.correct==='1';
+     if(!correct){
+      btn.classList.add('is-wrong');
+      btn.disabled=true;
+      msSay(feedback,'bad','✕ That is not the safe next action.',btn.dataset.explain||'');
+      return;
+     }
+     btn.classList.add('is-correct');
+     stage.querySelectorAll('[data-ms-choice]').forEach(b=>{b.disabled=true});
+     msSay(feedback,'good','✓ Safe action.',btn.dataset.explain||'');
+     msLine(log,btn.dataset.line||btn.textContent.trim());
+     cur+=1;
+     paint(cur<total);
+     if(cur>=total&&done){done.setAttribute('tabindex','-1');msFocus(done)}
+    });
+   });
+  });
+  resetBtn?.addEventListener('click',()=>{
+   cur=0;
+   if(log)log.innerHTML='';
+   stages.forEach(s=>s.querySelectorAll('[data-ms-choice]').forEach(b=>{b.disabled=false;b.classList.remove('is-correct','is-wrong')}));
+   msClear(feedback);
+   paint(true);
+  });
+  paint(false);
+ });
+}
+/* Progressive recap: step through the lesson's safety rules one at a time. */
+function wireMsRecaps(root){
+ root.querySelectorAll('[data-ms-recap]').forEach(block=>{
+  if(block.dataset.msRecapReady==='1')return;
+  block.dataset.msRecapReady='1';
+  const items=[...block.querySelectorAll('[data-ms-recap-item]')];
+  const total=items.length;
+  if(!total)return;
+  const counter=block.querySelector('[data-ms-recap-counter]');
+  const bar=block.querySelector('[data-ms-recap-bar]');
+  const nextBtn=block.querySelector('[data-ms-recap-next]');
+  const prevBtn=block.querySelector('[data-ms-recap-prev]');
+  const resetBtn=block.querySelector('[data-ms-recap-reset]');
+  const done=block.querySelector('[data-ms-recap-done]');
+  let shown=0;
+  const paint=focusIdx=>{
+   items.forEach((it,i)=>{it.hidden=i>=shown});
+   if(counter)counter.textContent=shown+' of '+total+' recap points revealed';
+   if(bar)bar.style.width=Math.round((shown/total)*100)+'%';
+   if(prevBtn)prevBtn.disabled=shown===0;
+   if(nextBtn){
+    nextBtn.disabled=shown>=total;
+    nextBtn.textContent=shown===0?'Reveal the first point':shown>=total?'All points revealed':'Reveal the next point';
+   }
+   if(done)done.hidden=shown<total;
+   if(typeof focusIdx==='number'&&items[focusIdx]){items[focusIdx].setAttribute('tabindex','-1');msFocus(items[focusIdx])}
+  };
+  nextBtn?.addEventListener('click',()=>{if(shown>=total)return;shown+=1;paint(shown-1)});
+  prevBtn?.addEventListener('click',()=>{if(shown<=0)return;shown-=1;paint()});
+  resetBtn?.addEventListener('click',()=>{shown=0;paint();msFocus(nextBtn)});
+  paint();
+ });
+}
+/* Competency self-validation checklist — ungraded, local to this view. */
+function wireMsChecklists(root){
+ root.querySelectorAll('[data-ms-checklist]').forEach(block=>{
+  if(block.dataset.msChecklistReady==='1')return;
+  block.dataset.msChecklistReady='1';
+  const boxes=[...block.querySelectorAll('input[type="checkbox"]')];
+  const total=boxes.length;
+  if(!total)return;
+  const counter=block.querySelector('[data-ms-checklist-counter]');
+  const bar=block.querySelector('[data-ms-checklist-bar]');
+  const feedback=block.querySelector('[data-ms-checklist-feedback]');
+  const resetBtn=block.querySelector('[data-ms-checklist-reset]');
+  const paint=()=>{
+   const n=boxes.filter(b=>b.checked).length;
+   if(counter)counter.textContent=n+' of '+total+' competencies ready for observation';
+   if(bar)bar.style.width=Math.round((n/total)*100)+'%';
+   if(n===total)msSay(feedback,'good','✓ All '+total+' statements checked.','Ask your DVM or RVT preceptor to observe each item in practice. Self-assessment does not replace observed validation, and this checklist is not scored.');
+   else msClear(feedback);
+  };
+  boxes.forEach(b=>b.addEventListener('change',paint));
+  resetBtn?.addEventListener('click',()=>{boxes.forEach(b=>{b.checked=false});paint();msFocus(boxes[0])});
+  paint();
+ });
+}
+/* Printable one-page job aid: clone into a print sheet so the dialog does not clip it. */
+function wireMsPrint(root){
+ root.querySelectorAll('[data-ms-print]').forEach(btn=>{
+  if(btn.dataset.msPrintReady==='1')return;
+  btn.dataset.msPrintReady='1';
+  const status=root.querySelector('[data-ms-print-status]');
+  btn.addEventListener('click',()=>{
+   const source=document.getElementById(btn.dataset.msPrint);
+   if(!source){if(status)status.textContent='The job aid could not be found on this page.';return}
+   document.getElementById('msPrintSheet')?.remove();
+   const sheet=document.createElement('div');
+   sheet.id='msPrintSheet';
+   sheet.className='ms-print-sheet';
+   sheet.setAttribute('aria-hidden','true');
+   sheet.appendChild(source.cloneNode(true));
+   document.body.appendChild(sheet);
+   document.documentElement.classList.add('ms-printing');
+   if(status)status.textContent='Print dialog opened. The one-page SAFE PAWS job aid prints on its own, without the rest of the app.';
+   const cleanup=()=>{
+    document.documentElement.classList.remove('ms-printing');
+    document.getElementById('msPrintSheet')?.remove();
+    window.removeEventListener('afterprint',cleanup);
+   };
+   window.addEventListener('afterprint',cleanup);
+   window.setTimeout(()=>{
+    try{window.print()}catch(e){if(status)status.textContent='This browser blocked printing. Use your browser menu: File then Print.'}
+    window.setTimeout(cleanup,1500);
+   },msReduced()?0:60);
+  });
+ });
+}
+/* Final-assessment remediation: name the safety domains missed and where to relearn them. */
+function wireMsRemediation(root){
+ const marker=root.querySelector('[data-ms-remediation]');
+ if(!marker||marker.dataset.msRemediationReady==='1')return;
+ marker.dataset.msRemediationReady='1';
+ let map=[];
+ try{map=JSON.parse(marker.dataset.msRemediation||'[]')}catch(e){map=[]}
+ const result=root.querySelector('#l2QuizResult');
+ if(!result)return;
+  const finishLabel=()=>{
+   const box=result.querySelector('.feedback-box');
+   const btn=result.querySelector('#l2CloseModuleModal');
+   if(!box||!btn)return;
+   if(/marked complete/i.test(box.textContent||'')&&btn.textContent!=='Finish lesson'){
+    btn.textContent='Finish lesson';
+    btn.setAttribute('aria-label','Finish Medication Safety and return to the curriculum');
+   }
+  };
+ const build=()=>{
+  if(!document.body.contains(result)){observer.disconnect();return}
+  finishLabel();
+  if(!result.innerHTML.trim())return;
+  if(result.querySelector('[data-ms-remediation-panel]'))return;
+  const missed=[];
+  Object.keys(quizAnswers).forEach(key=>{
+   const a=quizAnswers[key];
+   if(a&&a.correct===false&&map[+key])missed.push(map[+key]);
+  });
+  const panel=document.createElement('section');
+  panel.className='ms-remediation';
+  panel.setAttribute('data-ms-remediation-panel','');
+  panel.setAttribute('role','status');
+  panel.setAttribute('aria-live','polite');
+  const h=document.createElement('h3');
+  const body=document.createElement('p');
+  if(!missed.length){
+   panel.classList.add('is-clear');
+   h.textContent='No safety domain gaps on this attempt';
+   body.textContent='You answered every item correctly across all eight medication-safety domains. Keep the SAFE PAWS job aid at the prep area and re-verify at the patient every time.';
+   panel.appendChild(h);panel.appendChild(body);
+  }else{
+   const critical=missed.filter(m=>m.critical);
+   panel.classList.toggle('is-critical',critical.length>0);
+   h.textContent=critical.length
+    ?'Required remediation — '+critical.length+' critical safety domain'+(critical.length===1?'':'s')+' missed'
+    :'Recommended review — '+missed.length+' domain'+(missed.length===1?'':'s')+' to revisit';
+   body.textContent=critical.length
+    ?'Hannah requires remediation before you perform this task unsupervised. Re-open the modules listed below, then retake the assessment and ask your DVM or RVT to observe the workflow.'
+    :'Re-open the modules listed below before your next medication task.';
+   panel.appendChild(h);panel.appendChild(body);
+   const ul=document.createElement('ul');
+   ul.className='ms-remediation-list';
+   const seen=new Set();
+   missed.forEach(m=>{
+    if(seen.has(m.domain))return;
+    seen.add(m.domain);
+    const li=document.createElement('li');
+    if(m.critical)li.className='is-critical';
+    const strong=document.createElement('strong');
+    strong.textContent=(m.critical?'Critical • ':'')+m.domain;
+    li.appendChild(strong);
+    li.appendChild(document.createTextNode(' — revisit '+m.module+'. '+m.action));
+    ul.appendChild(li);
+   });
+   panel.appendChild(ul);
+  }
+  result.appendChild(panel);
+ };
+ const observer=new MutationObserver(()=>build());
+ observer.observe(result,{childList:true,subtree:true});
+ build();
+}
+
 /* ---- Module modal with knowledge check ---- */
 const TRIAGE_REVIEW_LESSON_SLUG='triage-review';
 const SAMPLE_COLLECTION_LESSON_SLUG='sample-collection';
 const CANINE_COMMUNICATION_LESSON_SLUG='understanding-canine-communication';
 const IMAGING_SUPPORT_LESSON_SLUG='imaging-support';
 const CASE_PRESENTATION_LESSON_SLUG='case-presentation';
-const CONTINUE_FLOW_LESSON_SLUGS=new Set([TRIAGE_REVIEW_LESSON_SLUG,SAMPLE_COLLECTION_LESSON_SLUG,CANINE_COMMUNICATION_LESSON_SLUG,IMAGING_SUPPORT_LESSON_SLUG,CASE_PRESENTATION_LESSON_SLUG]);
+const MEDICATION_SAFETY_LESSON_SLUG='medication-safety';
+const CONTINUE_FLOW_LESSON_SLUGS=new Set([TRIAGE_REVIEW_LESSON_SLUG,SAMPLE_COLLECTION_LESSON_SLUG,CANINE_COMMUNICATION_LESSON_SLUG,IMAGING_SUPPORT_LESSON_SLUG,CASE_PRESENTATION_LESSON_SLUG,MEDICATION_SAFETY_LESSON_SLUG]);
 let activeModule=null, quizAnswers={};
 const moduleModalState={saving:false,message:'',isError:false,reviewSaveStatus:'idle'};
 function resetModuleModalState(){
@@ -3676,6 +4362,7 @@ function renderModuleModal(opts={}){
  wireCanineWidgets(document.querySelector('#modalContent'));
  wireImagingWidgets(document.querySelector('#modalContent'));
  wireCasePresentationWidgets(document.querySelector('#modalContent'));
+ wireMedicationSafetyWidgets(document.querySelector('#modalContent'));
  if(hasQuiz&&answeredCount===total)void renderQuizResult();
  if(opts.focusHeading)focusModuleModalHeading();
 }
