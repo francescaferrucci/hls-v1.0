@@ -1,0 +1,366 @@
+/* ==========================================================================
+   Member Services Academy — shared visual system
+   Palette and layout carried forward from the approved Member Service
+   Training PowerPoint: deep navy, light blue, yellow, sparing orange,
+   near-black, warm gray, white. No gradients.
+   ========================================================================== */
+
+.ms-scope,
+body.ms-body {
+  --ms-navy: #1f3b54;
+  --ms-navy-deep: #071023;
+  --ms-blue: #51b5e0;
+  --ms-blue-ink: #14607f;
+  --ms-yellow: #fdd757;
+  --ms-orange: #ff6308;
+  --ms-warm: #eae9e6;
+  --ms-white: #ffffff;
+
+  --ms-surface: #ffffff;
+  --ms-surface-2: #f7f7f5;
+  --ms-canvas: #ffffff;
+  --ms-ink: #16232f;
+  --ms-ink-soft: #4c5b68;
+  --ms-line: #c9d2da;
+  --ms-line-soft: #e2e6ea;
+  --ms-focus: #0b4f74;
+  --ms-good-bg: #e7f4ec;
+  --ms-good-ink: #1c6335;
+  --ms-warn-bg: #fdf1d6;
+  --ms-warn-ink: #7a5310;
+  --ms-bad-bg: #fbeaea;
+  --ms-bad-ink: #8f2f2f;
+  --ms-radius: 10px;
+  --ms-font: "Aptos", "Aptos Display", "Segoe UI Variable Text", "Segoe UI",
+    system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+}
+
+body.ms-body {
+  margin: 0;
+  background: var(--ms-canvas);
+  color: var(--ms-ink);
+  font-family: var(--ms-font);
+  font-size: 17px;
+  line-height: 1.6;
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+
+body.ms-body * { box-sizing: border-box; }
+body.ms-body img,
+body.ms-body svg { max-width: 100%; height: auto; }
+
+body.ms-body h1,
+body.ms-body h2,
+body.ms-body h3,
+body.ms-body h4 {
+  font-family: var(--ms-font);
+  line-height: 1.2;
+  color: var(--ms-navy);
+  margin: 0 0 12px;
+  letter-spacing: -0.005em;
+}
+body.ms-body h1 { font-size: clamp(30px, 4vw, 44px); }
+body.ms-body h2 { font-size: clamp(24px, 2.6vw, 31px); }
+body.ms-body h3 { font-size: clamp(19px, 1.8vw, 22px); }
+body.ms-body h4 { font-size: 17px; }
+body.ms-body p { margin: 0 0 14px; max-width: 72ch; }
+body.ms-body ul, body.ms-body ol { max-width: 74ch; }
+body.ms-body li { margin-bottom: 8px; }
+body.ms-body a { color: var(--ms-blue-ink); }
+body.ms-body strong { color: inherit; }
+
+/* ---------- Focus + touch targets ---------- */
+body.ms-body :focus-visible {
+  outline: 3px solid var(--ms-focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.ms-skip {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  background: var(--ms-navy);
+  color: #fff;
+  padding: 12px 18px;
+  border-radius: 0 0 8px 0;
+  font-weight: 700;
+  text-decoration: none;
+}
+body.ms-body .ms-skip, body.ms-body .ms-skip:visited { color: #fff; }
+.ms-skip:focus {
+  left: 0;
+}
+
+/* ---------- Header ---------- */
+.ms-header {
+  background: var(--ms-navy);
+  color: #fff;
+  padding: 14px 22px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: center;
+  justify-content: space-between;
+}
+.ms-brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.ms-brand img { width: 52px; height: auto; background: #fff; border-radius: 6px; padding: 4px; }
+.ms-brand span { display: block; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #bfe4f5; }
+.ms-brand strong { display: block; font-size: 15px; }
+.ms-header a {
+  color: #fff;
+  text-decoration: none;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 8px;
+  padding: 11px 14px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+body.ms-body .ms-header a, body.ms-body .ms-header a:visited { color: #fff; }
+.ms-header a:hover { background: rgba(255, 255, 255, 0.14); }
+
+/* ---------- Shell ---------- */
+.ms-shell {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 26px 22px 70px;
+}
+.ms-eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ms-blue-ink);
+  margin: 0 0 8px;
+}
+
+/* ---------- Panels and cards ---------- */
+.ms-panel {
+  background: var(--ms-surface);
+  border: 1px solid var(--ms-line);
+  border-radius: var(--ms-radius);
+  padding: 26px;
+  margin-bottom: 22px;
+}
+.ms-panel-navy {
+  background: var(--ms-navy);
+  border-color: var(--ms-navy);
+  color: #fff;
+}
+body.ms-body .ms-panel-navy h1,
+body.ms-body .ms-panel-navy h2,
+body.ms-body .ms-panel-navy h3,
+body.ms-body .ms-panel-navy h4 { color: #fff; }
+body.ms-body .ms-panel-navy p { color: #dbe7ef; }
+body.ms-body .ms-panel-navy .ms-eyebrow { color: #bfe4f5; }
+body.ms-body .ms-hero-course { color: #fdd757; font-weight: 700; margin-bottom: 0; }
+.ms-hero-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 26px;
+  align-items: center;
+}
+.ms-hero-split img {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  display: block;
+}
+@media (max-width: 760px) {
+  .ms-hero-split { grid-template-columns: 1fr; }
+}
+.ms-yellow-band {
+  height: 6px;
+  background: var(--ms-yellow);
+  border-radius: 3px;
+  margin: 0 0 18px;
+  max-width: 140px;
+}
+.ms-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+.ms-card {
+  border: 1px solid var(--ms-line);
+  border-radius: var(--ms-radius);
+  background: var(--ms-surface);
+  padding: 18px;
+}
+.ms-card h3, .ms-card h4 { margin-bottom: 6px; }
+.ms-card p:last-child { margin-bottom: 0; }
+.ms-card-accent { border-top: 4px solid var(--ms-blue); }
+.ms-card-yellow { border-top: 4px solid var(--ms-yellow); }
+.ms-card-warm { background: var(--ms-warm); border-color: #d8d7d3; }
+.ms-callout {
+  border: 1px solid var(--ms-line);
+  border-left: 5px solid var(--ms-blue);
+  background: var(--ms-surface-2);
+  border-radius: 6px;
+  padding: 16px 18px;
+  margin: 18px 0;
+}
+.ms-callout.ms-callout-governed { border-left-color: var(--ms-orange); }
+.ms-callout p:last-child { margin-bottom: 0; }
+.ms-source {
+  font-size: 14px;
+  color: var(--ms-ink-soft);
+  margin: 6px 0 0;
+}
+
+/* ---------- Buttons ---------- */
+.ms-btn,
+.ms-btn-quiet,
+.ms-option {
+  font-family: inherit;
+  font-size: 16px;
+  min-height: 44px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.ms-btn {
+  background: var(--ms-navy);
+  color: #fff;
+  border: 1px solid var(--ms-navy);
+  font-weight: 700;
+  padding: 11px 20px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+body.ms-body a.ms-btn, body.ms-body a.ms-btn:visited { color: #fff; }
+.ms-btn:hover { background: #17303f; }
+.ms-btn-quiet {
+  background: #fff;
+  color: var(--ms-navy);
+  border: 1px solid var(--ms-navy);
+  font-weight: 700;
+  padding: 11px 18px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+body.ms-body a.ms-btn-quiet, body.ms-body a.ms-btn-quiet:visited { color: var(--ms-navy); }
+.ms-btn-quiet:hover { background: var(--ms-surface-2); }
+.ms-btn[disabled], .ms-btn-quiet[disabled] { opacity: 0.55; cursor: not-allowed; }
+.ms-btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-top: 16px;
+}
+
+/* ---------- Media ---------- */
+.ms-figure { margin: 0 0 18px; }
+.ms-figure img {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--ms-line);
+  border-radius: var(--ms-radius);
+}
+.ms-figure figcaption {
+  font-size: 14px;
+  color: var(--ms-ink-soft);
+  padding-top: 8px;
+}
+.ms-icon {
+  height: 46px;
+  width: auto;
+  display: block;
+  margin-bottom: 12px;
+}
+
+/* ---------- Progress ---------- */
+.ms-progress {
+  height: 10px;
+  background: var(--ms-line-soft);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.ms-progress > span {
+  display: block;
+  height: 100%;
+  background: var(--ms-blue);
+}
+.ms-progress-label {
+  font-size: 14px;
+  color: var(--ms-ink-soft);
+  margin: 8px 0 0;
+}
+.ms-badge {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  border: 1px solid transparent;
+}
+.ms-badge-live { background: var(--ms-yellow); color: #4a3705; }
+.ms-badge-planned { background: var(--ms-warm); color: #4a4a46; border-color: #d3d2ce; }
+.ms-badge-done { background: var(--ms-good-bg); color: var(--ms-good-ink); }
+
+@media (max-width: 700px) {
+  body.ms-body { font-size: 16.5px; }
+  .ms-panel { padding: 20px 17px; }
+  .ms-shell { padding: 20px 14px 60px; }
+}
+
+/* ---------- Dark mode ---------- */
+@media (prefers-color-scheme: dark) {
+  body.ms-body:not([data-theme="light"]) {
+    --ms-canvas: #0d1720;
+    --ms-surface: #142430;
+    --ms-surface-2: #182c39;
+    --ms-ink: #eaf2f7;
+    --ms-ink-soft: #b6c6d2;
+    --ms-line: #37505f;
+    --ms-line-soft: #2a3f4d;
+    --ms-blue-ink: #8ed3f0;
+    --ms-focus: #8ed3f0;
+    --ms-warm: #22323d;
+    --ms-good-bg: #16351f; --ms-good-ink: #b6e6c4;
+    --ms-warn-bg: #3a2f13; --ms-warn-ink: #f4dca0;
+    --ms-bad-bg: #3b1e1e; --ms-bad-ink: #f3bcbc;
+  }
+  body.ms-body:not([data-theme="light"]) h1,
+  body.ms-body:not([data-theme="light"]) h2,
+  body.ms-body:not([data-theme="light"]) h3,
+  body.ms-body:not([data-theme="light"]) h4 { color: #dceaf3; }
+  body.ms-body:not([data-theme="light"]) .ms-btn-quiet,
+  body.ms-body:not([data-theme="light"]) a.ms-btn-quiet { background: var(--ms-surface); color: #dceaf3 !important; border-color: #6f93a8; }
+  body.ms-body:not([data-theme="light"]) .ms-btn { background: #2b5c78; border-color: #2b5c78; }
+  body.ms-body:not([data-theme="light"]) .ms-card-warm { background: #22323d; border-color: #37505f; }
+  body.ms-body:not([data-theme="light"]) .ms-brand img { background: #fff; }
+  /* The deck's line-art icons are near-black; invert them so they stay legible
+     on dark surfaces. */
+  body.ms-body:not([data-theme="light"]) .ms-icon { filter: invert(1) brightness(1.5); }
+}
+html[data-theme="dark"] body.ms-body .ms-icon { filter: invert(1) brightness(1.5); }
+html[data-theme="dark"] body.ms-body {
+  --ms-canvas: #0d1720;
+  --ms-surface: #142430;
+  --ms-surface-2: #182c39;
+  --ms-ink: #eaf2f7;
+  --ms-ink-soft: #b6c6d2;
+  --ms-line: #37505f;
+  --ms-line-soft: #2a3f4d;
+  --ms-blue-ink: #8ed3f0;
+  --ms-focus: #8ed3f0;
+  --ms-warm: #22323d;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.ms-body * { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto !important; }
+}

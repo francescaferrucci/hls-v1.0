@@ -1,0 +1,409 @@
+/* ==========================================================================
+   Member Services Academy · Course 1 — Member Service Success
+   Lesson-specific styles. Namespaced .ms1-* to avoid collisions with the
+   root prototype stylesheet or any other academy lesson.
+   ========================================================================== */
+
+/* ---------- Section navigation ---------- */
+.ms1-nav {
+  background: var(--ms-surface-2);
+  border-bottom: 1px solid var(--ms-line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px 18px;
+  position: relative;
+}
+.ms1-nav a {
+  color: var(--ms-navy);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 11px 12px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 6px;
+  border: 1px solid transparent;
+}
+.ms1-nav a:hover { background: #fff; border-color: var(--ms-line); }
+.ms1-nav a[aria-current="true"] {
+  background: var(--ms-navy);
+  color: #fff;
+}
+.ms1-nav a.ms1-nav-done::after {
+  content: " ✓";
+  color: var(--ms-good-ink);
+  font-weight: 900;
+}
+.ms1-nav a[aria-current="true"].ms1-nav-done::after { color: var(--ms-yellow); }
+
+/* ---------- Progress strip ---------- */
+.ms1-progressbar {
+  border-bottom: 1px solid var(--ms-line);
+  background: var(--ms-surface);
+  padding: 12px 18px;
+}
+.ms1-progressbar-inner { max-width: 1120px; margin: 0 auto; }
+.ms1-progress-text {
+  margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ms-ink-soft);
+}
+
+/* ---------- Sections ---------- */
+.ms1-section { scroll-margin-top: 14px; }
+.ms1-section h3 { margin-top: 32px; }
+.ms1-section h3:first-of-type { margin-top: 26px; }
+.ms1-kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 11px;
+  font-weight: 800;
+  color: #fff;
+  background: var(--ms-navy);
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 4px;
+  margin: 0 0 12px;
+}
+.ms1-subtitle {
+  font-size: clamp(19px, 2.2vw, 24px);
+  color: var(--ms-blue-ink);
+  font-weight: 700;
+  margin: -4px 0 20px;
+}
+.ms1-quote {
+  border-left: 6px solid var(--ms-yellow);
+  background: var(--ms-surface-2);
+  padding: 16px 20px;
+  margin: 0 0 22px;
+}
+.ms1-quote p { margin: 0; font-size: 19px; }
+.ms1-mini { font-size: 14px; color: var(--ms-ink-soft); }
+.ms1-cite { font-size: 15px; }
+.ms1-list { padding-left: 22px; }
+.ms1-steps { padding-left: 22px; }
+.ms1-steps li { margin-bottom: 10px; }
+.ms1-backlink {
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 10px 2px;
+}
+/* Long URLs in the resources list must wrap rather than force page overflow. */
+.ms1-list a { overflow-wrap: anywhere; word-break: break-word; }
+
+.ms1-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+.ms1-two { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 6px; }
+.ms1-three { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.ms1-portrait {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--ms-line);
+  margin-bottom: 12px;
+  display: block;
+}
+
+/* ---------- Reveals ---------- */
+.ms1-reveal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+  margin-bottom: 22px;
+}
+.ms1-reveal {
+  border: 1px solid var(--ms-line);
+  border-radius: 8px;
+  background: var(--ms-surface);
+  padding: 4px 16px;
+}
+.ms1-reveal > summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--ms-navy);
+  padding: 13px 4px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  list-style-position: inside;
+}
+.ms1-reveal[open] { border-left: 5px solid var(--ms-blue); }
+.ms1-reveal p:last-child { margin-bottom: 12px; }
+
+/* ---------- Activities ---------- */
+.ms1-activity {
+  border: 1px solid var(--ms-line);
+  border-radius: var(--ms-radius);
+  background: var(--ms-surface-2);
+  padding: 20px;
+  margin: 0 0 24px;
+}
+.ms1-item, .ms1-multi, .ms1-q, .ms1-checklist {
+  border: 1px solid var(--ms-line);
+  border-radius: 8px;
+  background: var(--ms-surface);
+  padding: 16px 18px;
+  margin: 0 0 14px;
+}
+/* Legends are floated to full width so a wrapped question never sits inside
+   the fieldset's border notch. */
+.ms1-item legend, .ms1-multi legend, .ms1-q legend, .ms1-checklist legend {
+  font-weight: 700;
+  color: var(--ms-navy);
+  float: left;
+  width: 100%;
+  padding: 0;
+  margin: 0 0 6px;
+}
+.ms1-item::after, .ms1-multi::after, .ms1-q::after, .ms1-checklist::after {
+  content: "";
+  display: table;
+  clear: both;
+}
+.ms1-item label,
+.ms1-multi label,
+.ms1-q label,
+.ms1-checklist label {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 11px 10px;
+  margin: 6px 0 0;
+  border: 1px solid var(--ms-line-soft);
+  border-radius: 6px;
+  cursor: pointer;
+  min-height: 44px;
+  line-height: 1.5;
+}
+.ms1-item label:hover,
+.ms1-multi label:hover,
+.ms1-q label:hover,
+.ms1-checklist label:hover { background: var(--ms-surface-2); border-color: var(--ms-blue); }
+.ms1-item input[type="radio"],
+.ms1-multi input[type="checkbox"],
+.ms1-q input[type="radio"],
+.ms1-checklist input[type="checkbox"] {
+  margin-top: 4px;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  accent-color: var(--ms-navy);
+}
+.ms1-item-select label {
+  border: 0;
+  padding: 10px 2px 4px;
+  font-weight: 700;
+  color: var(--ms-ink-soft);
+  font-size: 14px;
+  min-height: 0;
+  display: block;
+}
+.ms1-item-select select {
+  width: 100%;
+  max-width: 460px;
+  min-height: 44px;
+  font: inherit;
+  padding: 10px 12px;
+  border: 1px solid var(--ms-line);
+  border-radius: 6px;
+  background: var(--ms-surface);
+  color: var(--ms-ink);
+}
+
+/* Feedback states — never color alone; a text prefix is always added by JS */
+.ms1-feedback {
+  max-width: none;
+  margin: 12px 0 0;
+  padding: 12px 14px;
+  border-radius: 6px;
+  font-size: 15.5px;
+  border: 1px solid var(--ms-line);
+  background: var(--ms-surface-2);
+}
+.ms1-feedback.is-correct { background: var(--ms-good-bg); border-color: #9fcdb0; color: var(--ms-good-ink); }
+.ms1-feedback.is-wrong { background: var(--ms-bad-bg); border-color: #dda9a9; color: var(--ms-bad-ink); }
+.ms1-feedback.is-partial { background: var(--ms-warn-bg); border-color: #e0c485; color: var(--ms-warn-ink); }
+.ms1-feedback ul { margin: 8px 0 0; padding-left: 20px; max-width: none; }
+.ms1-feedback p { max-width: none; }
+.ms1-feedback li { margin-bottom: 6px; }
+.ms1-item.is-correct, .ms1-q.is-correct { border-left: 5px solid var(--ms-good-ink); }
+.ms1-item.is-wrong, .ms1-q.is-wrong { border-left: 5px solid var(--ms-bad-ink); }
+
+.ms1-status {
+  font-weight: 700;
+  margin: 12px 0 0;
+  min-height: 1.2em;
+}
+.ms1-result {
+  font-weight: 700;
+  margin: 14px 0 0;
+  padding: 14px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--ms-line);
+  background: var(--ms-surface-2);
+}
+.ms1-result.is-pass { background: var(--ms-good-bg); border-color: #9fcdb0; color: var(--ms-good-ink); }
+.ms1-result.is-fail { background: var(--ms-warn-bg); border-color: #e0c485; color: var(--ms-warn-ink); }
+.ms1-result:empty { display: none; }
+
+/* ---------- Greeting builder ---------- */
+.ms1-preview {
+  border: 1px dashed var(--ms-blue);
+  border-radius: 8px;
+  background: var(--ms-surface);
+  padding: 14px 16px;
+  margin: 4px 0 0;
+}
+.ms1-preview-text { font-size: 18px; margin: 4px 0 0; }
+
+/* ---------- Transcript ---------- */
+.ms1-transcript {
+  border: 1px solid var(--ms-line);
+  border-left: 5px solid var(--ms-navy);
+  background: var(--ms-surface);
+  border-radius: 6px;
+  padding: 16px 18px;
+  margin: 0 0 18px;
+}
+.ms1-transcript p { margin: 0 0 10px; }
+.ms1-transcript p:last-child { margin-bottom: 0; }
+
+/* ---------- Branching scenario ---------- */
+.ms1-branch {
+  border: 1px solid var(--ms-line);
+  border-radius: var(--ms-radius);
+  background: var(--ms-surface-2);
+  padding: 20px;
+  margin-bottom: 24px;
+}
+.ms1-branch-scene {
+  background: var(--ms-navy);
+  color: #fff;
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin-bottom: 14px;
+}
+body.ms-body .ms1-branch-scene h4 { color: #fff; margin-bottom: 8px; }
+body.ms-body .ms1-branch-scene p { color: #dbe7ef; margin-bottom: 0; max-width: none; }
+.ms1-branch-options { display: grid; gap: 10px; }
+.ms1-branch-option {
+  text-align: left;
+  font: inherit;
+  background: var(--ms-surface);
+  border: 1px solid var(--ms-line);
+  border-radius: 8px;
+  padding: 13px 15px;
+  min-height: 44px;
+  cursor: pointer;
+  color: var(--ms-ink);
+}
+.ms1-branch-option:hover { border-color: var(--ms-blue); background: #fff; }
+.ms1-branch-option[aria-pressed="true"] { border-color: var(--ms-navy); border-left-width: 5px; font-weight: 700; }
+.ms1-branch-option[disabled] { cursor: default; opacity: 0.85; }
+.ms1-branch-feedback:empty { display: none; }
+
+/* ---------- Reflection ---------- */
+.ms1-reflection {
+  border: 1px solid var(--ms-line);
+  border-radius: var(--ms-radius);
+  background: var(--ms-surface);
+  padding: 18px;
+  margin-bottom: 22px;
+}
+.ms1-reflection label { display: block; font-weight: 700; margin-bottom: 8px; }
+.ms1-reflection textarea {
+  width: 100%;
+  font: inherit;
+  padding: 12px;
+  border: 1px solid var(--ms-line);
+  border-radius: 6px;
+  background: var(--ms-surface);
+  color: var(--ms-ink);
+  resize: vertical;
+}
+
+/* ---------- Module footer ---------- */
+.ms1-modulefoot {
+  border-top: 1px solid var(--ms-line);
+  margin-top: 24px;
+  padding-top: 18px;
+}
+.ms1-modulefoot .ms-btn { margin-bottom: 4px; }
+
+/* ---------- Recap / job aid ---------- */
+.ms1-takeaway {
+  border: 1px solid var(--ms-line);
+  border-top: 6px solid var(--ms-yellow);
+  border-radius: 8px;
+  background: var(--ms-surface);
+  padding: 18px 20px;
+  margin-top: 18px;
+}
+.ms1-takeaway p:last-child { margin-bottom: 0; font-size: 18px; }
+
+/* ---------- Sign-off form ---------- */
+.ms1-formgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 4px 18px;
+}
+.ms1-formgrid label { display: block; font-weight: 700; font-size: 14px; margin-bottom: 6px; }
+.ms1-formgrid input {
+  width: 100%;
+  font: inherit;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--ms-line);
+  border-radius: 6px;
+  background: var(--ms-surface);
+  color: var(--ms-ink);
+}
+.ms1-formgrid input[readonly] { background: var(--ms-surface-2); color: var(--ms-ink-soft); }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 900px) {
+  .ms1-split { grid-template-columns: 1fr; }
+  .ms1-split figure { max-width: 460px; }
+}
+@media (max-width: 700px) {
+  .ms1-nav { padding: 6px 10px; }
+  .ms1-nav a { font-size: 13.5px; padding: 11px 10px; }
+  .ms1-activity, .ms1-branch { padding: 14px 12px; }
+  .ms1-item, .ms1-multi, .ms1-q, .ms1-checklist { padding: 14px 12px; }
+  .ms1-quote p { font-size: 17.5px; }
+}
+
+/* ---------- Dark mode tweaks ---------- */
+@media (prefers-color-scheme: dark) {
+  /* Legends and summaries use the heading navy, which is unreadable on dark
+     surfaces; lift them to the dark-mode heading color. */
+  body.ms-body:not([data-theme="light"]) .ms1-item legend,
+  body.ms-body:not([data-theme="light"]) .ms1-multi legend,
+  body.ms-body:not([data-theme="light"]) .ms1-q legend,
+  body.ms-body:not([data-theme="light"]) .ms1-checklist legend,
+  body.ms-body:not([data-theme="light"]) .ms1-reveal > summary { color: #dceaf3; }
+  body.ms-body:not([data-theme="light"]) .ms1-nav a { color: #dceaf3; }
+  body.ms-body:not([data-theme="light"]) .ms1-nav a:hover { background: var(--ms-surface); }
+  body.ms-body:not([data-theme="light"]) .ms1-nav a[aria-current="true"] { background: #2b5c78; color: #fff; }
+  body.ms-body:not([data-theme="light"]) .ms1-branch-option:hover { background: var(--ms-surface-2); }
+  body.ms-body:not([data-theme="light"]) .ms1-feedback.is-correct { border-color: #3f7a52; }
+  body.ms-body:not([data-theme="light"]) .ms1-feedback.is-wrong { border-color: #8b4a4a; }
+  body.ms-body:not([data-theme="light"]) .ms1-feedback.is-partial { border-color: #8a7433; }
+}
+
+/* Reduced motion: the root prototype stylesheet sets smooth scrolling on <html>;
+   honor the user's preference here, since our own media query cannot reach it
+   through the body selector. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto !important; }
+}

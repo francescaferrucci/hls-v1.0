@@ -16,7 +16,9 @@ const roleProfiles = {
  "General Manager": {manager:true,admin:true,readiness:84,continue:"Leadership Academy: Performance Management",progress:64},
  "Pet Nurse": {manager:false,admin:false,readiness:81,continue:"Medical Academy: Patient Assessment",progress:58},
  "DVM / Practitioner": {manager:false,admin:false,readiness:88,continue:"Diagnostic Testing Protocols",progress:73},
- "Service Coordinator": {manager:false,admin:false,readiness:86,continue:"Member Services: Phone Excellence",progress:67},
+ // Member Service Success is a real, browser-local course: its progress is read
+ // from its own storage namespace instead of a hard-coded prototype percentage.
+ "Service Coordinator": {manager:false,admin:false,readiness:86,continue:"Member Service Success",progress:0},
  "Membership Coordinator": {manager:false,admin:false,readiness:83,continue:"Membership Enrollment Accuracy",progress:49},
  "Member Advocate": {manager:false,admin:false,readiness:85,continue:"Medical Records Request Process",progress:78}
 };
@@ -24,13 +26,32 @@ const roleProfiles = {
 const academies = [
  {id:"foundations",title:"Foundations Academy",track:"foundation",group:"Operations",icon:"H",progress:100,description:"Hannah culture, service philosophy, safety, compliance, and core expectations."},
  {id:"medical",title:"Medical Academy",track:"clinical",group:"Clinical",icon:"＋",progress:72,description:"Patient assessment, diagnostics, treatment workflows, and clinical communication."},
- {id:"client",title:"Member Services Academy",track:"client",group:"Member Services",icon:"☎",progress:64,description:"Service Coordinator, Membership Coordinator, and Member Advocate pathways."},
+ {id:"client",title:"Member Services Academy",track:"client",group:"Member Services",icon:"☎",progress:0,ns:"hls.member-services.course-1",href:"academies/member-services/index.html",description:"Service Coordinator, Membership Coordinator, and Member Advocate pathways. Course 1, Member Service Success, is live."},
  {id:"leadership",title:"Leadership Academy",track:"leadership",group:"Leadership",icon:"★",progress:48,description:"Coaching, accountability, performance, team membersing, and operational leadership."},
  {id:"operations",title:"Operations Academy",track:"operations",group:"Operations",icon:"⚙",progress:56,description:"Billing, records, scheduling, inventory, systems, and quality processes."},
  {id:"ce",title:"Continuing Education",track:"ce",group:"Clinical",icon:"↗",progress:31,description:"Advanced professional growth and role-specific continuing education."}
 ];
 
+// Browser-local storage namespace for the live Member Services course.
+const MS_COURSE1_NS="hls.member-services.course-1";
+function localCoursePercent(ns){
+ try{
+  if(localStorage.getItem(ns+".complete")==="true") return 100;
+  const n=parseInt(localStorage.getItem(ns+".progress.percent"),10);
+  return isNaN(n)?0:Math.max(0,Math.min(100,n));
+ }catch(e){return 0}
+}
+// Prototype rows without a namespace keep their sample percentage; live courses
+// report only what is actually stored in this browser.
+function courseProgress(c){return c&&c.ns?localCoursePercent(c.ns):(c?c.progress:0)}
+function academyProgress(a){return a&&a.ns?localCoursePercent(a.ns):(a?a.progress:0)}
+function liveCourseForRole(role){
+ const target=roleProfiles[role]&&roleProfiles[role].continue;
+ return courses.find(c=>c.href&&c.title===target)||null;
+}
+
 const courses = [
+ {title:"Member Service Success",academy:"Member Services Academy",role:"Member Services",progress:0,ns:MS_COURSE1_NS,status:"assigned",duration:"55 min",due:"Assigned",track:"client",href:"academies/member-services/course-1/index.html"},
  {title:"Phone Answering Expectations",academy:"Member Services Academy",role:"Service Coordinator",progress:0,status:"assigned",duration:"12 min",due:"Jul 29",track:"client"},
  {title:"Diagnostic Testing Protocol",academy:"Medical Academy",role:"DVM / Practitioner",progress:42,status:"progress",duration:"18 min",due:"Jul 31",track:"clinical"},
  {title:"Nose-to-Tail Exam",academy:"Medical Academy",role:"Pet Nurse",progress:58,status:"progress",duration:"24 min",due:"Aug 3",track:"clinical"},
@@ -310,9 +331,11 @@ function updateRole(){
  state.role=$("#roleSwitch").value;state.location=$("#locationSwitch").value;
  const p=roleProfiles[state.role];
  $("#readinessScore").textContent=p.readiness+"%";
+ const liveContinue=liveCourseForRole(state.role);
  $("#continueTitle").textContent=p.continue;
- $("#continueMeta").textContent=`Current course • ${p.progress}% complete`;
- $("#continueProgress").style.width=p.progress+"%";
+ const continuePct=liveContinue?courseProgress(liveContinue):p.progress;
+ $("#continueMeta").textContent=liveContinue?`Current course • ${continuePct}% complete (saved in this browser)`:`Current course • ${continuePct}% complete`;
+ $("#continueProgress").style.width=continuePct+"%";
  renderDashboard();renderCourses();renderSimulations();renderManager();
  toast(`View updated for ${state.role} at ${state.location}`);
  applyRoleGating();
@@ -341,10 +364,17 @@ function renderDashboard(){
  const qs=["What is the blocked cat protocol?","How do I request medical records?","What is the phone answering expectation?","How do outside labs get approved?"];
  $("#popularQuestions").innerHTML=qs.map(q=>`<button class="question-item question-link" data-question="${q}"><span>${q}</span><span>→</span></button>`).join("");
  $$(".question-link").forEach(b=>b.addEventListener("click",()=>{switchView("ask");$("#askInput").value=b.dataset.question;askHannah()}));
- $("#dashboardAcademies").innerHTML=academies.slice(0,3).map(a=>`<button class="mini-academy dashboard-academy" data-academy="${a.id}"><strong>${a.title}</strong><span>${a.progress}% complete</span><div class="progress"><span style="width:${a.progress}%"></span></div></button>`).join("");
- $$(".dashboard-academy").forEach(b=>b.onclick=()=>b.dataset.academy==="foundations"?switchView("foundationsAcademy"):switchView("academies"));
+ $("#dashboardAcademies").innerHTML=academies.slice(0,3).map(a=>{const ap=academyProgress(a);return `<button class="mini-academy dashboard-academy" data-academy="${a.id}" data-href="${a.href||""}"><strong>${a.title}</strong><span>${ap}% complete</span><div class="progress"><span style="width:${ap}%"></span></div></button>`}).join("");
+ $$(".dashboard-academy").forEach(b=>b.onclick=()=>{
+  if(b.dataset.href) return window.location.assign(b.dataset.href);
+  return b.dataset.academy==="foundations"?switchView("foundationsAcademy"):switchView("academies");
+ });
 }
-$("#resumeLessonBtn").addEventListener("click",()=>openCourse(roleProfiles[state.role].continue));
+$("#resumeLessonBtn").addEventListener("click",()=>{
+ const live=liveCourseForRole(state.role);
+ if(live&&live.href) return window.location.assign(live.href);
+ openCourse(roleProfiles[state.role].continue);
+});
 
 function renderCourses(){
  const tab=state.learningTab;
@@ -354,8 +384,11 @@ function renderCourses(){
   const relevant=list.filter(c=>c.role===state.role||c.role==="All roles"||c.role==="Clinical"&&["Pet Nurse","DVM / Practitioner"].includes(state.role)||c.role==="Member Services"&&["Service Coordinator","Membership Coordinator","Member Advocate"].includes(state.role));
   if(relevant.length) list=relevant;
  }
- $("#courseGrid").innerHTML=list.map(c=>`<article class="course-card"><div class="card-banner ${c.track}"><strong>${c.academy}</strong><span>${c.role}</span></div><div class="card-body"><h2>${c.title}</h2><div class="card-meta"><span>${c.duration}</span><span>${c.due}</span></div><div class="progress"><span style="width:${c.progress}%"></span></div><div class="card-footer"><strong>${c.progress}%</strong><div><button class="secondary save-course" data-title="${c.title}">${state.savedCourses.has(c.title)?"Saved":"Save"}</button> <button class="primary open-course" data-title="${c.title}">${c.progress?"Continue":"Start"}</button></div></div></div></article>`).join("");
- $$(".open-course").forEach(b=>b.addEventListener("click",()=>openCourse(b.dataset.title)));
+ $("#courseGrid").innerHTML=list.map(c=>{const cp=courseProgress(c);return `<article class="course-card"><div class="card-banner ${c.track}"><strong>${c.academy}</strong><span>${c.role}</span></div><div class="card-body"><h2>${c.title}</h2><div class="card-meta"><span>${c.duration}</span><span>${c.due}</span></div><div class="progress"><span style="width:${cp}%"></span></div><div class="card-footer"><strong>${cp}%</strong><div><button class="secondary save-course" data-title="${c.title}">${state.savedCourses.has(c.title)?"Saved":"Save"}</button> <button class="primary open-course" data-title="${c.title}" data-href="${c.href||""}">${cp>=100?"Review":cp?"Continue":"Start"}</button></div></div></div></article>`}).join("");
+ $$(".open-course").forEach(b=>b.addEventListener("click",()=>{
+  if(b.dataset.href) return window.location.assign(b.dataset.href);
+  openCourse(b.dataset.title);
+ }));
  $$(".save-course").forEach(b=>b.addEventListener("click",()=>{state.savedCourses.add(b.dataset.title);toast("Course saved");renderCourses()}));
 }
 $("#learningTabs").addEventListener("click",e=>{if(!e.target.matches(".chip"))return;$$("#learningTabs .chip").forEach(x=>x.classList.remove("active"));e.target.classList.add("active");state.learningTab=e.target.dataset.tab;renderCourses()});
@@ -368,8 +401,9 @@ $("#certificateBtn").addEventListener("click",()=>openModal(`<span class="eyebro
 function renderAcademies(){
  const f=$("#academyRoleFilter").value;
  const list=academies.filter(a=>f==="all"||a.group===f);
- $("#academyGrid").innerHTML=list.map(a=>`<article class="academy-card"><div class="academy-icon ${a.track}">${a.icon}</div><span class="eyebrow">${a.group}</span><h2>${a.title}</h2><p>${a.description}</p><div class="progress"><span style="width:${a.progress}%"></span></div><div class="card-footer"><strong>${a.progress}% complete</strong><button class="primary academy-open" data-title="${a.title}">Open academy</button></div></article>`).join("");
+ $("#academyGrid").innerHTML=list.map(a=>{const ap=academyProgress(a);return `<article class="academy-card"><div class="academy-icon ${a.track}">${a.icon}</div><span class="eyebrow">${a.group}</span><h2>${a.title}</h2><p>${a.description}</p><div class="progress"><span style="width:${ap}%"></span></div><div class="card-footer"><strong>${ap}% complete</strong><button class="primary academy-open" data-title="${a.title}" data-href="${a.href||""}">Open academy</button></div></article>`}).join("");
  $$(".academy-open").forEach(b=>b.addEventListener("click",()=>{
+  if(b.dataset.href) return window.location.assign(b.dataset.href);
   if(b.dataset.title==="Foundations Academy") return switchView("foundationsAcademy");
   openModal(`<span class="eyebrow">Curriculum map</span><h1 class="modal-title">${b.dataset.title}</h1>${["Foundation knowledge","Role-specific workflow","Guided practice","Knowledge check","Competency validation"].map((x,i)=>`<div class="list-item"><span>${i+1}. ${x}</span><span class="badge ${i<2?"good":i===2?"warning":"neutral"}">${i<2?"Complete":i===2?"Current":"Locked"}</span></div>`).join("")}`)
  }));
@@ -1515,7 +1549,12 @@ document.addEventListener('click',e=>{
  const academy=e.target.closest('.academy-open');
  if(academy&&academy.dataset.title==='Medical Academy'){e.preventDefault();e.stopImmediatePropagation();openMedicalAcademy()}
 },true);
-document.querySelector('#resumeLessonBtn')?.addEventListener('click',e=>{e.stopImmediatePropagation();openMedicalAcademy()},true);
+// Resume routes to a real course when the active role has one; otherwise it keeps
+// the existing Medical Academy prototype behavior.
+document.querySelector('#resumeLessonBtn')?.addEventListener('click',e=>{
+ if(liveCourseForRole(state.role)) return;
+ e.stopImmediatePropagation();openMedicalAcademy();
+},true);
 document.querySelector('#openLevel5Btn')?.addEventListener('click',()=>openLevel5());
 document.querySelector('#backToMedicalAcademy')?.addEventListener('click',openMedicalAcademy);
 document.querySelector('#resumeBellaBtn')?.addEventListener('click',openBellaCase);

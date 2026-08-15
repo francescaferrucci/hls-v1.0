@@ -14,6 +14,11 @@ Open `http://localhost:8080`.
 - Interactive Course 1: `/academies/foundations/course-1/index.html`
 - The course contains a **Foundations Academy** return link.
 
+## Member Services Academy
+- Academy hub: `/academies/member-services/index.html` (also reachable from **Academies → Member Services Academy** and the dashboard mini-card)
+- Interactive Course 1: `/academies/member-services/course-1/index.html` — *Member Service Success: Connect, Listen, Respond*
+- Course 1 progress, reflections, assessment score, and teach-back are stored in this browser only, under the `hls.member-services.course-1` namespace. Root Academy, Learning, and Resume progress for this course is read from that namespace rather than a hard-coded percentage. Other Member Services course cards remain prototype placeholders.
+
 ## Version 1.0 scope
 Course 1 is fully interactive. Course 2 has a curriculum-ready blueprint inside the academy. Courses 3–8 are structured roadmap prototypes. The Medical Academy Levels 1–12 prototype remains available in the main system.
 
