@@ -1628,7 +1628,7 @@ function plannedLessonsFor(slug){return plannedLessonsBySlug[slug]||[]}
 /* Optional fixed display order per course (mixes live + planned lesson slugs/ids). Falls back to live-then-planned order when a course has no entry here. */
 const courseOrderBySlug={
  'medical-foundations':['medical-terminology','reproductive-anatomy','anatomy-and-physiology','understanding-canine-communication'],
- 'clinical-diagnostics':['sample-collection','imaging-support','case-presentation'],
+ 'clinical-diagnostics':['sample-collection','imaging-support','case-presentation','laboratory-procedures'],
  'clinical-skills':['medication-safety','asepsis-infection-prevention','catheter-care']
 };
 function applyCourseOrder(slug,tiles){
@@ -1831,7 +1831,8 @@ const bundledCourseLessonFallbacks={
  'clinical-diagnostics':[
   {slug:'sample-collection',title:'Sample Collection',summary:'Blood, urine, fecal, and ear sample collection: venipuncture sites and technique, cystocentesis and free catch urine, ear swab cytology, needles, syringes and sharps safety, blood tube selection, a fifteen-point recap, and a graded end-of-course assessment.',sort_order:1,path:'assets/data/clinical-diagnostics/sample-collection.json',localOnly:true},
   {slug:'imaging-support',title:'Imaging Support',summary:'Support the imaging team safely: radiography workflow and image quality, ALARA radiation safety, positioning and restraint support, ultrasound preparation, CT/MRI and contrast readiness, emergency imaging prioritization, and a graded twelve-question final assessment.',sort_order:2,path:'assets/data/clinical-diagnostics/imaging-support.json',localOnly:true},
-  {slug:'case-presentation',title:'Case Presentation',summary:'Present a case clearly and safely: the anatomy of a strong presentation, sorting relevant history and objective data, SBAR and veterinary I-PASS handoffs, observation versus interpretation and scope boundaries, closed-loop communication and PACE escalation, a case presentation lab, and a graded twelve-question final assessment.',sort_order:3,path:'assets/data/clinical-diagnostics/case-presentation.json',localOnly:true}
+  {slug:'case-presentation',title:'Case Presentation',summary:'Present a case clearly and safely: the anatomy of a strong presentation, sorting relevant history and objective data, SBAR and veterinary I-PASS handoffs, observation versus interpretation and scope boundaries, closed-loop communication and PACE escalation, a case presentation lab, and a graded twelve-question final assessment.',sort_order:3,path:'assets/data/clinical-diagnostics/case-presentation.json',localOnly:true},
+  {slug:'laboratory-procedures',title:'Laboratory Procedures',summary:'In-house laboratory procedures from the supplied Laboratory Procedures course: four section bands of key terms across hematology, blood chemistry, urinalysis and additional tests, ten instructional modules covering hematology analyzers and manual differentials, blood smear preparation and evaluation, PCV and total solids, chemistry testing, SNAP tests, urinalysis, fecal analysis, therapeutic drug monitoring and ear cytology, four supplied videos with five replacement-ready placeholders, and a five-question final assessment at 70 percent (4 of 5 correct).',sort_order:4,path:'assets/data/clinical-diagnostics/laboratory-procedures.json',localOnly:true}
  ],
  /* Clinical Skills & Treatment Delivery ships bundled-only for now: the course has no Supabase
     course row yet, so its lessons load from the package and keep progress in this browser. */
@@ -6318,6 +6319,501 @@ function wireCtcCases(root){
  });
 }
 
+/* ---- Clinical Diagnostics — Laboratory Procedures interactions ---- */
+function lpReduced(){return !!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)}
+function lpFocus(el){if(el)el.focus({preventScroll:lpReduced()})}
+function lpSay(host,tone,lead,body){
+ if(!host)return;
+ host.hidden=false;
+ host.className='lp-feedback is-'+tone;
+ host.innerHTML='';
+ const p=document.createElement('p');
+ const strong=document.createElement('strong');
+ strong.textContent=lead;
+ p.appendChild(strong);
+ if(body)p.appendChild(document.createTextNode(' '+body));
+ host.appendChild(p);
+}
+function lpClear(host){if(!host)return;host.hidden=true;host.innerHTML='';host.className='lp-feedback'}
+function wireLaboratoryProceduresWidgets(root){
+ if(!root)return;
+ wireLpTerms(root);
+ wireLpAccordions(root);
+ wireLpSequences(root);
+ wireLpPairs(root);
+ wireLpSorts(root);
+ wireLpChecks(root);
+ wireLpPlayers(root);
+ wireLpPlaceholders(root);
+ wireLpAssessmentNote(root);
+}
+/* Key-term cards: click to reveal the source definition. Mirrors the reveal affordance on the
+   source cards while keeping every definition selectable, copyable text. */
+function wireLpTerms(root){
+ root.querySelectorAll('[data-lp-terms]').forEach(block=>{
+  if(block.dataset.lpTermsReady==='1')return;
+  block.dataset.lpTermsReady='1';
+  const btns=[...block.querySelectorAll('[data-lp-term-btn]')];
+  const counter=block.querySelector('[data-lp-terms-counter]');
+  const allBtn=block.querySelector('[data-lp-terms-all]');
+  const resetBtn=block.querySelector('[data-lp-terms-reset]');
+  const total=btns.length;
+  if(!total)return;
+  const shownCount=()=>btns.filter(b=>b.getAttribute('aria-expanded')==='true').length;
+  const paint=()=>{
+   const shown=shownCount();
+   if(counter)counter.textContent=shown+' of '+total+' key terms revealed';
+   if(allBtn)allBtn.textContent=shown===total?'Hide all definitions':'Reveal all definitions';
+  };
+  const set=(btn,open)=>{
+   const body=document.getElementById(btn.getAttribute('aria-controls'));
+   btn.setAttribute('aria-expanded',open?'true':'false');
+   btn.textContent=open?'Hide':(btn.dataset.lpTermBtn||'Reveal');
+   if(body)body.hidden=!open;
+   btn.closest('.lp-term')?.classList.toggle('is-open',open);
+  };
+  btns.forEach(btn=>{
+   set(btn,false);
+   btn.addEventListener('click',()=>{
+    set(btn,btn.getAttribute('aria-expanded')!=='true');
+    paint();
+   });
+  });
+  allBtn?.addEventListener('click',()=>{
+   const open=shownCount()!==total;
+   btns.forEach(b=>set(b,open));
+   paint();
+  });
+  resetBtn?.addEventListener('click',()=>{
+   btns.forEach(b=>set(b,false));
+   paint();
+   lpFocus(btns[0]);
+  });
+  paint();
+ });
+}
+/* Accordion reading panels: the document's plus/minus rows with a thin orange left rule.
+   Native buttons, aria-expanded, and real text in every panel. */
+function wireLpAccordions(root){
+ root.querySelectorAll('[data-lp-accordion]').forEach(block=>{
+  if(block.dataset.lpAccordionReady==='1')return;
+  block.dataset.lpAccordionReady='1';
+  const btns=[...block.querySelectorAll('[data-lp-acc-btn]')];
+  const counter=block.querySelector('[data-lp-acc-counter]');
+  const allBtn=block.querySelector('[data-lp-acc-all]');
+  const total=btns.length;
+  if(!total)return;
+  const openCount=()=>btns.filter(b=>b.getAttribute('aria-expanded')==='true').length;
+  const paint=()=>{
+   const open=openCount();
+   if(counter)counter.textContent=open+' of '+total+' sections open';
+   if(allBtn)allBtn.textContent=open===total?'Collapse all sections':'Expand all sections';
+  };
+  const set=(btn,open)=>{
+   const panel=document.getElementById(btn.getAttribute('aria-controls'));
+   btn.setAttribute('aria-expanded',open?'true':'false');
+   if(panel)panel.hidden=!open;
+   btn.closest('.lp-acc-row')?.classList.toggle('is-open',open);
+   const sign=btn.querySelector('[data-lp-acc-sign]');
+   if(sign)sign.textContent=open?'\u2212':'+';
+  };
+  btns.forEach((btn,i)=>{
+   set(btn,i===0&&block.dataset.lpAccordion==='first-open');
+   btn.addEventListener('click',()=>{
+    const open=btn.getAttribute('aria-expanded')!=='true';
+    set(btn,open);
+    paint();
+    if(open){
+     const panel=document.getElementById(btn.getAttribute('aria-controls'));
+     if(panel){panel.setAttribute('tabindex','-1');lpFocus(panel)}
+    }
+   });
+   btn.addEventListener('keydown',e=>{
+    let next=null;
+    if(e.key==='ArrowDown')next=(i+1)%total;
+    else if(e.key==='ArrowUp')next=(i-1+total)%total;
+    else if(e.key==='Home')next=0;
+    else if(e.key==='End')next=total-1;
+    if(next===null)return;
+    e.preventDefault();
+    lpFocus(btns[next]);
+   });
+  });
+  allBtn?.addEventListener('click',()=>{
+   const open=openCount()!==total;
+   btns.forEach(b=>set(b,open));
+   paint();
+  });
+  paint();
+ });
+}
+/* Ordered sequences: select each step in the order the document describes. */
+function wireLpSequences(root){
+ root.querySelectorAll('[data-lp-seq]').forEach(block=>{
+  if(block.dataset.lpSeqReady==='1')return;
+  block.dataset.lpSeqReady='1';
+  const steps=[...block.querySelectorAll('[data-lp-seq-step]')];
+  const total=steps.length;
+  if(!total)return;
+  const track=block.querySelector('[data-lp-seq-track]');
+  const counter=block.querySelector('[data-lp-seq-counter]');
+  const feedback=block.querySelector('[data-lp-seq-feedback]');
+  const resetBtn=block.querySelector('[data-lp-seq-reset]');
+  const done=block.querySelector('[data-lp-seq-done]');
+  let placed=0;
+  const paint=()=>{
+   if(counter)counter.textContent=placed+' of '+total+' steps in order';
+   if(done)done.hidden=placed<total;
+  };
+  steps.forEach(step=>{
+   step.addEventListener('click',()=>{
+    if(step.disabled)return;
+    const order=+step.dataset.lpSeqStep;
+    if(order!==placed+1){
+     lpSay(feedback,'bad','\u2715 Not that step yet.',step.dataset.wrong||'That step comes later in this sequence.');
+     step.classList.add('is-wrong');
+     window.setTimeout(()=>step.classList.remove('is-wrong'),lpReduced()?0:700);
+     return;
+    }
+    placed+=1;
+    step.disabled=true;
+    step.classList.add('is-placed');
+    if(track){
+     const li=document.createElement('li');
+     li.className='lp-seq-track-item';
+     const n=document.createElement('span');
+     n.className='lp-seq-track-num';
+     n.textContent=String(placed);
+     const t=document.createElement('span');
+     t.textContent=step.dataset.label||step.textContent.trim();
+     li.appendChild(n);li.appendChild(t);
+     track.appendChild(li);
+    }
+    lpSay(feedback,'good','\u2713 Step '+placed+' placed.',step.dataset.explain||'');
+    paint();
+    if(placed===total&&done){done.setAttribute('tabindex','-1');lpFocus(done)}
+   });
+  });
+  resetBtn?.addEventListener('click',()=>{
+   placed=0;
+   steps.forEach(s=>{s.disabled=false;s.classList.remove('is-placed','is-wrong')});
+   if(track)track.innerHTML='';
+   lpClear(feedback);
+   paint();
+   lpFocus(steps[0]);
+  });
+  paint();
+ });
+}
+/* Matching: pick a sample or finding, then pick the tube, stain or instrument it belongs with. */
+function wireLpPairs(root){
+ root.querySelectorAll('[data-lp-pair]').forEach(block=>{
+  if(block.dataset.lpPairReady==='1')return;
+  block.dataset.lpPairReady='1';
+  const lefts=[...block.querySelectorAll('[data-lp-pair-left]')];
+  const rights=[...block.querySelectorAll('[data-lp-pair-right]')];
+  const counter=block.querySelector('[data-lp-pair-counter]');
+  const fb=block.querySelector('[data-lp-pair-feedback]');
+  const done=block.querySelector('[data-lp-pair-done]');
+  const resetBtn=block.querySelector('[data-lp-pair-reset]');
+  const rightNoun=block.dataset.lpPairRightNoun||'match';
+  const leftNoun=block.dataset.lpPairLeftNoun||'item';
+  const total=lefts.length;
+  if(!total||!rights.length)return;
+  let sel=null,matched=0;
+  const paint=()=>{
+   if(counter)counter.textContent=matched+' of '+total+' matched.'+(sel?' Now choose the '+rightNoun+' for the selected '+leftNoun+'.':' Select a'+(/^[aeiou]/i.test(leftNoun)?'n ':' ')+leftNoun+' to begin.');
+  };
+  const clearSel=()=>{lefts.forEach(l=>{l.setAttribute('aria-pressed','false');l.classList.remove('is-picked')});sel=null};
+  lefts.forEach(l=>{
+   l.setAttribute('aria-pressed','false');
+   l.addEventListener('click',()=>{
+    if(l.disabled)return;
+    const was=l.getAttribute('aria-pressed')==='true';
+    clearSel();
+    if(!was){l.setAttribute('aria-pressed','true');l.classList.add('is-picked');sel=l}
+    paint();
+   });
+  });
+  rights.forEach(r=>{
+   r.addEventListener('click',()=>{
+    if(!sel){lpSay(fb,'bad','\u2715 Select a '+leftNoun+' first.','Choose one '+leftNoun+' on the left, then choose its '+rightNoun+'.');return}
+    if(r.dataset.pairKey===sel.dataset.pairKey){
+     matched++;
+     sel.disabled=true;
+     sel.classList.remove('is-picked');
+     sel.classList.add('is-correct');
+     const slot=sel.parentElement.querySelector('[data-lp-pair-slot]');
+     if(slot){slot.hidden=false;slot.textContent=(r.dataset.short||r.textContent.trim())+' \u2014 '+(r.dataset.explain||'')}
+     lpSay(fb,'good','\u2713 Correct match.',sel.dataset.explain||'');
+     clearSel();
+     if(matched===total&&done){done.hidden=false;done.setAttribute('tabindex','-1');lpFocus(done)}
+    }else{
+     lpSay(fb,'bad','\u2715 That is not the '+rightNoun+' for this '+leftNoun+'.',r.dataset.explain||'');
+    }
+    paint();
+   });
+  });
+  resetBtn?.addEventListener('click',()=>{
+   matched=0;
+   lefts.forEach(l=>{
+    l.disabled=false;
+    l.classList.remove('is-correct','is-picked');
+    l.setAttribute('aria-pressed','false');
+    const slot=l.parentElement.querySelector('[data-lp-pair-slot]');
+    if(slot){slot.hidden=true;slot.textContent=''}
+   });
+   lpClear(fb);
+   if(done)done.hidden=true;
+   sel=null;paint();
+   lpFocus(lefts[0]);
+  });
+  paint();
+ });
+}
+/* Test-purpose classification: select a test, then place it under the question it answers. */
+function wireLpSorts(root){
+ root.querySelectorAll('[data-lp-sort]').forEach(block=>{
+  if(block.dataset.lpSortReady==='1')return;
+  block.dataset.lpSortReady='1';
+  const bank=block.querySelector('[data-lp-sort-bank]');
+  const items=[...block.querySelectorAll('[data-lp-item]')];
+  const total=items.length;
+  if(!total)return;
+  const placeBtns=[...block.querySelectorAll('[data-lp-place]')];
+  const checkBtn=block.querySelector('[data-lp-sort-check]');
+  const resetBtn=block.querySelector('[data-lp-sort-reset]');
+  const counter=block.querySelector('[data-lp-sort-counter]');
+  const feedback=block.querySelector('[data-lp-sort-feedback]');
+  let selected=null;
+  const placedCount=()=>items.filter(i=>i.dataset.placed).length;
+  const paint=()=>{
+   const placed=placedCount();
+   if(counter)counter.textContent=placed+' of '+total+' tests placed';
+   placeBtns.forEach(b=>{b.disabled=!selected});
+   if(checkBtn)checkBtn.disabled=placed!==total;
+  };
+  const select=item=>{
+   selected=selected===item?null:item;
+   items.forEach(i=>{
+    i.setAttribute('aria-pressed',i===selected?'true':'false');
+    i.classList.toggle('is-selected',i===selected);
+   });
+   paint();
+  };
+  items.forEach(item=>item.addEventListener('click',()=>select(item)));
+  placeBtns.forEach(btn=>{
+   btn.addEventListener('click',()=>{
+    if(!selected)return;
+    const key=btn.dataset.lpPlace;
+    const list=block.querySelector('[data-lp-bucket="'+key+'"] [data-lp-bucket-list]');
+    if(!list)return;
+    const li=selected.closest('li')||selected;
+    selected.dataset.placed=key;
+    selected.classList.remove('is-correct','is-wrong');
+    selected.querySelector('.lp-sort-result')?.remove();
+    selected.querySelector('.lp-sort-why')?.remove();
+    list.appendChild(li);
+    const moved=selected;
+    select(selected);
+    lpFocus(moved);
+    lpClear(feedback);
+    paint();
+   });
+  });
+  checkBtn?.addEventListener('click',()=>{
+   let right=0;
+   items.forEach(item=>{
+    const ok=item.dataset.placed===item.dataset.bucket;
+    item.classList.toggle('is-correct',ok);
+    item.classList.toggle('is-wrong',!ok);
+    let tag=item.querySelector('.lp-sort-result');
+    if(!tag){tag=document.createElement('span');tag.className='lp-sort-result';item.appendChild(tag)}
+    tag.textContent=ok?'\u2713 Correct':'\u2715 Not this question';
+    let why=item.querySelector('.lp-sort-why');
+    if(!why){why=document.createElement('span');why.className='lp-sort-why';item.appendChild(why)}
+    why.textContent=item.dataset.explain||'';
+    if(ok)right+=1;
+   });
+   lpSay(feedback,right===total?'good':'bad',right+' of '+total+' are under the right question.',
+    right===total?'Every test is matched to the question it answers. Each card now shows the source wording.'
+     :'Each card now shows the source wording. Reset and retry the ones you missed.');
+  });
+  resetBtn?.addEventListener('click',()=>{
+   items.forEach(item=>{
+    delete item.dataset.placed;
+    item.classList.remove('is-correct','is-wrong','is-selected');
+    item.setAttribute('aria-pressed','false');
+    item.querySelector('.lp-sort-result')?.remove();
+    item.querySelector('.lp-sort-why')?.remove();
+    if(bank)bank.appendChild(item.closest('li')||item);
+   });
+   selected=null;
+   lpClear(feedback);
+   paint();
+   lpFocus(items[0]);
+  });
+  paint();
+ });
+}
+/* Knowledge-reinforcement prompts: ungraded single-choice checks with immediate feedback. */
+function wireLpChecks(root){
+ root.querySelectorAll('[data-lp-check]').forEach(block=>{
+  if(block.dataset.lpCheckReady==='1')return;
+  block.dataset.lpCheckReady='1';
+  const items=[...block.querySelectorAll('[data-lp-q]')];
+  const total=items.length;
+  if(!total)return;
+  const counter=block.querySelector('[data-lp-check-counter]');
+  const resetBtn=block.querySelector('[data-lp-check-reset]');
+  const answered=new Array(total).fill(null);
+  const paint=()=>{
+   const done=answered.filter(a=>a!==null).length;
+   const right=answered.filter(a=>a===true).length;
+   if(counter)counter.textContent=done===0
+    ?'0 of '+total+' answered. These prompts are not scored \u2014 only the final assessment is.'
+    :done+' of '+total+' answered \u2014 '+right+' correct on the first try. Not scored toward your progress.';
+  };
+  items.forEach((li,i)=>{
+   const fb=li.querySelector('[data-lp-fb]');
+   const opts=[...li.querySelectorAll('[data-lp-opt]')];
+   opts.forEach(btn=>{
+    btn.addEventListener('click',()=>{
+     if(answered[i]!==null)return;
+     const correct=btn.dataset.correct==='1';
+     answered[i]=correct;
+     opts.forEach(b=>{
+      b.disabled=true;
+      if(b.dataset.correct==='1')b.classList.add('is-correct');
+      else if(b===btn)b.classList.add('is-wrong');
+     });
+     btn.classList.add('is-chosen');
+     lpSay(fb,correct?'good':'bad',correct?'\u2713 Correct.':'\u2715 Not quite.',btn.dataset.explain||li.dataset.explain||'');
+     paint();
+    });
+   });
+  });
+  resetBtn?.addEventListener('click',()=>{
+   answered.fill(null);
+   items.forEach(li=>{
+    li.querySelectorAll('[data-lp-opt]').forEach(b=>{b.disabled=false;b.classList.remove('is-correct','is-wrong','is-chosen')});
+    lpClear(li.querySelector('[data-lp-fb]'));
+   });
+   paint();
+   lpFocus(items[0].querySelector('[data-lp-opt]'));
+  });
+  paint();
+ });
+}
+/* Supplied course videos: native <video> with controls only. No autoplay, loop or muted.
+   Reports real duration once metadata loads and surfaces a download link if playback fails. */
+function wireLpPlayers(root){
+ root.querySelectorAll('[data-lp-player]').forEach(block=>{
+  if(block.dataset.lpPlayerReady==='1')return;
+  block.dataset.lpPlayerReady='1';
+  const video=block.querySelector('video');
+  const status=block.querySelector('[data-lp-player-status]');
+  if(!video)return;
+  const fmt=s=>{
+   if(!Number.isFinite(s))return '';
+   const m=Math.floor(s/60),sec=Math.round(s-m*60);
+   return m>0?m+' min '+String(sec).padStart(2,'0')+' sec':sec+' sec';
+  };
+  const say=text=>{if(status)status.textContent=text};
+  say('Ready to play. Use the player controls \u2014 this video never starts on its own.');
+  video.addEventListener('loadedmetadata',()=>{
+   const d=fmt(video.duration);
+   say('Loaded'+(d?' \u2014 '+d+' of video':'')+'. Use the player controls to play, pause or seek.');
+  });
+  video.addEventListener('play',()=>say('Playing. Pause or seek at any time with the player controls.'));
+  video.addEventListener('pause',()=>{if(!video.ended)say('Paused at '+fmt(video.currentTime)+'.')});
+  video.addEventListener('ended',()=>say('Finished. Replay from the player controls, or select Continue when you are ready.'));
+  video.addEventListener('error',()=>{
+   block.classList.add('is-error');
+   say('This video could not load in your browser. Use the download link below to open it directly.');
+  });
+ });
+}
+/* Video locations with no supplied file yet: an accessible disclosure describing what the
+   finished video will cover. No <video> element is created, so there is never a broken player. */
+function wireLpPlaceholders(root){
+ root.querySelectorAll('[data-lp-placeholder]').forEach(block=>{
+  if(block.dataset.lpPlaceholderReady==='1')return;
+  block.dataset.lpPlaceholderReady='1';
+  const btn=block.querySelector('[data-lp-placeholder-toggle]');
+  const panel=btn&&block.querySelector('#'+btn.getAttribute('aria-controls'));
+  const status=block.querySelector('[data-lp-placeholder-status]');
+  if(!btn||!panel)return;
+  panel.hidden=true;
+  btn.setAttribute('aria-expanded','false');
+  if(status)status.textContent='Details closed.';
+  btn.addEventListener('click',()=>{
+   const open=btn.getAttribute('aria-expanded')==='true';
+   btn.setAttribute('aria-expanded',open?'false':'true');
+   panel.hidden=open;
+   btn.classList.toggle('is-open',!open);
+   btn.textContent=open?'What this video will cover':'Hide details';
+   if(status)status.textContent=open?'Details closed.':'Details open.';
+   if(!open){panel.setAttribute('tabindex','-1');lpFocus(panel)}
+  });
+ });
+}
+/* Final assessment: restate the document's pass rule in learner language (70% = 4 of 5 correct)
+   and relabel the closing action once the module is complete. Scoped by the marker element. */
+function wireLpAssessmentNote(root){
+ const marker=root.querySelector('[data-lp-assessment-note]');
+ if(!marker||marker.dataset.lpAssessmentNoteReady==='1')return;
+ marker.dataset.lpAssessmentNoteReady='1';
+ const result=root.querySelector('#l2QuizResult');
+ if(!result)return;
+ const build=()=>{
+  if(!document.body.contains(result)){observer.disconnect();return}
+  if(!result.innerHTML.trim())return;
+  const box=result.querySelector('.feedback-box');
+  const closeBtn=result.querySelector('#l2CloseModuleModal');
+  const passed=!!box&&/marked complete/i.test(box.textContent||'');
+  if(closeBtn&&passed&&closeBtn.textContent!=='Finish lesson'){
+   closeBtn.textContent='Finish lesson';
+   closeBtn.setAttribute('aria-label','Finish Laboratory Procedures and return to the curriculum');
+  }
+  if(result.querySelector('[data-lp-assessment-note-panel]'))return;
+  const panel=document.createElement('section');
+  panel.className='lp-result-note'+(passed?' is-pass':' is-retake');
+  panel.setAttribute('data-lp-assessment-note-panel','');
+  panel.setAttribute('role','status');
+  panel.setAttribute('aria-live','polite');
+  const h=document.createElement('h3');
+  const p=document.createElement('p');
+  h.textContent=passed?'You passed \u2014 4 of 5 or better':'Not passed yet \u2014 4 of 5 correct required';
+  p.textContent=passed
+   ?'The course pass mark is 70%. With five questions, each worth 20%, that means 4 of 5 correct or better. Your score is recorded in your Hannah Learning System progress.'
+   :'The course pass mark is 70%. With five questions, each worth 20%, the only passing scores are 4 of 5 (80%) and 5 of 5 (100%). Retake the assessment \u2014 reopen any module from the curriculum first to re-read the material behind the items you missed.';
+  panel.appendChild(h);
+  panel.appendChild(p);
+  const note=document.createElement('p');
+  note.className='lp-result-note-review';
+  note.textContent='All content in this lesson comes from the supplied Laboratory Procedures course document and is pending Hannah clinical leadership approval before production use.';
+  panel.appendChild(note);
+  if(passed){
+   const finish=document.createElement('div');
+   finish.className='lp-finish';
+   const mark=document.createElement('div');
+   mark.className='lp-finish-mark';
+   mark.setAttribute('aria-hidden','true');
+   mark.textContent='\u2713';
+   const fh=document.createElement('h4');
+   fh.textContent='You\u2019ve reached the finish line!';
+   const fp=document.createElement('p');
+   fp.textContent='Now it\u2019s time to put your newfound knowledge into practice. Select Finish lesson to return to the Clinical Diagnostics curriculum.';
+   finish.appendChild(mark);finish.appendChild(fh);finish.appendChild(fp);
+   panel.appendChild(finish);
+  }
+  result.appendChild(panel);
+ };
+ const observer=new MutationObserver(()=>build());
+ observer.observe(result,{childList:true,subtree:true});
+ build();
+}
 /* ---- Module modal with knowledge check ---- */
 const TRIAGE_REVIEW_LESSON_SLUG='triage-review';
 const SAMPLE_COLLECTION_LESSON_SLUG='sample-collection';
@@ -6327,7 +6823,8 @@ const CASE_PRESENTATION_LESSON_SLUG='case-presentation';
 const MEDICATION_SAFETY_LESSON_SLUG='medication-safety';
 const ASEPSIS_LESSON_SLUG='asepsis-infection-prevention';
 const CATHETER_CARE_LESSON_SLUG='catheter-care';
-const CONTINUE_FLOW_LESSON_SLUGS=new Set([TRIAGE_REVIEW_LESSON_SLUG,SAMPLE_COLLECTION_LESSON_SLUG,CANINE_COMMUNICATION_LESSON_SLUG,IMAGING_SUPPORT_LESSON_SLUG,CASE_PRESENTATION_LESSON_SLUG,MEDICATION_SAFETY_LESSON_SLUG,ASEPSIS_LESSON_SLUG,CATHETER_CARE_LESSON_SLUG]);
+const LABORATORY_PROCEDURES_LESSON_SLUG='laboratory-procedures';
+const CONTINUE_FLOW_LESSON_SLUGS=new Set([TRIAGE_REVIEW_LESSON_SLUG,SAMPLE_COLLECTION_LESSON_SLUG,CANINE_COMMUNICATION_LESSON_SLUG,IMAGING_SUPPORT_LESSON_SLUG,CASE_PRESENTATION_LESSON_SLUG,MEDICATION_SAFETY_LESSON_SLUG,ASEPSIS_LESSON_SLUG,CATHETER_CARE_LESSON_SLUG,LABORATORY_PROCEDURES_LESSON_SLUG]);
 let activeModule=null, quizAnswers={};
 const moduleModalState={saving:false,message:'',isError:false,reviewSaveStatus:'idle'};
 function resetModuleModalState(){
@@ -6509,6 +7006,7 @@ function renderModuleModal(opts={}){
  wireMedicationSafetyWidgets(document.querySelector('#modalContent'));
  wireAsepsisWidgets(document.querySelector('#modalContent'));
  wireCatheterWidgets(document.querySelector('#modalContent'));
+ wireLaboratoryProceduresWidgets(document.querySelector('#modalContent'));
  if(hasQuiz&&answeredCount===total)void renderQuizResult();
  if(opts.focusHeading)focusModuleModalHeading();
 }
