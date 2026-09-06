@@ -2057,7 +2057,7 @@ async function fetchBundledFallbackCourseLessons(slug){
 }
 
 function stateFor(slug){
- if(!lessonStates[slug])lessonStates[slug]={tab:'overview',moduleProgress:{},moduleScores:{},caseId:null,caseStep:0,casesCompleted:[],checklist:{},attested:false,signoff:null,progressRow:null,loaded:false};
+ if(!lessonStates[slug])lessonStates[slug]={tab:'overview',moduleProgress:{},moduleScores:{},caseId:null,caseStep:0,casesCompleted:[],caseDecisions:{},checklist:{},attested:false,signoff:null,progressRow:null,loaded:false};
  return lessonStates[slug];
 }
 function activeLesson(){return lessonCache[activeSlug]}
@@ -2567,14 +2567,42 @@ function wireLessonPlayer(){
  document.querySelectorAll('.l2-open-module').forEach(b=>b.onclick=()=>openLessonModule(+b.dataset.module));
  document.querySelectorAll('.l2-open-case').forEach(b=>b.onclick=()=>openLessonCase(+b.dataset.case));
  document.querySelectorAll('[data-l2-check]').forEach(cb=>cb.onchange=async()=>{
-  st.checklist[cb.dataset.l2Check]=cb.checked;
+  const idx=cb.dataset.l2Check,nextChecked=cb.checked;
+  if(isBundledFallbackLesson(lesson)||isLocalOnlyLesson(lesson)){
+   st.checklist[idx]=nextChecked;
+   paintLesson();
+   toast(nextChecked?'Checklist item marked complete':'Checklist item unchecked');
+   await saveProgress(lesson,st);
+   return;
+  }
+  cb.disabled=true;
+  try{
+   const result=await recordCompletionRemotely(lesson.id,'checklist_item',idx,{checked:nextChecked});
+   if(result.checklist)Object.assign(st.checklist,result.checklist);
+   toast(nextChecked?'Checklist item marked complete':'Checklist item unchecked');
+  }catch(error){
+   toast(error.message||'Could not save this checklist item');
+  }
   paintLesson();
-  toast(cb.checked?'Checklist item marked complete':'Checklist item unchecked');
   await saveProgress(lesson,st);
  });
  document.querySelector('#l2AttestCheck')?.addEventListener('change',async e=>{
-  st.attested=e.target.checked;paintLesson();
-  toast(e.target.checked?'Attestation signed':'Attestation removed');
+  const nextChecked=e.target.checked;
+  if(isBundledFallbackLesson(lesson)||isLocalOnlyLesson(lesson)){
+   st.attested=nextChecked;paintLesson();
+   toast(nextChecked?'Attestation signed':'Attestation removed');
+   await saveProgress(lesson,st);
+   return;
+  }
+  e.target.disabled=true;
+  try{
+   const result=await recordCompletionRemotely(lesson.id,'attestation','attestation',{checked:nextChecked});
+   st.attested=typeof result.attested==='boolean'?result.attested:st.attested;
+   toast(st.attested?'Attestation signed':'Attestation removed');
+  }catch(error){
+   toast(error.message||'Could not save the attestation');
+  }
+  paintLesson();
   await saveProgress(lesson,st);
  });
  document.querySelector('#requestL2Validation')?.addEventListener('click',async()=>{
@@ -7252,6 +7280,27 @@ async function finalizeModuleAttemptRemotely(lessonId,moduleId){
  if(error)throw error;
  return data;
 }
+async function extractFunctionErrorMessage(error,fallback){
+ try{
+  const body=await error?.context?.json?.();
+  if(body?.error)return body.error;
+ }catch(e){}
+ return fallback;
+}
+/* Trusted write boundary for checklist items, case exercises, and self-attestation -- the
+   server validates the claim against the lesson's live content (and, for attestation, against
+   the same server-trusted moduleProgress/moduleScores/checklist records) instead of trusting
+   whatever st.checklist/st.casesCompleted/st.attested a modified browser might send. */
+async function recordCompletionRemotely(lessonId,kind,itemKey,extra={}){
+ const {data,error}=await sb.functions.invoke('record-completion',{
+  body:{lesson_id:lessonId,kind,item_key:String(itemKey),...extra}
+ });
+ if(error){
+  const message=await extractFunctionErrorMessage(error,'Could not save this — check your connection and try again.');
+  throw new Error(message);
+ }
+ return data;
+}
 async function renderQuizResult(){
  const m=activeModule,lesson=activeLesson(),st=activeState();
  if(lessonUsesTriageContinueFlow(lesson)&&moduleIsUngradedReview(m)){
@@ -7343,25 +7392,57 @@ function renderLessonCase(){
  const hwCfg=c.hwWidgets&&c.hwWidgets[String(st.caseStep)]; if(hwCfg)wireHwWidget(hwCfg);
  wireAnatomyWidgets(document.querySelector('#l2CaseStageContent'));
  document.querySelectorAll('[data-l2-case-step]').forEach(b=>b.onclick=()=>{st.caseStep=+b.dataset.l2CaseStep;renderLessonCase()});
+ if(!st.caseDecisions[c.id])st.caseDecisions[c.id]={};
+ const chosenForCase=st.caseDecisions[c.id];
  Object.keys(c.decisions).forEach(hostId=>{
   const el=document.querySelector('#'+hostId);
   if(!el)return;
   const d=c.decisions[hostId];
+  const priorChoice=chosenForCase[hostId];
   el.innerHTML=d.opts.map((o,i)=>`<button class="case-choice" data-opt="${i}">${o}</button>`).join('')+'<div class="l2-case-feedback"></div>';
+  if(Number.isInteger(priorChoice)){
+   el.querySelectorAll('.case-choice').forEach((b2,i2)=>{b2.disabled=true;if(i2===d.correct)b2.classList.add('selected')});
+   el.querySelector('.l2-case-feedback').innerHTML=`<div class="feedback"><p><strong>${priorChoice===d.correct?'Correct.':'Consider the veterinarian-approved answer:'}</strong> ${d.exp}</p></div>`;
+  }
   el.querySelectorAll('.case-choice').forEach(btn=>btn.onclick=()=>{
    const chosen=+btn.dataset.opt;
+   chosenForCase[hostId]=chosen;
    el.querySelectorAll('.case-choice').forEach((b2,i2)=>{b2.disabled=true;if(i2===d.correct)b2.classList.add('selected')});
    el.querySelector('.l2-case-feedback').innerHTML=`<div class="feedback"><p><strong>${chosen===d.correct?'Correct.':'Consider the veterinarian-approved answer:'}</strong> ${d.exp}</p></div>`;
    toast(chosen===d.correct?'Correct decision recorded':'Feedback recorded');
   });
  });
- document.querySelector(`#completeL2Case${c.id}`)?.addEventListener('click',async()=>{
-  if(!st.casesCompleted.includes(c.id))st.casesCompleted.push(c.id);
-  toast(`${c.title} completed`);
-  await saveProgress(lesson,st);
-  st.tab='cases';
-  switchView('level2');
-  paintLesson();
+ document.querySelector(`#completeL2Case${c.id}`)?.addEventListener('click',async btnEvt=>{
+  if(isBundledFallbackLesson(lesson)||isLocalOnlyLesson(lesson)){
+   if(!st.casesCompleted.includes(c.id))st.casesCompleted.push(c.id);
+   toast(`${c.title} completed`);
+   await saveProgress(lesson,st);
+   st.tab='cases';
+   switchView('level2');
+   paintLesson();
+   return;
+  }
+  const decisionHostIds=Object.keys(c.decisions||{});
+  const unanswered=decisionHostIds.filter(hostId=>!Number.isInteger(chosenForCase[hostId]));
+  if(unanswered.length>0){
+   toast('Answer every decision point in this case before marking it complete');
+   return;
+  }
+  const completeBtn=btnEvt?.currentTarget;
+  if(completeBtn)completeBtn.disabled=true;
+  try{
+   const result=await recordCompletionRemotely(lesson.id,'case',c.id,{decisions:chosenForCase});
+   if(Array.isArray(result.casesCompleted))st.casesCompleted=result.casesCompleted;
+   else if(!st.casesCompleted.includes(c.id))st.casesCompleted.push(c.id);
+   toast(`${c.title} completed`);
+   await saveProgress(lesson,st);
+   st.tab='cases';
+   switchView('level2');
+   paintLesson();
+  }catch(error){
+   toast(error.message||'Could not save this case completion');
+   if(completeBtn)completeBtn.disabled=false;
+  }
  });
 }
 
