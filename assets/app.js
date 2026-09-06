@@ -116,13 +116,6 @@ const team = [
  {name:"Noah Williams",initials:"NW",role:"Service Coordinator",location:"HE2 ER",completion:68,overdue:3,skills:5,status:"At risk"}
 ];
 
-const assignments = [
- {title:"Phone Answering Expectations",audience:"Service Coordinators",due:"Jul 29",complete:"78%",status:"Active"},
- {title:"Diagnostic Testing Protocol",audience:"DVM / Practitioners",due:"Jul 31",complete:"71%",status:"Active"},
- {title:"Nose-to-Tail Exam",audience:"Pet Nurses",due:"Aug 3",complete:"64%",status:"Active"},
- {title:"Medical Records Request Process",audience:"Member Advocates",due:"Aug 5",complete:"82%",status:"Active"},
- {title:"Membership Enrollment Accuracy",audience:"Membership Coordinators",due:"Aug 10",complete:"0%",status:"Scheduled"}
-];
 
 const simulationSteps = {
  "urgent-triage":[
@@ -583,14 +576,109 @@ async function soDecide(id,decision){
  await soLoadPending();
  renderManager();
 }
+
+/* Real cutover: Team / Assignments / Compliance tabs are sourced from profiles, lessons,
+   courses, lesson_progress, sign_offs, competencies, and assignments (all readable by staff
+   via each table's `is_staff()` RLS clause). One batched load feeds all three tabs plus the
+   manager metrics strip. job_title and location are not yet populated for any real profile
+   (roadmap IAM-003, identity import, is still open), so those fields fall back to
+   "Not set" rather than showing fabricated values. */
+const mgrData={learners:[],lessons:[],courses:[],progress:[],signoffs:[],assignments:[],competencies:[],loaded:false,error:null};
+async function mgrLoadAll(){
+ const [P,L,C,PR,SO,AS,CO]=await Promise.all([
+  sb.from("profiles").select("id,full_name,email,job_title,location,role").eq("role","learner").order("full_name",{ascending:true}),
+  sb.from("lessons").select("id,title,course_id,status").eq("status","published").order("sort_order",{ascending:true}),
+  sb.from("courses").select("id,title,status").eq("status","published").order("sort_order",{ascending:true}),
+  sb.from("lesson_progress").select("user_id,lesson_id,status"),
+  sb.from("sign_offs").select("user_id,status,competency_id,expires_at").eq("status","approved"),
+  sb.from("assignments").select("id,user_id,course_id,lesson_id,due_date,created_at,assignee:profiles!assignments_user_id_fkey(full_name,email),lesson:lessons!assignments_lesson_id_fkey(title,course_id),course:courses!assignments_course_id_fkey(title)").order("due_date",{ascending:true}),
+  sb.from("competencies").select("id,title,expiry_interval_months").eq("active",true).order("title",{ascending:true})
+ ]);
+ mgrData.error=(P.error||L.error||C.error||PR.error||SO.error||AS.error||CO.error)?.message||null;
+ mgrData.learners=P.data||[];mgrData.lessons=L.data||[];mgrData.courses=C.data||[];mgrData.progress=PR.data||[];mgrData.signoffs=SO.data||[];mgrData.assignments=AS.data||[];mgrData.competencies=CO.data||[];
+ mgrData.loaded=!mgrData.error;
+}
+function mgrTeamRows(){
+ const today=new Date(),totalLessons=mgrData.lessons.length;
+ return mgrData.learners.map(u=>{
+  const completedLessonIds=new Set(mgrData.progress.filter(p=>p.user_id===u.id&&p.status==="completed").map(p=>p.lesson_id));
+  const completion=totalLessons?Math.round(100*completedLessonIds.size/totalLessons):0;
+  const userAssignments=mgrData.assignments.filter(a=>a.user_id===u.id);
+  const overdue=userAssignments.filter(a=>a.due_date&&new Date(a.due_date)<today&&a.lesson_id&&!completedLessonIds.has(a.lesson_id)).length;
+  const skills=mgrData.signoffs.filter(s=>s.user_id===u.id).length;
+  const status=overdue>=3?"At risk":(overdue>=1||completion<70)?"Attention":"On track";
+  const name=u.full_name||u.email||"Team member";
+  const initials=name.trim().split(/\s+/).map(w=>w[0]).filter(Boolean).slice(0,2).join("").toUpperCase()||"?";
+  return {id:u.id,name,initials,role:u.job_title||"Role not set",location:u.location||"Location not set",completion,overdue,skills,status};
+ });
+}
+function mgrAssignmentGroups(){
+ const today=new Date(),groups={};
+ mgrData.assignments.forEach(a=>{
+  const key=`${a.lesson_id||a.course_id||"none"}|${a.due_date||""}`;
+  if(!groups[key])groups[key]={title:a.lesson?.title||a.course?.title||"Untitled",due:a.due_date,rows:[]};
+  groups[key].rows.push(a);
+ });
+ return Object.values(groups).map(g=>{
+  const completedCount=g.rows.filter(a=>{
+   if(a.lesson_id)return mgrData.progress.some(p=>p.user_id===a.user_id&&p.lesson_id===a.lesson_id&&p.status==="completed");
+   if(a.course_id){const lessonIds=mgrData.lessons.filter(l=>l.course_id===a.course_id).map(l=>l.id);return lessonIds.length>0&&lessonIds.every(lid=>mgrData.progress.some(p=>p.user_id===a.user_id&&p.lesson_id===lid&&p.status==="completed"))}
+   return false;
+  }).length;
+  const pct=g.rows.length?Math.round(100*completedCount/g.rows.length):0;
+  const overdue=g.due&&new Date(g.due)<today&&pct<100;
+  const status=pct>=100?"Completed":overdue?"Overdue":"Active";
+  const audience=g.rows.length===1?escapeHtml(g.rows[0].assignee?.full_name||g.rows[0].assignee?.email||"1 team member"):`${g.rows.length} team members`;
+  return {title:g.title,audience,due:g.due?csFmtDate(g.due):"No due date",complete:pct+"%",status,rows:g.rows};
+ }).sort((a,b)=>(a.due||"").localeCompare(b.due||""));
+}
+function mgrComplianceRows(){
+ const today=new Date(),totalLearners=mgrData.learners.length;
+ return mgrData.competencies.map(c=>{
+  const approved=mgrData.signoffs.filter(s=>s.competency_id===c.id);
+  const currentUserIds=new Set(approved.filter(s=>!s.expires_at||new Date(s.expires_at)>today).map(s=>s.user_id));
+  const pctCurrent=totalLearners?Math.round(100*currentUserIds.size/totalLearners):0;
+  return {title:c.title,pctCurrent,due:Math.max(totalLearners-currentUserIds.size,0)};
+ });
+}
+function mgrForecastBuckets(){
+ const today=new Date(),buckets=[["0–30 days",0,30],["31–60 days",31,60],["61–90 days",61,90]];
+ const expiries=mgrData.signoffs.filter(s=>s.expires_at).map(s=>new Date(s.expires_at));
+ return buckets.map(([label,lo,hi])=>{
+  const days=d=>Math.floor((d-today)/86400000);
+  return [label,expiries.filter(d=>days(d)>=lo&&days(d)<=hi).length];
+ });
+}
 function renderManager(){
- const metrics=[["Team completion","87%","Up 4%"],["Overdue","14","Needs follow-up"],["Sign-offs pending",soData.loaded?String(soData.items.length):"—","Awaiting facilitator review"],["Renewals due","6","Next 30 days"]];
+ const rows=mgrData.loaded?mgrTeamRows():[];
+ const avgCompletion=rows.length?Math.round(rows.reduce((s,t)=>s+t.completion,0)/rows.length):0;
+ const totalOverdue=rows.reduce((s,t)=>s+t.overdue,0);
+ const renewalsDue=mgrData.loaded?mgrForecastBuckets()[0][1]:0;
+ const metrics=[["Team completion",mgrData.loaded?avgCompletion+"%":"—","Across all team members"],["Overdue",mgrData.loaded?String(totalOverdue):"—","Needs follow-up"],["Sign-offs pending",soData.loaded?String(soData.items.length):"—","Awaiting facilitator review"],["Renewals due",mgrData.loaded?String(renewalsDue):"—","Next 30 days"]];
  $("#managerMetrics").innerHTML=metrics.map(m=>`<article class="metric"><span>${m[0]}</span><strong>${m[1]}</strong><small>${m[2]}</small></article>`).join("");
  if(state.managerTab==="team"){
-  $("#managerContent").innerHTML=`<div class="manager-team-grid">${team.map(t=>`<article class="team-card"><div class="team-head"><div class="team-avatar">${t.initials}</div><div><strong>${t.name}</strong><span>${t.role} • ${t.location}</span></div></div><div class="team-stats"><div class="team-stat"><strong>${t.completion}%</strong><span>Complete</span></div><div class="team-stat"><strong>${t.overdue}</strong><span>Overdue</span></div><div class="team-stat"><strong>${t.skills}</strong><span>Skills</span></div></div><div class="progress"><span style="width:${t.completion}%"></span></div><div class="card-footer"><span class="badge ${t.status==="On track"?"good":t.status==="At risk"?"risk":"warning"}">${t.status}</span><button class="secondary profile-open" data-name="${t.name}">Open profile</button></div></article>`).join("")}</div>`;
-  $$(".profile-open").forEach(b=>b.addEventListener("click",()=>openProfile(b.dataset.name)));
+  if(!mgrData.loaded){
+   $("#managerContent").innerHTML=`<p class="cs-empty">${mgrData.error?escapeHtml(mgrData.error):"Loading team data…"}</p>`;
+  } else {
+   $("#managerContent").innerHTML=rows.length?`<div class="manager-team-grid">${rows.map(t=>`<article class="team-card"><div class="team-head"><div class="team-avatar">${escapeHtml(t.initials)}</div><div><strong>${escapeHtml(t.name)}</strong><span>${escapeHtml(t.role)} • ${escapeHtml(t.location)}</span></div></div><div class="team-stats"><div class="team-stat"><strong>${t.completion}%</strong><span>Complete</span></div><div class="team-stat"><strong>${t.overdue}</strong><span>Overdue</span></div><div class="team-stat"><strong>${t.skills}</strong><span>Skills</span></div></div><div class="progress"><span style="width:${t.completion}%"></span></div><div class="card-footer"><span class="badge ${t.status==="On track"?"good":t.status==="At risk"?"risk":"warning"}">${t.status}</span><button class="secondary profile-open" data-id="${t.id}">Open profile</button></div></article>`).join("")}</div>`:'<p class="cs-empty">No learner accounts found yet.</p>';
+   $$(".profile-open").forEach(b=>b.addEventListener("click",()=>openProfile(b.dataset.id)));
+  }
  } else if(state.managerTab==="assignments"){
-  $("#managerContent").innerHTML=`<div class="assignment-table"><div class="assignment-head"><span>Assignment</span><span>Audience</span><span>Due</span><span>Complete</span><span>Status</span><span></span></div>${assignments.map(a=>`<div class="assignment-row"><strong>${a.title}</strong><span>${a.audience}</span><span>${a.due}</span><span>${a.complete}</span><span class="badge ${a.status==="Active"?"warning":"neutral"}">${a.status}</span><button class="secondary">Manage</button></div>`).join("")}</div>`;
+  if(!mgrData.loaded){
+   $("#managerContent").innerHTML=`<p class="cs-empty">${mgrData.error?escapeHtml(mgrData.error):"Loading assignments…"}</p>`;
+  } else {
+   const groups=mgrAssignmentGroups();
+   $("#managerContent").innerHTML=groups.length?`<div class="assignment-table"><div class="assignment-head"><span>Assignment</span><span>Audience</span><span>Due</span><span>Complete</span><span>Status</span><span></span></div>${groups.map((a,i)=>`<div class="assignment-row"><strong>${escapeHtml(a.title)}</strong><span>${a.audience}</span><span>${a.due}</span><span>${a.complete}</span><span class="badge ${a.status==="Completed"?"good":a.status==="Overdue"?"risk":"warning"}">${a.status}</span><button class="secondary asg-manage" data-idx="${i}">Manage</button></div>`).join("")}</div>`:'<p class="cs-empty">No assignments yet. Use “Assign learning” to create one.</p>';
+   $$(".asg-manage").forEach(b=>b.addEventListener("click",()=>{
+    const g=groups[Number(b.dataset.idx)];
+    if(!g)return;
+    openModal(`<span class="eyebrow">Assignment</span><h1 class="modal-title">${escapeHtml(g.title)}</h1><p>Due ${g.due}</p>${g.rows.map(r=>{
+     const who=escapeHtml(r.assignee?.full_name||r.assignee?.email||"Team member");
+     const done=r.lesson_id?mgrData.progress.some(p=>p.user_id===r.user_id&&p.lesson_id===r.lesson_id&&p.status==="completed"):false;
+     return `<div class="list-item"><span>${who}</span><span class="badge ${done?"good":"warning"}">${done?"Completed":"In progress"}</span></div>`;
+    }).join("")}`);
+   }));
+  }
  } else if(state.managerTab==="approvals"){
   const soPanel=!soData.loaded?`<p class="cs-empty">${soData.error?escapeHtml(soData.error):"Loading sign-off requests…"}</p>`:(soData.items.length?soData.items.map(it=>{
     const requester=it.requester||{},lesson=it.lesson||{};
@@ -600,13 +688,57 @@ function renderManager(){
   $$(".cs-review-draft").forEach(b=>b.addEventListener("click",()=>csEditLesson(b.dataset.lessonId)));
   $$(".so-review").forEach(b=>b.addEventListener("click",()=>soOpenReview(b.dataset.id)));
  } else {
-  $("#managerContent").innerHTML=`<div class="compliance-grid"><section class="panel"><h2>Requirements</h2>${["CPR Certification","Radiation Safety","Annual OSHA Refresher","HIPAA & Records Privacy"].map((x,i)=>`<div class="list-item"><div><strong>${x}</strong><span>${[92,88,96,90][i]}% current</span></div><span class="badge ${i===2?"risk":"warning"}">${[6,3,2,4][i]} due</span></div>`).join("")}</section><section class="panel"><h2>90-day forecast</h2>${[["0–30 days",6],["31–60 days",5],["61–90 days",7]].map(x=>`<div class="list-item"><span>${x[0]}</span><strong>${x[1]}</strong></div>`).join("")}</section></div>`;
+  if(!mgrData.loaded){
+   $("#managerContent").innerHTML=`<p class="cs-empty">${mgrData.error?escapeHtml(mgrData.error):"Loading compliance data…"}</p>`;
+  } else {
+   const rows=mgrComplianceRows(),forecast=mgrForecastBuckets();
+   $("#managerContent").innerHTML=`<div class="compliance-grid"><section class="panel"><h2>Requirements</h2>${rows.length?rows.map(r=>`<div class="list-item"><div><strong>${escapeHtml(r.title)}</strong><span>${r.pctCurrent}% current</span></div><span class="badge ${r.pctCurrent>=90?"good":r.pctCurrent>=70?"warning":"risk"}">${r.due} due</span></div>`).join(""):'<p class="cs-empty">No compliance requirements have been defined yet.</p>'}</section><section class="panel"><h2>90-day forecast</h2>${forecast.map(f=>`<div class="list-item"><span>${f[0]}</span><strong>${f[1]}</strong></div>`).join("")}</section></div>`;
+  }
  }
 }
 $("#managerTabs").addEventListener("click",e=>{if(!e.target.matches(".chip"))return;$$("#managerTabs .chip").forEach(x=>x.classList.remove("active"));e.target.classList.add("active");state.managerTab=e.target.dataset.managerTab;renderManager()});
-function openProfile(name){const t=team.find(x=>x.name===name);openModal(`<span class="eyebrow">${t.role}</span><h1 class="modal-title">${t.name}</h1><p>${t.location}</p><div class="form-grid"><div><strong>Completion</strong><p>${t.completion}%</p></div><div><strong>Validated skills</strong><p>${t.skills}</p></div><div><strong>Overdue</strong><p>${t.overdue}</p></div><div><strong>Status</strong><p>${t.status}</p></div></div><button class="primary" id="assignFromProfile">Assign learning</button>`);$("#assignFromProfile").addEventListener("click",assignmentForm)}
-$("#createAssignmentBtn").addEventListener("click",assignmentForm);
-function assignmentForm(){openModal(`<span class="eyebrow">Manager workflow</span><h1 class="modal-title">Create assignment</h1><div class="form-grid"><label class="full">Learning content<select><option>Nose-to-Tail Exam</option><option>Phone Answering Expectations</option><option>Membership Enrollment Accuracy</option><option>Urgent Call Triage Simulation</option></select></label><label>Assignment type<select><option>Role-based</option><option>Location-based</option><option>Individual</option><option>All team members</option></select></label><label>Audience<select><option>Service Coordinator</option><option>Membership Coordinator</option><option>Pet Nurse</option><option>DVM / Practitioner</option><option>Leadership</option></select></label><label>Start date<input type="date" value="2026-07-25"></label><label>Due date<input type="date" value="2026-08-08"></label><label class="full">Manager message<textarea rows="3" placeholder="Why is this learning being assigned?"></textarea></label></div><button class="primary" id="saveAssignment">Create assignment</button>`);$("#saveAssignment").addEventListener("click",()=>{$("#modal").close();toast("Assignment created")})}
+function openProfile(id){
+ const t=mgrTeamRows().find(x=>x.id===id);
+ if(!t)return;
+ openModal(`<span class="eyebrow">${escapeHtml(t.role)}</span><h1 class="modal-title">${escapeHtml(t.name)}</h1><p>${escapeHtml(t.location)}</p><div class="form-grid"><div><strong>Completion</strong><p>${t.completion}%</p></div><div><strong>Validated skills</strong><p>${t.skills}</p></div><div><strong>Overdue</strong><p>${t.overdue}</p></div><div><strong>Status</strong><p>${t.status}</p></div></div><button class="primary" id="assignFromProfile">Assign learning</button>`);
+ $("#assignFromProfile").addEventListener("click",()=>{$("#modal").close();assignmentForm(t.id)});
+}
+$("#createAssignmentBtn").addEventListener("click",()=>assignmentForm());
+/* Real cutover: assignments are sourced from and written to the `assignments` table
+   (assignments_select_own / assignments_write_staff RLS: staff see and create all rows).
+   Role-based and location-based audiences are intentionally omitted from this form until
+   staff job_title/location import (roadmap IAM-003) is complete — today those columns are
+   unpopulated for every real profile, so a role/location filter would silently match zero
+   people. Only "one team member" and "all team members" are wired to real recipients. */
+function assignmentForm(prefillUserId){
+ const lessonOptions=mgrData.lessons.map(l=>{const c=mgrData.courses.find(x=>x.id===l.course_id);return `<option value="${l.id}">${escapeHtml(c?c.title+" — ":"")}${escapeHtml(l.title)}</option>`}).join("");
+ const learnerOptions=mgrData.learners.map(u=>`<option value="${u.id}" ${u.id===prefillUserId?"selected":""}>${escapeHtml(u.full_name||u.email)}</option>`).join("");
+ const dueDefault=new Date(Date.now()+14*86400000).toISOString().slice(0,10);
+ openModal(`<span class="eyebrow">Manager workflow</span><h1 class="modal-title">Create assignment</h1><div class="form-grid"><label class="full">Learning content<select id="asgLesson">${lessonOptions||'<option value="">No published lessons available</option>'}</select></label><label>Assign to<select id="asgAudience"><option value="individual">One team member</option><option value="all">All team members</option></select></label><label id="asgIndividualWrap">Team member<select id="asgLearner">${learnerOptions||'<option value="">No learners found</option>'}</select></label><label>Due date<input type="date" id="asgDue" value="${dueDefault}"></label><label class="full">Manager message<textarea id="asgNote" rows="3" placeholder="Why is this learning being assigned?"></textarea></label></div><button class="primary" id="saveAssignment">Create assignment</button>`);
+ $("#asgAudience").addEventListener("change",()=>{$("#asgIndividualWrap").style.display=$("#asgAudience").value==="individual"?"":"none"});
+ $("#saveAssignment").addEventListener("click",()=>void mgrCreateAssignment());
+}
+async function mgrCreateAssignment(){
+ const lessonId=$("#asgLesson")?.value;
+ if(!lessonId){toast("Choose learning content to assign");return}
+ const audience=$("#asgAudience")?.value,due=$("#asgDue")?.value||null;
+ let targets=[];
+ if(audience==="all")targets=mgrData.learners.map(u=>u.id);
+ else{const uid=$("#asgLearner")?.value;if(!uid){toast("Choose a team member");return}targets=[uid]}
+ if(!targets.length){toast("No matching team members to assign");return}
+ const btn=$("#saveAssignment");if(btn){btn.disabled=true;btn.textContent="Creating…"}
+ const rows=targets.map(uid=>({user_id:uid,lesson_id:lessonId,due_date:due,assigned_by:hlsAuth.user.id}));
+ const {error}=await sb.from("assignments").insert(rows);
+ if(error){
+  toast("Couldn't create the assignment. Please try again.");
+  if(btn){btn.disabled=false;btn.textContent="Create assignment"}
+  return;
+ }
+ $("#modal").close();
+ toast(targets.length>1?`Assignment created for ${targets.length} team members`:"Assignment created");
+ await mgrLoadAll();
+ renderManager();
+}
 function assessmentForm(){openModal(`<span class="eyebrow">Competency validation</span><h1 class="modal-title">New assessment</h1><div class="form-grid"><label>Team member<select>${team.map(t=>`<option>${t.name}</option>`).join("")}</select></label><label>Competency<select>${competencies.map(c=>`<option>${c.name}</option>`).join("")}</select></label><label>Status<select><option>Practicing</option><option>Awaiting Sign-Off</option><option>Certified</option><option>Needs Practice</option></select></label><label>Evidence type<select><option>Observed practice</option><option>Simulation</option><option>Skills lab</option><option>Document upload</option></select></label><label class="full">Notes<textarea rows="4"></textarea></label></div><button class="primary" id="saveAssessment">Save assessment</button>`);$("#saveAssessment").addEventListener("click",()=>{$("#modal").close();toast("Assessment saved")})}
 
 function renderReports(){
@@ -1343,6 +1475,7 @@ document.addEventListener("hls:authenticated",async()=>{
  const tasks=[];
  if(isContentManager())tasks.push(csLoadAll());
  if(isStaffRole())tasks.push(soLoadPending());
+ if(isStaffRole())tasks.push(mgrLoadAll());
  if(!tasks.length)return;
  await Promise.all(tasks);
  renderContent();
