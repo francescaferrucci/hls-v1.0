@@ -396,7 +396,49 @@ function openCourse(title){
  openModal(`<span class="eyebrow">Interactive course preview</span><h1 class="modal-title">${title}</h1><p>This unified prototype demonstrates the course-launch experience. A production course would include lessons, videos, knowledge checks, acknowledgments, and completion tracking.</p><div class="detail-card"><strong>Learning objective</strong><span>Apply the approved Hannah workflow consistently and explain why each step matters.</span></div><div class="detail-card"><strong>Progress</strong><span>Your progress is saved in this browser session.</span></div><button class="primary" id="completeCourseModal">Mark lesson complete</button>`);
  $("#completeCourseModal").addEventListener("click",()=>{state.completedCourses.add(title);$("#modal").close();toast("Lesson completed and progress updated")});
 }
-$("#certificateBtn").addEventListener("click",()=>openModal(`<span class="eyebrow">My achievements</span><h1 class="modal-title">Certificates</h1>${["Hannah Foundations","Cycle of Service","Annual OSHA Refresher"].map(x=>`<div class="list-item"><div><strong>${x}</strong><span class="badge good">Valid</span></div><button class="secondary">View</button></div>`).join("")}`));
+$("#certificateBtn").addEventListener("click",()=>void openCertificatesModal());
+
+/* Real cutover: certificates are now sourced from the `certificates` table and
+   issued only through the trusted `issue-certificate` edge function, which
+   re-verifies completion + sign-off requirements server-side before writing
+   the row (see supabase/functions/issue-certificate/index.ts). No client code
+   decides eligibility or writes to the certificates table directly. */
+async function openCertificatesModal(){
+ const uid=hlsAuth.user?.id;
+ if(!uid){openModal(`<span class="eyebrow">My achievements</span><h1 class="modal-title">Certificates</h1><p class="cs-empty">Sign in to view your certificates.</p>`);return}
+ openModal(`<span class="eyebrow">My achievements</span><h1 class="modal-title">Certificates</h1><p class="cs-empty">Loading…</p>`);
+ await renderCertificatesModal(uid);
+}
+async function renderCertificatesModal(uid){
+ const [{data:certs,error:certErr},{data:courses,error:courseErr}]=await Promise.all([
+  sb.from("certificates").select("id,certificate_number,issued_at,course_id,courses(title)").eq("user_id",uid).order("issued_at",{ascending:false}),
+  sb.from("courses").select("id,title").eq("status","published").order("sort_order",{ascending:true})
+ ]);
+ if(certErr||courseErr){
+  openModal(`<span class="eyebrow">My achievements</span><h1 class="modal-title">Certificates</h1><p class="cs-empty">Certificates couldn't be loaded right now. Try again in a moment.</p>`);
+  return;
+ }
+ const earnedIds=new Set((certs||[]).map(c=>c.course_id));
+ const earnedRows=(certs||[]).map(c=>`<div class="list-item"><div><strong>${escapeHtml(c.courses?.title||"Certificate")}</strong><span class="badge good">Valid • issued ${csFmtDate(c.issued_at)}</span></div><button class="secondary" data-cert-view="${c.id}">View</button></div>`).join("");
+ const claimRows=(courses||[]).filter(c=>!earnedIds.has(c.id)).map(c=>`<div class="list-item"><div><strong>${escapeHtml(c.title)}</strong><span>Not yet earned</span></div><button class="secondary" data-cert-claim="${c.id}">Claim certificate</button></div>`).join("");
+ openModal(`<span class="eyebrow">My achievements</span><h1 class="modal-title">Certificates</h1>${earnedRows||`<p class="cs-empty">No certificates earned yet.</p>`}${claimRows?`<h2 style="margin-top:18px">Available to claim</h2>${claimRows}`:""}`);
+ document.querySelectorAll("[data-cert-view]").forEach(b=>b.addEventListener("click",()=>{
+  const c=(certs||[]).find(x=>x.id===b.dataset.certView);
+  if(c)toast(`Certificate ${c.certificate_number} • issued ${csFmtDate(c.issued_at)}`);
+ }));
+ document.querySelectorAll("[data-cert-claim]").forEach(b=>b.addEventListener("click",()=>void claimCertificate(b.dataset.certClaim,uid)));
+}
+async function claimCertificate(courseId,uid){
+ const {data,error}=await sb.functions.invoke("issue-certificate",{body:{user_id:uid,course_id:courseId}});
+ if(error){
+  let msg="Certificate could not be issued — this course isn't fully complete yet.";
+  try{const body=await error.context?.json?.();if(body?.error)msg=body.error}catch{}
+  toast(msg);
+  return;
+ }
+ toast(`Certificate ${data.certificate_number} issued`);
+ await renderCertificatesModal(uid);
+}
 
 function renderAcademies(){
  const f=$("#academyRoleFilter").value;
@@ -655,10 +697,15 @@ function renderContent(){
 }
 
 function csPreview(slug){
- if(window.invalidateLessonCache)window.invalidateLessonCache(slug);
  const lesson=csData.lessons.find(l=>l.slug===slug)||(csEd&&csEd.basic&&csEd.basic.slug===slug?{course_id:csEd.basic.course_id}:null);
  const course=lesson?csData.courses.find(c=>c.id===lesson.course_id):null;
  if(course&&window.setCourseContext)window.setCourseContext(course.slug,course.title);
+ /* Preview must show the true, unredacted saved lesson -- learners fetch through the
+    lessons_public view, which only serves published lessons with quiz answer keys stripped.
+    Seed the cache directly from Content Studio's own staff-only read (csData.lessons) instead
+    of refetching, so drafts still preview correctly and staff can test-answer their quizzes. */
+ if(lesson&&lesson.id&&window.seedLessonCache)window.seedLessonCache(slug,normalizeLessonRow({...lesson}));
+ else if(window.invalidateLessonCache)window.invalidateLessonCache(slug);
  window.renderLessonPlayer(slug,"overview");
 }
 
@@ -2021,7 +2068,7 @@ async function fetchCourseLessons(){
  try{
   const {data:course,error:cErr}=await sb.from('courses').select('id,slug,title').eq('slug',currentCourse.slug).single();
   if(cErr)throw cErr;
-  const {data,error}=await sb.from('lessons').select('*').eq('course_id',course.id).eq('status','published').order('sort_order',{ascending:true});
+  const {data,error}=await sb.from('lessons_public').select('*').eq('course_id',course.id).order('sort_order',{ascending:true});
   if(error)throw error;
   const rows=await mergeBundledOnlyLessons(currentCourse.slug,(data||[]).map(normalizeLessonRow));
   courseLessons=applyCourseOrder(currentCourse.slug,filterCourseLessons(currentCourse.slug,rows));
@@ -2042,7 +2089,7 @@ async function fetchCourseLessonsBySlug(slug,opts={}){
  try{
   const {data:course,error:cErr}=await sb.from('courses').select('id,slug,title').eq('slug',slug).single();
   if(cErr)throw cErr;
-  const {data,error}=await sb.from('lessons').select('*').eq('course_id',course.id).eq('status','published').order('sort_order',{ascending:true});
+  const {data,error}=await sb.from('lessons_public').select('*').eq('course_id',course.id).order('sort_order',{ascending:true});
   if(error)throw error;
   const rows=await mergeBundledOnlyLessons(slug,(data||[]).map(normalizeLessonRow));
   const lessons=applyCourseOrder(slug,filterCourseLessons(slug,rows));
@@ -2066,7 +2113,10 @@ async function fetchLesson(slug){
   return lessonCache[slug];
  }
  try{
-  const {data,error}=await sb.from('lessons').select('*').eq('slug',slug).single();
+  /* Learner-facing fetch: lessons_public redacts quiz answer keys (see
+     redact_lesson_content in the DB). Staff preview of drafts never reaches this branch --
+     csPreview seeds the cache directly from Content Studio's own staff-only read. */
+  const {data,error}=await sb.from('lessons_public').select('*').eq('slug',slug).single();
   if(error)throw error;
   lessonCache[slug]=normalizeLessonRow(data);
   if(currentCourse?.slug)courseSlugByLessonSlug[slug]=currentCourse.slug;
@@ -2096,7 +2146,10 @@ function lessonPercent(lesson,st){
 function moduleQuestionCount(m){return Array.isArray(m?.quiz)?m.quiz.length:0}
 function moduleIsManual(m){return m?.mode==='manual'}
 function moduleIsReview(m){return m?.mode==='review'}
-function moduleHasAnswerKey(q){return Number.isInteger(q?.correct)||(Array.isArray(q?.correct)&&q.correct.every(Number.isInteger))}
+/* q.hasKey covers the redacted shape served by lessons_public: correct/exp are stripped for
+   learners, replaced with this boolean, so scored-vs-ungraded gating still works without ever
+   shipping the real key. Staff/Content Studio content still carries the raw q.correct. */
+function moduleHasAnswerKey(q){return Number.isInteger(q?.correct)||(Array.isArray(q?.correct)&&q.correct.every(Number.isInteger))||q?.hasKey===true}
 function moduleHasAnswerKeys(m){return moduleQuestionCount(m)>0&&m.quiz.every(moduleHasAnswerKey)}
 function moduleUsesScoring(m){return !moduleIsManual(m)&&!moduleIsReview(m)&&moduleHasAnswerKeys(m)}
 function moduleIsUngradedReview(m){return moduleIsReview(m)&&!moduleHasAnswerKeys(m)}
@@ -2375,6 +2428,13 @@ async function renderLessonPlayer(lessonSlug,tab){
  scrollViewTop();
 }
 window.renderLessonPlayer=renderLessonPlayer;
+// Content Studio preview needs the true unredacted saved row (drafts included), not the
+// learner-facing lessons_public fetch that fetchLesson() falls back to on a cache miss.
+window.seedLessonCache=(slug,lesson)=>{
+ if(!slug||!lesson)return;
+ lessonCache[slug]=lesson;
+ delete lessonStates[slug];
+};
 // Content Studio edits a lesson out from under the player's cache; let it drop stale copies.
 window.invalidateLessonCache=slug=>{
  if(slug){delete lessonCache[slug];delete lessonStates[slug];delete courseSlugByLessonSlug[slug]}
@@ -7049,23 +7109,26 @@ function renderModuleModal(opts={}){
  if(hasQuiz&&answeredCount===total)void renderQuizResult();
  if(opts.focusHeading)focusModuleModalHeading();
 }
-function answerQuizQuestion(qi,oi){
+/* Trusted per-question scoring call. The lesson content the browser holds never carries the
+   real q.correct/q.exp for a DB-backed lesson (see redact_lesson_content / lessons_public) --
+   this is the only place that learns a question's verdict, and only after the learner has
+   already submitted a selection for it. Never trust a locally-known "correct" value here. */
+async function checkQuizAnswerRemotely(lessonId,moduleId,questionIndex,selected){
+ const {data,error}=await sb.functions.invoke('submit-quiz-answer',{
+  body:{lesson_id:lessonId,module_id:moduleId,question_index:questionIndex,selected}
+ });
+ if(error)throw error;
+ return data;
+}
+function paintQuizAnswerResult(qi,{hasKey,isCorrect,correctAnswer,explanation,multi,selected}){
  const m=activeModule;
- if(quizAnswers[qi])return;
- const q=m.quiz[qi];
- const hasKey=moduleHasAnswerKey(q);
- const multi=moduleQuestionType(q)==='multi_select';
- const selected=multi?[...document.querySelectorAll(`#l2q-${qi} input:checked`)].map(input=>+input.dataset.oi):[oi];
- if(multi&&!selected.length)return;
- const isCorrect=hasKey?(multi?moduleSelectionsMatch(selected,q.correct):selected[0]===q.correct):null;
- quizAnswers[qi]=multi?{selected,correct:isCorrect}:{oi:selected[0],correct:isCorrect};
  const wrap=document.querySelector(`#l2q-${qi}`);
  if(multi){
   wrap.querySelectorAll('input').forEach((input,idx)=>{
    input.disabled=true;
    const row=input.closest('.triage-check-option');
    if(hasKey){
-    if(q.correct.includes(idx))row?.classList.add('is-correct');
+    if(Array.isArray(correctAnswer)&&correctAnswer.includes(idx))row?.classList.add('is-correct');
     else if(selected.includes(idx))row?.classList.add('is-wrong');
    }else if(selected.includes(idx))row?.classList.add('is-selected');
   });
@@ -7074,13 +7137,14 @@ function answerQuizQuestion(qi,oi){
   wrap.querySelectorAll('.decision-option').forEach((btn,idx)=>{
    btn.disabled=true;
    if(hasKey){
-    if(idx===q.correct)btn.classList.add('correct');
+    if(idx===correctAnswer)btn.classList.add('correct');
     else if(idx===selected[0])btn.classList.add('wrong');
    }else if(idx===selected[0])btn.classList.add('selected');
   });
  }
  const feedbackLead=hasKey?(isCorrect?'Correct.':'Not quite.'):'Response recorded.';
- document.querySelector(`#l2fb-${qi}`).innerHTML=`<div class="feedback"><p><strong>${feedbackLead}</strong> ${q.exp||''}</p></div>`;
+ const fb=document.querySelector(`#l2fb-${qi}`);
+ if(fb)fb.innerHTML=`<div class="feedback"><p><strong>${feedbackLead}</strong> ${explanation||''}</p></div>`;
  const label=document.querySelector('#l2QuizScoreLabel');
  if(label){
   const answered=Object.keys(quizAnswers).length;
@@ -7088,6 +7152,53 @@ function answerQuizQuestion(qi,oi){
  }
  const bar=document.querySelector('#l2QuizProgressBar');
  if(bar)bar.style.width=moduleAnsweredPercent(m,Object.keys(quizAnswers).length)+'%';
+}
+/* Bundled/offline fallback lessons ship as static bundled JS (no live Supabase row), so there is
+   no server to score against and no answer-key exposure to fix -- keep the original synchronous,
+   client-side check for those only. */
+function answerQuizQuestionLocally(qi,oi,q,multi,selected){
+ const m=activeModule;
+ const hasKey=moduleHasAnswerKey(q);
+ const isCorrect=hasKey?(multi?moduleSelectionsMatch(selected,q.correct):selected[0]===q.correct):null;
+ quizAnswers[qi]=multi?{selected,correct:isCorrect}:{oi:selected[0],correct:isCorrect};
+ paintQuizAnswerResult(qi,{hasKey,isCorrect,correctAnswer:q.correct,explanation:q.exp||'',multi,selected});
+ if(Object.keys(quizAnswers).length===moduleQuestionCount(m))void renderQuizResult();
+}
+async function answerQuizQuestion(qi,oi){
+ const m=activeModule,lesson=activeLesson();
+ if(quizAnswers[qi])return;
+ const q=m.quiz[qi];
+ const multi=moduleQuestionType(q)==='multi_select';
+ const selected=multi?[...document.querySelectorAll(`#l2q-${qi} input:checked`)].map(input=>+input.dataset.oi):[oi];
+ if(multi&&!selected.length)return;
+ if(isBundledFallbackLesson(lesson)||isLocalOnlyLesson(lesson)){
+  answerQuizQuestionLocally(qi,oi,q,multi,selected);
+  return;
+ }
+ /* Lock immediately (before the await) so a rapid second click can't double-submit while we're
+    waiting on the server, and disable the inputs so nothing looks answerable mid-flight. */
+ quizAnswers[qi]={pending:true};
+ const wrap=document.querySelector(`#l2q-${qi}`);
+ if(multi)wrap?.querySelectorAll('input').forEach(input=>input.disabled=true);
+ else wrap?.querySelectorAll('.decision-option').forEach(btn=>btn.disabled=true);
+ document.querySelectorAll(`.triage-inline-submit[data-qi="${qi}"]`).forEach(btn=>btn.disabled=true);
+ const fb=document.querySelector(`#l2fb-${qi}`);
+ if(fb)fb.innerHTML=`<div class="feedback"><p>Checking…</p></div>`;
+ let result;
+ try{
+  result=await checkQuizAnswerRemotely(lesson.id,m.id,qi,multi?selected:selected[0]);
+ }catch(error){
+  delete quizAnswers[qi];
+  if(multi)wrap?.querySelectorAll('input').forEach(input=>input.disabled=false);
+  else wrap?.querySelectorAll('.decision-option').forEach(btn=>btn.disabled=false);
+  document.querySelectorAll(`.triage-inline-submit[data-qi="${qi}"]`).forEach(btn=>btn.disabled=false);
+  if(fb)fb.innerHTML=`<div class="feedback"><p><strong>Could not check this answer.</strong> Check your connection and try again.</p></div>`;
+  return;
+ }
+ const hasKey=!!result.has_key;
+ const isCorrect=hasKey?!!result.correct:null;
+ quizAnswers[qi]=multi?{selected,correct:isCorrect}:{oi:selected[0],correct:isCorrect};
+ paintQuizAnswerResult(qi,{hasKey,isCorrect,correctAnswer:result.correct_answer,explanation:result.explanation||'',multi,selected});
  if(Object.keys(quizAnswers).length===moduleQuestionCount(m))void renderQuizResult();
 }
 async function completeManualModule(){
