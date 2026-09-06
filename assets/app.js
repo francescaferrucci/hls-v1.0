@@ -539,8 +539,52 @@ function finishSimulation(){
 }
 $("#exitSimulation").addEventListener("click",()=>switchView("simulations"));
 
+/* Real cutover: pending sign-off requests are sourced from the `sign_offs` table
+   (visible to staff via the signoffs_select_own RLS policy's `is_staff()` clause)
+   and decided only through the trusted `decide-sign-off` edge function, which
+   re-validates reviewer eligibility and prerequisite state server-side (see
+   supabase/functions/decide-sign-off/index.ts). No client code writes a
+   decision to the sign_offs table directly. */
+const soData={items:[],loaded:false,error:null};
+async function soLoadPending(){
+ const {data,error}=await sb.from("sign_offs").select("id,status,notes,requested_at,evidence_url,competency_id,requester:profiles!sign_offs_user_id_fkey(full_name,email,role,location),lesson:lessons!sign_offs_lesson_id_fkey(title),competency:competencies(title)").eq("status","pending").order("requested_at",{ascending:true});
+ soData.error=error?error.message:null;
+ soData.items=data||[];
+ soData.loaded=!error;
+}
+function soOpenReview(id){
+ const item=soData.items.find(x=>x.id===id);
+ if(!item)return;
+ const requester=item.requester||{},lesson=item.lesson||{},competency=item.competency||{};
+ const who=escapeHtml(requester.full_name||requester.email||"Team member");
+ const roleLoc=[requester.role,requester.location].filter(Boolean).map(escapeHtml).join(" • ");
+ openModal(`<span class="eyebrow">Competency validation</span><h1 class="modal-title">${escapeHtml(lesson.title||"Lesson")}</h1><p>${who}${roleLoc?" • "+roleLoc:""}</p>${competency.title?`<div class="detail-card"><strong>Competency</strong><span>${escapeHtml(competency.title)}</span></div>`:""}<div class="detail-card"><strong>Requested</strong><span>${csFmtDate(item.requested_at)}</span></div>${item.evidence_url?`<div class="detail-card"><strong>Evidence</strong><span><a href="${escapeHtml(item.evidence_url)}" target="_blank" rel="noopener">View submitted evidence</a></span></div>`:""}<div class="form-grid"><label class="full">Reviewer notes (optional)<textarea id="soNotes" rows="3" placeholder="Add context for this decision"></textarea></label></div><div style="display:flex;gap:10px;margin-top:12px"><button class="primary" id="soApprove">Approve</button><button class="secondary" id="soReject">Reject</button></div>`);
+ $("#soApprove").addEventListener("click",()=>void soDecide(item.id,"approved"));
+ $("#soReject").addEventListener("click",()=>void soDecide(item.id,"rejected"));
+}
+async function soDecide(id,decision){
+ const notes=$("#soNotes")?.value?.trim()||"";
+ const approveBtn=$("#soApprove"),rejectBtn=$("#soReject");
+ [approveBtn,rejectBtn].forEach(b=>{if(b)b.disabled=true});
+ const actingBtn=decision==="approved"?approveBtn:rejectBtn;
+ if(actingBtn)actingBtn.textContent=decision==="approved"?"Approving…":"Rejecting…";
+ const {error}=await sb.functions.invoke("decide-sign-off",{body:{sign_off_id:id,decision,notes:notes||undefined}});
+ if(error){
+  let msg="This decision couldn't be saved. It may have already been decided.";
+  try{const body=await error.context?.json?.();if(body?.error)msg=body.error}catch{}
+  toast(msg);
+  [approveBtn,rejectBtn].forEach(b=>{if(b)b.disabled=false});
+  if(approveBtn)approveBtn.textContent="Approve";
+  if(rejectBtn)rejectBtn.textContent="Reject";
+  return;
+ }
+ $("#modal").close();
+ toast(decision==="approved"?"Sign-off approved":"Sign-off rejected");
+ await soLoadPending();
+ renderManager();
+}
 function renderManager(){
- const metrics=[["Team completion","87%","Up 4%"],["Overdue","14","Needs follow-up"],["Sign-offs pending","17","Four high priority"],["Renewals due","6","Next 30 days"]];
+ const metrics=[["Team completion","87%","Up 4%"],["Overdue","14","Needs follow-up"],["Sign-offs pending",soData.loaded?String(soData.items.length):"—","Awaiting facilitator review"],["Renewals due","6","Next 30 days"]];
  $("#managerMetrics").innerHTML=metrics.map(m=>`<article class="metric"><span>${m[0]}</span><strong>${m[1]}</strong><small>${m[2]}</small></article>`).join("");
  if(state.managerTab==="team"){
   $("#managerContent").innerHTML=`<div class="manager-team-grid">${team.map(t=>`<article class="team-card"><div class="team-head"><div class="team-avatar">${t.initials}</div><div><strong>${t.name}</strong><span>${t.role} • ${t.location}</span></div></div><div class="team-stats"><div class="team-stat"><strong>${t.completion}%</strong><span>Complete</span></div><div class="team-stat"><strong>${t.overdue}</strong><span>Overdue</span></div><div class="team-stat"><strong>${t.skills}</strong><span>Skills</span></div></div><div class="progress"><span style="width:${t.completion}%"></span></div><div class="card-footer"><span class="badge ${t.status==="On track"?"good":t.status==="At risk"?"risk":"warning"}">${t.status}</span><button class="secondary profile-open" data-name="${t.name}">Open profile</button></div></article>`).join("")}</div>`;
@@ -548,8 +592,13 @@ function renderManager(){
  } else if(state.managerTab==="assignments"){
   $("#managerContent").innerHTML=`<div class="assignment-table"><div class="assignment-head"><span>Assignment</span><span>Audience</span><span>Due</span><span>Complete</span><span>Status</span><span></span></div>${assignments.map(a=>`<div class="assignment-row"><strong>${a.title}</strong><span>${a.audience}</span><span>${a.due}</span><span>${a.complete}</span><span class="badge ${a.status==="Active"?"warning":"neutral"}">${a.status}</span><button class="secondary">Manage</button></div>`).join("")}</div>`;
  } else if(state.managerTab==="approvals"){
-  $("#managerContent").innerHTML=`<div class="approval-grid"><section class="panel"><h2>Competency validations</h2>${competencies.filter(c=>["Awaiting Sign-Off","Practicing"].includes(c.status)).map(c=>`<div class="list-item"><div><strong>${c.name}</strong><span>${c.owner}</span></div><button class="primary">Review</button></div>`).join("")}</section><section class="panel"><h2>Content approvals</h2>${csDraftLessons().map(l=>`<div class="list-item"><div><strong>${escapeHtml(l.title)}</strong><span>Lesson • Draft</span></div><button class="primary cs-review-draft" data-lesson-id="${l.id}">Review</button></div>`).join("")||'<p class="cs-empty">No lessons are awaiting review.</p>'}</section></div>`;
+  const soPanel=!soData.loaded?`<p class="cs-empty">${soData.error?escapeHtml(soData.error):"Loading sign-off requests…"}</p>`:(soData.items.length?soData.items.map(it=>{
+    const requester=it.requester||{},lesson=it.lesson||{};
+    return `<div class="list-item"><div><strong>${escapeHtml(lesson.title||"Lesson")}</strong><span>${escapeHtml(requester.full_name||requester.email||"Team member")} • requested ${csFmtDate(it.requested_at)}</span></div><button class="primary so-review" data-id="${it.id}">Review</button></div>`;
+   }).join(""):'<p class="cs-empty">No sign-offs are waiting for review.</p>');
+  $("#managerContent").innerHTML=`<div class="approval-grid"><section class="panel"><h2>Competency validations</h2>${soPanel}</section><section class="panel"><h2>Content approvals</h2>${csDraftLessons().map(l=>`<div class="list-item"><div><strong>${escapeHtml(l.title)}</strong><span>Lesson • Draft</span></div><button class="primary cs-review-draft" data-lesson-id="${l.id}">Review</button></div>`).join("")||'<p class="cs-empty">No lessons are awaiting review.</p>'}</section></div>`;
   $$(".cs-review-draft").forEach(b=>b.addEventListener("click",()=>csEditLesson(b.dataset.lessonId)));
+  $$(".so-review").forEach(b=>b.addEventListener("click",()=>soOpenReview(b.dataset.id)));
  } else {
   $("#managerContent").innerHTML=`<div class="compliance-grid"><section class="panel"><h2>Requirements</h2>${["CPR Certification","Radiation Safety","Annual OSHA Refresher","HIPAA & Records Privacy"].map((x,i)=>`<div class="list-item"><div><strong>${x}</strong><span>${[92,88,96,90][i]}% current</span></div><span class="badge ${i===2?"risk":"warning"}">${[6,3,2,4][i]} due</span></div>`).join("")}</section><section class="panel"><h2>90-day forecast</h2>${[["0–30 days",6],["31–60 days",5],["61–90 days",7]].map(x=>`<div class="list-item"><span>${x[0]}</span><strong>${x[1]}</strong></div>`).join("")}</section></div>`;
  }
@@ -1291,8 +1340,11 @@ $("#csCourseFilter").addEventListener("change",e=>{csFilters.course=e.target.val
 $("#csStatusFilter").addEventListener("change",e=>{csFilters.status=e.target.value;renderContent()});
 
 document.addEventListener("hls:authenticated",async()=>{
- if(!isContentManager())return;
- await csLoadAll();
+ const tasks=[];
+ if(isContentManager())tasks.push(csLoadAll());
+ if(isStaffRole())tasks.push(soLoadPending());
+ if(!tasks.length)return;
+ await Promise.all(tasks);
  renderContent();
  renderManager();
 });
