@@ -750,29 +750,59 @@ function renderReports(){
 }
 $("#scheduleReportBtn").addEventListener("click",()=>openModal(`<span class="eyebrow">Automated reporting</span><h1 class="modal-title">Schedule report</h1><div class="form-grid"><label>Report<select><option>Executive Learning Summary</option><option>Compliance Audit</option><option>Role Readiness</option></select></label><label>Frequency<select><option>Weekly</option><option>Monthly</option><option>Quarterly</option></select></label><label class="full">Recipients<input placeholder="Email addresses"></label></div><button class="primary" id="saveReport">Schedule</button>`));
 
-/* Locations card is wired to the real `locations` table (locations_read_authenticated /
-   locations_write_staff / locations_update_staff / locations_delete_admin RLS). The other
-   three admin cards remain illustrative pending their own backend work (roadmap ADM-001). */
-const adminData={locations:[],loaded:false,error:null};
+/* Locations and Role architecture cards are wired to real tables (`locations`, `profiles.role`).
+   Role set is the 4 system roles enforced by the profiles_role_check constraint today
+   (learner/facilitator/manager/administrator) — the broader D-03 role list is a roadmap
+   candidate, not yet ratified, so it is intentionally not introduced here.
+   Assignment automations and Security & governance remain illustrative pending their own
+   backend work (roadmap ADM-001). */
+const ROLE_LABELS={learner:"Learner",facilitator:"Facilitator",manager:"Manager",administrator:"Administrator"};
+const adminData={locations:[],loaded:false,error:null,profiles:[],profilesLoaded:false,profilesError:null};
 async function adminLoadAll(){
- const {data,error}=await sb.from("locations").select("id,name,code,market,active").order("name",{ascending:true});
- adminData.error=error?.message||null;
- adminData.locations=data||[];
+ const [locRes,profRes]=await Promise.all([
+  sb.from("locations").select("id,name,code,market,active").order("name",{ascending:true}),
+  sb.from("profiles").select("id,full_name,email,role").order("full_name",{ascending:true})
+ ]);
+ adminData.error=locRes.error?.message||null;
+ adminData.locations=locRes.data||[];
  adminData.loaded=!adminData.error;
+ adminData.profilesError=profRes.error?.message||null;
+ adminData.profiles=profRes.data||[];
+ adminData.profilesLoaded=!adminData.profilesError;
 }
 function renderAdmin(){
  const staticCards=[
-  ["Role architecture",["DVM / Practitioner","Pet Nurse","Nurse Aide","Service Coordinator","Membership Coordinator","Member Advocate","Leadership","Operations"]],
   ["Assignment automations",["Assign Foundations to new hires","Enroll Academy when role changes","Send expiration reminders","Send manager overdue digest"]],
   ["Security & governance",["Role-based permissions","Content approval routing","Audit logs","Retention policy"]]
  ];
  const renderStatic=(c,isToggle)=>`<section class="panel"><h2>${c[0]}</h2>${c[1].map((x,i)=>isToggle?`<div class="setting-row"><div><strong>${x}</strong><span>${i<3?"Enabled":"Optional"}</span></div><label class="switch"><input type="checkbox" ${i<3?"checked":""}><span></span></label></div>`:`<div class="setting-row"><div><strong>${x}</strong><span>Active configuration</span></div><button class="secondary">Configure</button></div>`).join("")}</section>`;
+ const roleSelectStyle="border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:10px;padding:8px 10px;font-size:12px";
+ const roleCounts=adminData.profiles.reduce((acc,p)=>{acc[p.role]=(acc[p.role]||0)+1;return acc},{});
+ const roleSummary=Object.keys(ROLE_LABELS).map(r=>`${roleCounts[r]||0} ${ROLE_LABELS[r]}${(roleCounts[r]||0)===1?"":"s"}`).join(" • ");
+ const roleBody=!adminData.profilesLoaded?`<p class="cs-empty">${adminData.profilesError?escapeHtml(adminData.profilesError):"Loading team roles…"}</p>`:(adminData.profiles.length?adminData.profiles.map(p=>`<div class="list-item"><div><strong>${escapeHtml(p.full_name||p.email)}</strong><span>${escapeHtml(p.email)}</span></div><div class="cs-row-actions"><select class="admin-role-select" data-id="${p.id}" data-current="${p.role}" style="${roleSelectStyle}">${Object.keys(ROLE_LABELS).map(r=>`<option value="${r}" ${p.role===r?"selected":""}>${ROLE_LABELS[r]}</option>`).join("")}</select></div></div>`).join(""):'<p class="cs-empty">No team members found.</p>');
+ const roleCard=`<section class="panel"><div class="section-head"><h2>Role architecture</h2></div><p style="color:var(--muted);font-size:12px;margin:0 0 12px">${roleSummary}</p>${roleBody}</section>`;
  const locBody=!adminData.loaded?`<p class="cs-empty">${adminData.error?escapeHtml(adminData.error):"Loading locations…"}</p>`:(adminData.locations.length?adminData.locations.map(l=>`<div class="list-item"><div><strong>${escapeHtml(l.name)}${l.active?"":" (Inactive)"}</strong><span>${escapeHtml(l.code)}${l.market?" • "+escapeHtml(l.market):""}</span></div><div class="cs-row-actions"><span class="badge ${l.active?"good":"neutral"}">${l.active?"Active":"Inactive"}</span><button class="admin-loc-edit" data-id="${l.id}">Edit</button><button class="${l.active?"cs-danger admin-loc-toggle":"admin-loc-toggle"}" data-id="${l.id}" data-active="${l.active}">${l.active?"Deactivate":"Activate"}</button></div></div>`).join(""):'<p class="cs-empty">No locations yet. Use “Add location” to create one.</p>');
  const locCard=`<section class="panel"><div class="section-head"><h2>Locations</h2><button class="secondary" id="adminAddLocationBtn">Add location</button></div>${locBody}</section>`;
- $("#adminGrid").innerHTML=renderStatic(staticCards[0],false)+renderStatic(staticCards[1],true)+locCard+renderStatic(staticCards[2],false);
+ $("#adminGrid").innerHTML=roleCard+renderStatic(staticCards[0],true)+locCard+renderStatic(staticCards[1],false);
  $("#adminAddLocationBtn")?.addEventListener("click",()=>locationForm());
  $$(".admin-loc-edit").forEach(b=>b.addEventListener("click",()=>locationForm(b.dataset.id)));
  $$(".admin-loc-toggle").forEach(b=>b.addEventListener("click",()=>void adminToggleLocation(b.dataset.id,b.dataset.active==="true")));
+ $$(".admin-role-select").forEach(sel=>sel.addEventListener("change",()=>void adminUpdateRole(sel)));
+}
+async function adminUpdateRole(sel){
+ const id=sel.dataset.id,previous=sel.dataset.current,next=sel.value;
+ if(next===previous)return;
+ if(previous==="administrator"&&next!=="administrator"){
+  const otherAdmins=adminData.profiles.filter(p=>p.id!==id&&p.role==="administrator").length;
+  if(otherAdmins===0){toast("Can't remove the last administrator");sel.value=previous;return}
+ }
+ sel.disabled=true;
+ const {error}=await sb.from("profiles").update({role:next}).eq("id",id);
+ sel.disabled=false;
+ if(error){toast("Couldn't update the role. Please try again.");sel.value=previous;return}
+ toast(`Role updated to ${ROLE_LABELS[next]}`);
+ await adminLoadAll();
+ renderAdmin();
 }
 function locationForm(locationId){
  const loc=locationId?adminData.locations.find(l=>l.id===locationId):null;
