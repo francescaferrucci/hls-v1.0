@@ -108,8 +108,8 @@ dialog:has(.academy-video) .academy-video{width:min(100%,760px)}
 .l2-quiz-score{font-weight:800;color:var(--navy)}
 .l2-module-progress{display:flex;align-items:center;gap:8px;margin-top:10px}
 .l2-obj-list{display:grid;gap:10px;margin-top:14px}
-.l2-obj-list li{display:flex;gap:10px;align-items:flex-start;list-style:none}
-.l2-obj-list li::before{content:'✓';color:var(--green);font-weight:800}
+.l2-obj-list li{position:relative;padding-left:20px;list-style:none}
+.l2-obj-list li::before{content:'✓';color:var(--green);font-weight:800;position:absolute;left:0;top:0}
 .l2-case-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
 .hw-mock{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--panel);box-shadow:var(--shadow);margin:16px 0}
 .hw-mock-header{background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff;padding:9px 14px;display:flex;justify-content:space-between;align-items:center;font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:850}
