@@ -826,10 +826,11 @@ function renderAdmin(){
  const roleCounts=adminData.profiles.reduce((acc,p)=>{acc[p.role]=(acc[p.role]||0)+1;return acc},{});
  const roleSummary=Object.keys(ROLE_LABELS).map(r=>`${roleCounts[r]||0} ${ROLE_LABELS[r]}${(roleCounts[r]||0)===1?"":"s"}`).join(" • ");
  const roleBody=!adminData.profilesLoaded?`<p class="cs-empty">${adminData.profilesError?escapeHtml(adminData.profilesError):"Loading team roles…"}</p>`:(adminData.profiles.length?adminData.profiles.map(p=>`<div class="list-item"><div><strong>${escapeHtml(p.full_name||p.email)}</strong><span>${escapeHtml(p.email)}</span></div><div class="cs-row-actions"><select class="admin-role-select" data-id="${p.id}" data-current="${p.role}" style="${roleSelectStyle}">${Object.keys(ROLE_LABELS).map(r=>`<option value="${r}" ${p.role===r?"selected":""}>${ROLE_LABELS[r]}</option>`).join("")}</select></div></div>`).join(""):'<p class="cs-empty">No team members found.</p>');
- const roleCard=`<section class="panel"><div class="section-head"><h2>Role architecture</h2></div><p style="color:var(--muted);font-size:12px;margin:0 0 12px">${roleSummary}</p>${roleBody}</section>`;
+ const roleCard=`<section class="panel"><div class="section-head"><h2>Role architecture</h2><button class="secondary" id="adminInviteBtn">Invite team member</button></div><p style="color:var(--muted);font-size:12px;margin:0 0 12px">${roleSummary}</p>${roleBody}</section>`;
  const locBody=!adminData.loaded?`<p class="cs-empty">${adminData.error?escapeHtml(adminData.error):"Loading locations…"}</p>`:(adminData.locations.length?adminData.locations.map(l=>`<div class="list-item"><div><strong>${escapeHtml(l.name)}${l.active?"":" (Inactive)"}</strong><span>${escapeHtml(l.code)}${l.market?" • "+escapeHtml(l.market):""}</span></div><div class="cs-row-actions"><span class="badge ${l.active?"good":"neutral"}">${l.active?"Active":"Inactive"}</span><button class="admin-loc-edit" data-id="${l.id}">Edit</button><button class="${l.active?"cs-danger admin-loc-toggle":"admin-loc-toggle"}" data-id="${l.id}" data-active="${l.active}">${l.active?"Deactivate":"Activate"}</button></div></div>`).join(""):'<p class="cs-empty">No locations yet. Use “Add location” to create one.</p>');
  const locCard=`<section class="panel"><div class="section-head"><h2>Locations</h2><button class="secondary" id="adminAddLocationBtn">Add location</button></div>${locBody}</section>`;
  $("#adminGrid").innerHTML=roleCard+renderStatic(staticCards[0],true)+locCard+renderSecurityCard();
+ $("#adminInviteBtn")?.addEventListener("click",()=>inviteForm());
  $("#adminAddLocationBtn")?.addEventListener("click",()=>locationForm());
  $$(".admin-loc-edit").forEach(b=>b.addEventListener("click",()=>locationForm(b.dataset.id)));
  $$(".admin-loc-toggle").forEach(b=>b.addEventListener("click",()=>void adminToggleLocation(b.dataset.id,b.dataset.active==="true")));
@@ -874,6 +875,30 @@ async function adminToggleLocation(id,currentlyActive){
  const {error}=await sb.from("locations").update({active:!currentlyActive}).eq("id",id);
  if(error){toast("Couldn't update the location. Please try again.");return}
  toast(!currentlyActive?"Location activated":"Location deactivated");
+ await adminLoadAll();
+ renderAdmin();
+}
+function inviteForm(){
+ const activeLocations=adminData.locations.filter(l=>l.active);
+ const roleOptions=Object.keys(ROLE_LABELS).map(r=>`<option value="${r}" ${r==="learner"?"selected":""}>${ROLE_LABELS[r]}</option>`).join("");
+ const locOptions=`<option value="">No location</option>`+activeLocations.map(l=>`<option value="${escapeHtml(l.code)}">${escapeHtml(l.name)}</option>`).join("");
+ openModal(`<span class="eyebrow">Administration</span><h1 class="modal-title">Invite team member</h1><div class="form-grid"><label class="full">Email<input id="inviteEmail" type="email" placeholder="name@hannahpethospital.com"></label><label>Full name<input id="inviteName" placeholder="e.g. Jordan Alvarez"></label><label>Initial role<select id="inviteRole" style="border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:10px;padding:8px 10px;font-size:12px">${roleOptions}</select></label><label>Employee ID (optional)<input id="inviteEmployeeId" placeholder="e.g. 10234"></label><label>Job title (optional)<input id="inviteJobTitle" placeholder="e.g. Veterinary Technician"></label><label>Location (optional)<select id="inviteLocation" style="border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:10px;padding:8px 10px;font-size:12px">${locOptions}</select></label></div><p style="color:var(--muted);font-size:12px;margin:10px 0 0">Sends a real invite email with a secure sign-in link. Only administrators can send invites.</p><button class="primary" id="sendInvite" style="margin-top:12px">Send invite</button>`);
+ $("#sendInvite").addEventListener("click",()=>void adminSendInvite());
+}
+async function adminSendInvite(){
+ const email=$("#inviteEmail")?.value.trim().toLowerCase();
+ const full_name=$("#inviteName")?.value.trim();
+ const role=$("#inviteRole")?.value;
+ const employee_id=$("#inviteEmployeeId")?.value.trim();
+ const job_title=$("#inviteJobTitle")?.value.trim();
+ const location_code=$("#inviteLocation")?.value;
+ if(!email||!email.includes("@")){toast("Enter a valid email address");return}
+ const btn=$("#sendInvite");if(btn){btn.disabled=true;btn.textContent="Sending…"}
+ const {data,error}=await sb.functions.invoke("invite-user",{body:{email,full_name,role,employee_id,job_title,location_code}});
+ if(btn){btn.disabled=false;btn.textContent="Send invite"}
+ if(error||data?.error){toast(data?.error||error?.message||"Couldn't send the invite. Please try again.");return}
+ if(data?.warning){toast(data.warning);}else{toast(`Invite sent to ${email}`);}
+ $("#modal").close();
  await adminLoadAll();
  renderAdmin();
 }
