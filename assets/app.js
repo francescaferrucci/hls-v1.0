@@ -750,14 +750,56 @@ function renderReports(){
 }
 $("#scheduleReportBtn").addEventListener("click",()=>openModal(`<span class="eyebrow">Automated reporting</span><h1 class="modal-title">Schedule report</h1><div class="form-grid"><label>Report<select><option>Executive Learning Summary</option><option>Compliance Audit</option><option>Role Readiness</option></select></label><label>Frequency<select><option>Weekly</option><option>Monthly</option><option>Quarterly</option></select></label><label class="full">Recipients<input placeholder="Email addresses"></label></div><button class="primary" id="saveReport">Schedule</button>`));
 
+/* Locations card is wired to the real `locations` table (locations_read_authenticated /
+   locations_write_staff / locations_update_staff / locations_delete_admin RLS). The other
+   three admin cards remain illustrative pending their own backend work (roadmap ADM-001). */
+const adminData={locations:[],loaded:false,error:null};
+async function adminLoadAll(){
+ const {data,error}=await sb.from("locations").select("id,name,code,market,active").order("name",{ascending:true});
+ adminData.error=error?.message||null;
+ adminData.locations=data||[];
+ adminData.loaded=!adminData.error;
+}
 function renderAdmin(){
- const cards=[
+ const staticCards=[
   ["Role architecture",["DVM / Practitioner","Pet Nurse","Nurse Aide","Service Coordinator","Membership Coordinator","Member Advocate","Leadership","Operations"]],
   ["Assignment automations",["Assign Foundations to new hires","Enroll Academy when role changes","Send expiration reminders","Send manager overdue digest"]],
-  ["Locations",["HE1 Portland","HE2 Tigard","HE2 ER"]],
   ["Security & governance",["Role-based permissions","Content approval routing","Audit logs","Retention policy"]]
  ];
- $("#adminGrid").innerHTML=cards.map((c,idx)=>`<section class="panel"><h2>${c[0]}</h2>${c[1].map((x,i)=>idx===1?`<div class="setting-row"><div><strong>${x}</strong><span>${i<3?"Enabled":"Optional"}</span></div><label class="switch"><input type="checkbox" ${i<3?"checked":""}><span></span></label></div>`:`<div class="setting-row"><div><strong>${x}</strong><span>Active configuration</span></div><button class="secondary">Configure</button></div>`).join("")}</section>`).join("");
+ const renderStatic=(c,isToggle)=>`<section class="panel"><h2>${c[0]}</h2>${c[1].map((x,i)=>isToggle?`<div class="setting-row"><div><strong>${x}</strong><span>${i<3?"Enabled":"Optional"}</span></div><label class="switch"><input type="checkbox" ${i<3?"checked":""}><span></span></label></div>`:`<div class="setting-row"><div><strong>${x}</strong><span>Active configuration</span></div><button class="secondary">Configure</button></div>`).join("")}</section>`;
+ const locBody=!adminData.loaded?`<p class="cs-empty">${adminData.error?escapeHtml(adminData.error):"Loading locations…"}</p>`:(adminData.locations.length?adminData.locations.map(l=>`<div class="list-item"><div><strong>${escapeHtml(l.name)}${l.active?"":" (Inactive)"}</strong><span>${escapeHtml(l.code)}${l.market?" • "+escapeHtml(l.market):""}</span></div><div class="cs-row-actions"><span class="badge ${l.active?"good":"neutral"}">${l.active?"Active":"Inactive"}</span><button class="admin-loc-edit" data-id="${l.id}">Edit</button><button class="${l.active?"cs-danger admin-loc-toggle":"admin-loc-toggle"}" data-id="${l.id}" data-active="${l.active}">${l.active?"Deactivate":"Activate"}</button></div></div>`).join(""):'<p class="cs-empty">No locations yet. Use “Add location” to create one.</p>');
+ const locCard=`<section class="panel"><div class="section-head"><h2>Locations</h2><button class="secondary" id="adminAddLocationBtn">Add location</button></div>${locBody}</section>`;
+ $("#adminGrid").innerHTML=renderStatic(staticCards[0],false)+renderStatic(staticCards[1],true)+locCard+renderStatic(staticCards[2],false);
+ $("#adminAddLocationBtn")?.addEventListener("click",()=>locationForm());
+ $$(".admin-loc-edit").forEach(b=>b.addEventListener("click",()=>locationForm(b.dataset.id)));
+ $$(".admin-loc-toggle").forEach(b=>b.addEventListener("click",()=>void adminToggleLocation(b.dataset.id,b.dataset.active==="true")));
+}
+function locationForm(locationId){
+ const loc=locationId?adminData.locations.find(l=>l.id===locationId):null;
+ openModal(`<span class="eyebrow">Administration</span><h1 class="modal-title">${loc?"Edit location":"Add location"}</h1><div class="form-grid"><label>Name<input id="locName" value="${loc?escapeHtml(loc.name):""}" placeholder="e.g. Portland"></label><label>Code<input id="locCode" value="${loc?escapeHtml(loc.code):""}" placeholder="e.g. HE1"></label><label class="full">Market (optional)<input id="locMarket" value="${loc&&loc.market?escapeHtml(loc.market):""}" placeholder="e.g. Portland, OR metro"></label></div><button class="primary" id="saveLocation">${loc?"Save changes":"Add location"}</button>`);
+ $("#saveLocation").addEventListener("click",()=>void adminSaveLocation(locationId));
+}
+async function adminSaveLocation(locationId){
+ const name=$("#locName")?.value.trim(),code=$("#locCode")?.value.trim(),market=$("#locMarket")?.value.trim()||null;
+ if(!name||!code){toast("Enter a name and code");return}
+ const btn=$("#saveLocation");if(btn){btn.disabled=true;btn.textContent="Saving…"}
+ const {error}=locationId?await sb.from("locations").update({name,code,market}).eq("id",locationId):await sb.from("locations").insert({name,code,market});
+ if(error){
+  toast(error.code==="23505"?"That location code is already in use":"Couldn't save the location. Please try again.");
+  if(btn){btn.disabled=false;btn.textContent=locationId?"Save changes":"Add location"}
+  return;
+ }
+ $("#modal").close();
+ toast(locationId?"Location updated":"Location added");
+ await adminLoadAll();
+ renderAdmin();
+}
+async function adminToggleLocation(id,currentlyActive){
+ const {error}=await sb.from("locations").update({active:!currentlyActive}).eq("id",id);
+ if(error){toast("Couldn't update the location. Please try again.");return}
+ toast(!currentlyActive?"Location activated":"Location deactivated");
+ await adminLoadAll();
+ renderAdmin();
 }
 
 const searchIndex=[
@@ -1476,10 +1518,12 @@ document.addEventListener("hls:authenticated",async()=>{
  if(isContentManager())tasks.push(csLoadAll());
  if(isStaffRole())tasks.push(soLoadPending());
  if(isStaffRole())tasks.push(mgrLoadAll());
+ if(isAdminRole())tasks.push(adminLoadAll());
  if(!tasks.length)return;
  await Promise.all(tasks);
  renderContent();
  renderManager();
+ renderAdmin();
 });
 
 renderDashboard();renderCourses();renderAcademies();renderResources();renderDiagnostics();renderCompetencies();renderSimulations();renderManager();renderContent();renderReports();renderAdmin();updateRole();
