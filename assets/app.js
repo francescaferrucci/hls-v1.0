@@ -765,7 +765,7 @@ const adminData={locations:[],loaded:false,error:null,profiles:[],profilesLoaded
 async function adminLoadAll(){
  const [locRes,profRes,auditRes,courseRes,versionRes,signRes]=await Promise.all([
   sb.from("locations").select("id,name,code,market,active").order("name",{ascending:true}),
-  sb.from("profiles").select("id,full_name,email,role").order("full_name",{ascending:true}),
+  sb.from("profiles").select("id,full_name,email,role,active,employee_id,job_title,location").order("full_name",{ascending:true}),
   sb.from("audit_log").select("id,occurred_at,action,entity_type,before_state,after_state,actor:profiles(full_name,email)").order("occurred_at",{ascending:false}).limit(8),
   sb.from("courses").select("status"),
   sb.from("course_versions").select("status"),
@@ -825,7 +825,7 @@ function renderAdmin(){
  const roleSelectStyle="border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:10px;padding:8px 10px;font-size:12px";
  const roleCounts=adminData.profiles.reduce((acc,p)=>{acc[p.role]=(acc[p.role]||0)+1;return acc},{});
  const roleSummary=Object.keys(ROLE_LABELS).map(r=>`${roleCounts[r]||0} ${ROLE_LABELS[r]}${(roleCounts[r]||0)===1?"":"s"}`).join(" • ");
- const roleBody=!adminData.profilesLoaded?`<p class="cs-empty">${adminData.profilesError?escapeHtml(adminData.profilesError):"Loading team roles…"}</p>`:(adminData.profiles.length?adminData.profiles.map(p=>`<div class="list-item"><div><strong>${escapeHtml(p.full_name||p.email)}</strong><span>${escapeHtml(p.email)}</span></div><div class="cs-row-actions"><select class="admin-role-select" data-id="${p.id}" data-current="${p.role}" style="${roleSelectStyle}">${Object.keys(ROLE_LABELS).map(r=>`<option value="${r}" ${p.role===r?"selected":""}>${ROLE_LABELS[r]}</option>`).join("")}</select></div></div>`).join(""):'<p class="cs-empty">No team members found.</p>');
+ const roleBody=!adminData.profilesLoaded?`<p class="cs-empty">${adminData.profilesError?escapeHtml(adminData.profilesError):"Loading team roles…"}</p>`:(adminData.profiles.length?adminData.profiles.map(p=>`<div class="list-item"><div><strong>${escapeHtml(p.full_name||p.email)}${p.active===false?" (Inactive)":""}</strong><span>${escapeHtml(p.email)}</span></div><div class="cs-row-actions"><select class="admin-role-select" data-id="${p.id}" data-current="${p.role}" style="${roleSelectStyle}">${Object.keys(ROLE_LABELS).map(r=>`<option value="${r}" ${p.role===r?"selected":""}>${ROLE_LABELS[r]}</option>`).join("")}</select><button class="admin-user-edit" data-id="${p.id}">Edit</button><button class="${p.active!==false?"cs-danger admin-user-toggle":"admin-user-toggle"}" data-id="${p.id}" data-active="${p.active!==false}">${p.active!==false?"Deactivate":"Activate"}</button><button class="cs-danger admin-user-delete" data-id="${p.id}">Delete</button></div></div>`).join(""):'<p class="cs-empty">No team members found.</p>');
  const roleCard=`<section class="panel"><div class="section-head"><h2>Role architecture</h2><button class="secondary" id="adminInviteBtn">Invite team member</button></div><p style="color:var(--muted);font-size:12px;margin:0 0 12px">${roleSummary}</p>${roleBody}</section>`;
  const locBody=!adminData.loaded?`<p class="cs-empty">${adminData.error?escapeHtml(adminData.error):"Loading locations…"}</p>`:(adminData.locations.length?adminData.locations.map(l=>`<div class="list-item"><div><strong>${escapeHtml(l.name)}${l.active?"":" (Inactive)"}</strong><span>${escapeHtml(l.code)}${l.market?" • "+escapeHtml(l.market):""}</span></div><div class="cs-row-actions"><span class="badge ${l.active?"good":"neutral"}">${l.active?"Active":"Inactive"}</span><button class="admin-loc-edit" data-id="${l.id}">Edit</button><button class="${l.active?"cs-danger admin-loc-toggle":"admin-loc-toggle"}" data-id="${l.id}" data-active="${l.active}">${l.active?"Deactivate":"Activate"}</button></div></div>`).join(""):'<p class="cs-empty">No locations yet. Use “Add location” to create one.</p>');
  const locCard=`<section class="panel"><div class="section-head"><h2>Locations</h2><button class="secondary" id="adminAddLocationBtn">Add location</button></div>${locBody}</section>`;
@@ -835,6 +835,9 @@ function renderAdmin(){
  $$(".admin-loc-edit").forEach(b=>b.addEventListener("click",()=>locationForm(b.dataset.id)));
  $$(".admin-loc-toggle").forEach(b=>b.addEventListener("click",()=>void adminToggleLocation(b.dataset.id,b.dataset.active==="true")));
  $$(".admin-role-select").forEach(sel=>sel.addEventListener("change",()=>void adminUpdateRole(sel)));
+ $$(".admin-user-edit").forEach(b=>b.addEventListener("click",()=>editUserForm(b.dataset.id)));
+ $$(".admin-user-toggle").forEach(b=>b.addEventListener("click",()=>void adminToggleUserActive(b.dataset.id,b.dataset.active==="true")));
+ $$(".admin-user-delete").forEach(b=>b.addEventListener("click",()=>void adminDeleteUserConfirm(b.dataset.id)));
 }
 async function adminUpdateRole(sel){
  const id=sel.dataset.id,previous=sel.dataset.current,next=sel.value;
@@ -901,6 +904,62 @@ async function adminSendInvite(){
  $("#modal").close();
  await adminLoadAll();
  renderAdmin();
+}
+function editUserForm(userId){
+ const p=adminData.profiles.find(x=>x.id===userId);
+ if(!p){toast("Couldn't find that team member.");return}
+ const activeLocations=adminData.locations.filter(l=>l.active);
+ const locOptions=`<option value="">No location</option>`+activeLocations.map(l=>`<option value="${escapeHtml(l.code)}" ${p.location===l.code?"selected":""}>${escapeHtml(l.name)}</option>`).join("");
+ openModal(`<span class="eyebrow">Administration</span><h1 class="modal-title">Edit team member</h1><div class="form-grid"><label class="full">Email<input id="editEmail" type="email" value="${escapeHtml(p.email||"")}"></label><label>Full name<input id="editName" value="${escapeHtml(p.full_name||"")}" placeholder="e.g. Jordan Alvarez"></label><label>Employee ID (optional)<input id="editEmployeeId" value="${escapeHtml(p.employee_id||"")}" placeholder="e.g. 10234"></label><label>Job title (optional)<input id="editJobTitle" value="${escapeHtml(p.job_title||"")}" placeholder="e.g. Veterinary Technician"></label><label>Location (optional)<select id="editLocation" style="border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:10px;padding:8px 10px;font-size:12px">${locOptions}</select></label></div><p style="color:var(--muted);font-size:12px;margin:10px 0 0">Changing the email updates their sign-in address immediately — they'll need to use the new address next time they log in. Role is changed from the dropdown on the Role architecture list.</p><button class="primary" id="saveUser" style="margin-top:12px">Save changes</button>`);
+ $("#saveUser").addEventListener("click",()=>void adminSaveUser(userId));
+}
+async function adminSaveUser(userId){
+ const full_name=$("#editName")?.value.trim();
+ const email=$("#editEmail")?.value.trim().toLowerCase();
+ const employee_id=$("#editEmployeeId")?.value.trim();
+ const job_title=$("#editJobTitle")?.value.trim();
+ const location_code=$("#editLocation")?.value;
+ if(!email||!email.includes("@")){toast("Enter a valid email address");return}
+ const btn=$("#saveUser");if(btn){btn.disabled=true;btn.textContent="Saving…"}
+ const {data,error}=await sb.functions.invoke("manage-user",{body:{action:"update",user_id:userId,full_name,email,employee_id,job_title,location_code}});
+ if(btn){btn.disabled=false;btn.textContent="Save changes"}
+ if(error||data?.error){toast(data?.error||error?.message||"Couldn't save changes. Please try again.");return}
+ $("#modal").close();
+ toast("Team member updated");
+ await adminLoadAll();
+ renderAdmin();
+}
+async function adminDoToggleActive(userId,currentlyActive){
+ const {data,error}=await sb.functions.invoke("manage-user",{body:{action:"set_active",user_id:userId,active:!currentlyActive}});
+ if(error||data?.error){toast(data?.error||error?.message||"Couldn't update the account. Please try again.");return}
+ toast(!currentlyActive?"Account reactivated":"Account deactivated");
+ await adminLoadAll();
+ renderAdmin();
+}
+function adminToggleUserActive(userId,currentlyActive){
+ const p=adminData.profiles.find(x=>x.id===userId);
+ const label=p?escapeHtml(p.full_name||p.email):"this team member";
+ if(!currentlyActive){void adminDoToggleActive(userId,currentlyActive);return}
+ openModal(`<span class="eyebrow">Administration</span><h1 class="modal-title">Deactivate team member?</h1><p>Deactivate ${label}? They'll immediately lose the ability to sign in. This is reversible — you can reactivate them at any time, and their training history is kept.</p><div style="display:flex;gap:10px;margin-top:16px"><button class="primary" id="confirmDeactivate">Deactivate</button><button class="secondary" id="cancelDeactivate">Cancel</button></div>`);
+ $("#confirmDeactivate")?.addEventListener("click",()=>{$("#modal").close();void adminDoToggleActive(userId,currentlyActive)});
+ $("#cancelDeactivate")?.addEventListener("click",()=>$("#modal").close());
+}
+async function adminDoDeleteUser(userId){
+ const {data,error}=await sb.functions.invoke("manage-user",{body:{action:"delete",user_id:userId}});
+ if(error||data?.error){toast(data?.error||error?.message||"Couldn't delete the account. Please try again.");return}
+ toast("Team member deleted");
+ await adminLoadAll();
+ renderAdmin();
+}
+function adminDeleteUserConfirm(userId){
+ const p=adminData.profiles.find(x=>x.id===userId);
+ const label=p?escapeHtml(p.full_name||p.email):"this team member";
+ openModal(`<span class="eyebrow">Administration</span><h1 class="modal-title">Delete team member?</h1><p>This permanently deletes ${label}'s account and all of their training history. This CANNOT be undone.</p><label class="full">Type DELETE to confirm<input id="deleteConfirmInput" placeholder="DELETE" autocomplete="off"></label><div style="display:flex;gap:10px;margin-top:16px"><button class="primary" id="confirmDelete" disabled>Delete permanently</button><button class="secondary" id="cancelDelete">Cancel</button></div>`);
+ const input=$("#deleteConfirmInput"),btn=$("#confirmDelete");
+ input?.addEventListener("input",()=>{if(btn)btn.disabled=input.value.trim()!=="DELETE"});
+ input?.focus();
+ btn?.addEventListener("click",()=>{if(input?.value.trim()!=="DELETE")return;$("#modal").close();void adminDoDeleteUser(userId)});
+ $("#cancelDelete")?.addEventListener("click",()=>$("#modal").close());
 }
 
 const searchIndex=[
