@@ -137,6 +137,29 @@ Deno.serve(async (req: Request) => {
     isCorrect = selected === question.correct;
   }
 
+  // Record this verdict in the quiz_responses ledger so a later trusted aggregate step
+  // (submit-assessment-attempt's finalize-module-attempt path) has something authoritative to
+  // read instead of trusting a client-side tally. Upsert on (user_id, lesson_id, module_id,
+  // question_index) so retakes overwrite the prior verdict for that question rather than
+  // accumulating duplicates.
+  const { error: ledgerErr } = await admin.from("quiz_responses").upsert(
+    {
+      user_id: userData.user.id,
+      lesson_id: payload.lesson_id,
+      module_id: String(payload.module_id),
+      question_index: payload.question_index,
+      selected: payload.selected,
+      is_correct: isCorrect,
+      answered_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id,lesson_id,module_id,question_index" },
+  );
+  if (ledgerErr) {
+    // Don't fail the learner's answer submission over a ledger write hiccup -- they already
+    // have their verdict. Surface it in the response so it's visible in function logs/monitoring.
+    console.error("quiz_responses ledger write failed", ledgerErr);
+  }
+
   return new Response(
     JSON.stringify({
       has_key: true,

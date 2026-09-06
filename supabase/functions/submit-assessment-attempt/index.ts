@@ -1,11 +1,18 @@
-// submit-assessment-attempt
+// submit-assessment-attempt (finalize-module-attempt)
 //
-// Trusted server-side scoring boundary. The client currently writes lesson_progress.quiz_score
-// directly, which means a learner's own browser is the source of truth for whether they passed --
-// this function replaces that path. The client sends only { lesson_id, answers }; this function
-// looks up the lesson's quiz (answer key) and pass_threshold with the service role, scores the
-// submission itself, records an immutable row in assessment_attempts, and updates the
-// lesson_progress rollup. It never trusts a score value sent by the client.
+// Trusted aggregate-scoring boundary for a lesson module's quiz. The client sends only
+// { lesson_id, module_id } -- no answers, no claimed score. This function reads the
+// quiz_responses ledger (written exclusively by submit-quiz-answer as each question is
+// verified server-side) to see what this learner has actually gotten right, computes the
+// module's score itself, records an immutable assessment_attempts row, and updates the
+// module's score/progress inside lesson_progress.detail plus the lesson-level quiz_score/
+// quiz_attempts rollup. It never trusts a score, answer, or correctness flag sent by the client.
+//
+// Scope: only the quiz-scoring portion of a lesson's completion. Case exercises, checklist
+// items, and self-attestation have no secret answer key to protect and continue to be
+// self-reported by the client via saveProgress() in assets/app.js, which is expected to omit
+// quiz_score/quiz_attempts from its own upsert for lessons with scored modules so it never
+// clobbers what this function writes.
 //
 // Deploy: verify_jwt = true (learner must be authenticated). Requires SUPABASE_URL and
 // SUPABASE_SERVICE_ROLE_KEY, both provided automatically in the Edge Function runtime.
@@ -14,29 +21,35 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 interface QuizQuestion {
-  id: string;
-  correct_option: string; // or correct_options: string[] for multi-select -- see scoreQuiz
-  points?: number;
+  correct?: number | number[];
+  exp?: string;
+  type?: string;
+}
+
+interface LessonModule {
+  id: number | string;
+  mode?: string;
+  passThreshold?: number;
+  quiz?: QuizQuestion[];
 }
 
 interface SubmitPayload {
   lesson_id: string;
-  answers: Record<string, string | string[]>;
+  module_id: number | string;
 }
 
-function scoreQuiz(quiz: QuizQuestion[], answers: Record<string, string | string[]>) {
-  let earned = 0;
-  let max = 0;
-  for (const q of quiz) {
-    const pts = q.points ?? 1;
-    max += pts;
-    const given = answers[q.id];
-    if (given !== undefined && given === q.correct_option) {
-      earned += pts;
-    }
-  }
-  const score = max > 0 ? (earned / max) * 100 : 0;
-  return { score, maxScore: max };
+function hasAnswerKey(q: QuizQuestion | undefined): boolean {
+  return (
+    Number.isInteger(q?.correct) ||
+    (Array.isArray(q?.correct) && (q!.correct as unknown[]).every((n) => Number.isInteger(n)))
+  );
+}
+
+// Mirrors assets/app.js moduleUsesScoring(): not manual, not review-mode, and every quiz
+// question in the module carries an answer key.
+function moduleUsesScoring(m: LessonModule): boolean {
+  const quiz = Array.isArray(m.quiz) ? m.quiz : [];
+  return m.mode !== "manual" && m.mode !== "review" && quiz.length > 0 && quiz.every(hasAnswerKey);
 }
 
 Deno.serve(async (req: Request) => {
@@ -52,7 +65,6 @@ Deno.serve(async (req: Request) => {
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-  // Client used only to resolve who the caller is, from their own JWT.
   const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
     global: { headers: { Authorization: authHeader } },
   });
@@ -68,36 +80,73 @@ Deno.serve(async (req: Request) => {
   } catch {
     return new Response(JSON.stringify({ error: "Invalid JSON body" }), { status: 400 });
   }
-  if (!payload.lesson_id || typeof payload.answers !== "object") {
-    return new Response(JSON.stringify({ error: "lesson_id and answers are required" }), { status: 400 });
+  if (!payload.lesson_id || payload.module_id === undefined || payload.module_id === null) {
+    return new Response(JSON.stringify({ error: "lesson_id and module_id are required" }), { status: 400 });
   }
+  const moduleIdStr = String(payload.module_id);
 
   // Service-role client bypasses RLS -- this function IS the trusted boundary.
   const admin = createClient(supabaseUrl, serviceRoleKey);
 
   const { data: lesson, error: lessonErr } = await admin
     .from("lessons")
-    .select("id, quiz, pass_threshold, course_id")
+    .select("id, course_id, content")
     .eq("id", payload.lesson_id)
     .single();
-
   if (lessonErr || !lesson) {
     return new Response(JSON.stringify({ error: "Lesson not found" }), { status: 404 });
   }
 
-  const quiz = (lesson.quiz ?? []) as QuizQuestion[];
-  const { score, maxScore } = scoreQuiz(quiz, payload.answers);
-  const passed = score >= (lesson.pass_threshold ?? 80);
+  const modules: LessonModule[] = Array.isArray(lesson.content?.modules) ? lesson.content.modules : [];
+  const module = modules.find((m) => String(m?.id) === moduleIdStr);
+  if (!module) {
+    return new Response(JSON.stringify({ error: "Module not found" }), { status: 404 });
+  }
+  if (!moduleUsesScoring(module)) {
+    return new Response(JSON.stringify({ error: "This module is not a scored quiz module" }), { status: 400 });
+  }
 
-  const { data: priorAttempts } = await admin
-    .from("assessment_attempts")
-    .select("attempt_number")
+  const quiz = module.quiz ?? [];
+  const totalQuestions = quiz.length;
+
+  // Read the ledger written by submit-quiz-answer -- this is the ONLY source of truth for
+  // correctness. The client never gets to assert its own answers or score here.
+  const { data: responses, error: responsesErr } = await admin
+    .from("quiz_responses")
+    .select("question_index, is_correct")
     .eq("user_id", userId)
     .eq("lesson_id", payload.lesson_id)
-    .order("attempt_number", { ascending: false })
-    .limit(1);
+    .eq("module_id", moduleIdStr);
+  if (responsesErr) {
+    return new Response(
+      JSON.stringify({ error: "Failed to read quiz response ledger", detail: responsesErr.message }),
+      { status: 500 },
+    );
+  }
 
-  const nextAttemptNumber = (priorAttempts?.[0]?.attempt_number ?? 0) + 1;
+  const answeredIndexes = new Set((responses ?? []).map((r) => r.question_index));
+  const allAnswered = totalQuestions > 0 && Array.from({ length: totalQuestions }, (_, i) => i).every((i) =>
+    answeredIndexes.has(i)
+  );
+  if (!allAnswered) {
+    return new Response(
+      JSON.stringify({ error: "Not all questions in this module have been answered yet" }),
+      { status: 409 },
+    );
+  }
+
+  const correctCount = (responses ?? []).filter((r: { is_correct: boolean }) => r.is_correct).length;
+  const score = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
+  const threshold = Number.isFinite(Number(module.passThreshold)) ? Number(module.passThreshold) : 75;
+  const passed = score >= threshold;
+
+  const priorAttemptsRes = (await admin
+    .from("assessment_attempts")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("lesson_id", payload.lesson_id)
+    .contains("answers", { module_id: moduleIdStr })) as { data: { id: string }[] | null };
+  const attemptNumber = (priorAttemptsRes.data?.length ?? 0) + 1;
 
   const { data: publishedVersion } = await admin
     .from("course_versions")
@@ -112,33 +161,58 @@ Deno.serve(async (req: Request) => {
     user_id: userId,
     lesson_id: payload.lesson_id,
     course_version_id: publishedVersion?.id ?? null,
-    attempt_number: nextAttemptNumber,
-    answers: payload.answers,
+    attempt_number: attemptNumber,
+    answers: { module_id: moduleIdStr, question_count: totalQuestions, correct_count: correctCount },
     score,
-    max_score: maxScore,
+    max_score: 100,
     passed,
     submitted_at: new Date().toISOString(),
+    scoring_source: "server",
   });
-
   if (attemptErr) {
     return new Response(JSON.stringify({ error: "Failed to record attempt", detail: attemptErr.message }), {
       status: 500,
     });
   }
 
+  // Merge into lesson_progress: only touch this module's score/progress inside `detail`, plus
+  // the lesson-level quiz_score/quiz_attempts rollup. Never touch status/completed_at here --
+  // those depend on non-quiz completion (cases, checklist, attestation) that this function has
+  // no visibility into and no business deciding.
+  const { data: currentProgress } = await admin
+    .from("lesson_progress")
+    .select("detail, quiz_attempts")
+    .eq("user_id", userId)
+    .eq("lesson_id", payload.lesson_id)
+    .maybeSingle();
+
+  const currentDetail = (currentProgress?.detail ?? {}) as Record<string, unknown>;
+  const currentModuleScores = (currentDetail.moduleScores ?? {}) as Record<string, number>;
+  const currentModuleProgress = (currentDetail.moduleProgress ?? {}) as Record<string, boolean>;
+
+  const nextModuleScores = { ...currentModuleScores, [moduleIdStr]: score };
+  const nextModuleProgress = { ...currentModuleProgress, [moduleIdStr]: passed || !!currentModuleProgress[moduleIdStr] };
+  const nextDetail = { ...currentDetail, moduleScores: nextModuleScores, moduleProgress: nextModuleProgress };
+
+  const scoredModuleIds = modules.filter(moduleUsesScoring).map((m) => String(m.id));
+  const knownScores = scoredModuleIds
+    .map((id) => nextModuleScores[id])
+    .filter((v): v is number => typeof v === "number" && !Number.isNaN(v));
+  const aggregateQuizScore = knownScores.length
+    ? Math.round(knownScores.reduce((a, b) => a + b, 0) / knownScores.length)
+    : null;
+
   const { error: progressErr } = await admin.from("lesson_progress").upsert(
     {
       user_id: userId,
       lesson_id: payload.lesson_id,
-      status: passed ? "completed" : "in_progress",
-      quiz_score: score,
-      quiz_attempts: nextAttemptNumber,
-      completed_at: passed ? new Date().toISOString() : null,
+      quiz_score: aggregateQuizScore,
+      quiz_attempts: (currentProgress?.quiz_attempts ?? 0) + 1,
+      detail: nextDetail,
       updated_at: new Date().toISOString(),
     },
     { onConflict: "user_id,lesson_id" },
   );
-
   if (progressErr) {
     return new Response(JSON.stringify({ error: "Failed to update progress", detail: progressErr.message }), {
       status: 500,
@@ -146,7 +220,7 @@ Deno.serve(async (req: Request) => {
   }
 
   return new Response(
-    JSON.stringify({ score, max_score: maxScore, passed, attempt_number: nextAttemptNumber }),
+    JSON.stringify({ score, threshold, passed, attempt_number: attemptNumber, correct_count: correctCount, total_questions: totalQuestions }),
     { headers: { "Content-Type": "application/json" } },
   );
 });

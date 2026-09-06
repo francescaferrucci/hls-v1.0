@@ -2347,10 +2347,7 @@ async function saveProgress(lesson,st,opts={}){
  if(isBundledFallbackLesson(lesson)){toast('Progress sync is unavailable while live lesson data is offline');return false}
  const uid=hlsAuth.user?.id; if(!uid)return false;
  try{
-  const scores=lessonModuleScores(lesson,st);
   const hasScoredModules=lessonScoredModules(lesson).length>0;
-  const avg=scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length):null;
-  const nextAttempts=(st.progressRow?.quiz_attempts||0)+(opts.attempt?1:0);
   const done=allRequirementsMet(lesson,st);
   const detail={
    moduleProgress:st.moduleProgress,
@@ -2365,8 +2362,16 @@ async function saveProgress(lesson,st,opts={}){
    completed_at:st.progressRow?.completed_at||(done?new Date().toISOString():null),
    detail
   };
-  if(hasScoredModules&&scores.length)row.quiz_score=avg;
-  if(hasScoredModules&&(opts.attempt||scores.length||st.progressRow?.quiz_attempts!=null))row.quiz_attempts=nextAttempts;
+  /* quiz_score and quiz_attempts are the trusted-scoring boundary: for lessons with scored
+     modules, the submit-assessment-attempt edge function (finalize-module-attempt) owns those
+     two columns exclusively, computed from its own server-side quiz_responses ledger. This
+     upsert deliberately omits them here so Postgrest's onConflict UPDATE leaves the existing
+     server-written values untouched instead of overwriting them with a client-side tally.
+     Lessons with zero scored modules never populate either column either way. */
+  if(!hasScoredModules){
+   row.quiz_score=null;
+   row.quiz_attempts=st.progressRow?.quiz_attempts||0;
+  }
   const {data,error}=await sb.from('lesson_progress').upsert(row,{onConflict:'user_id,lesson_id'}).select().single();
   if(error){toast('Progress could not be saved');return false}
   st.progressRow=data;
@@ -7237,6 +7242,16 @@ async function completeManualModule(){
  modal.close();
  paintLesson();
 }
+/* Trusted aggregate-scoring call. The server reads its own quiz_responses ledger (populated
+   verdict-by-verdict by submit-quiz-answer) rather than trusting anything the client tallied,
+   so a modified browser can no longer fabricate a passing module score or attempt count. */
+async function finalizeModuleAttemptRemotely(lessonId,moduleId){
+ const {data,error}=await sb.functions.invoke('submit-assessment-attempt',{
+  body:{lesson_id:lessonId,module_id:moduleId}
+ });
+ if(error)throw error;
+ return data;
+}
 async function renderQuizResult(){
  const m=activeModule,lesson=activeLesson(),st=activeState();
  if(lessonUsesTriageContinueFlow(lesson)&&moduleIsUngradedReview(m)){
@@ -7246,15 +7261,35 @@ async function renderQuizResult(){
  }
  const total=moduleQuestionCount(m);
  const correctCount=Object.values(quizAnswers).filter(a=>a.correct===true).length;
- const pct=total?Math.round((correctCount/total)*100):0;
  const review=m.mode==='review';
  const ungradedReview=moduleIsUngradedReview(m);
  /* Lessons may set a stricter pass mark per module; the shared default stays 75%. */
  const threshold=Number.isFinite(Number(m.passThreshold))?Number(m.passThreshold):75;
- const passed=review||ungradedReview?true:pct>=threshold;
  const snap=snapshotModuleState(st,m.id);
- if(moduleUsesScoring(m))st.moduleScores[m.id]=pct;
- if(passed)st.moduleProgress[m.id]=true;
+ const scored=moduleUsesScoring(m);
+ const remoteScoring=scored&&!(isBundledFallbackLesson(lesson)||isLocalOnlyLesson(lesson));
+ let pct,passed;
+ if(remoteScoring){
+  const resultEl=document.querySelector('#l2QuizResult');
+  if(resultEl)resultEl.innerHTML='<div class="feedback-box"><strong>Scoring…</strong></div>';
+  let result;
+  try{
+   result=await finalizeModuleAttemptRemotely(lesson.id,m.id);
+  }catch(error){
+   if(resultEl)resultEl.innerHTML='<div class="feedback-box"><strong>Could not score this module.</strong> Check your connection and try again.</div><div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap"><button class="primary" id="l2RetryScoring">Retry</button></div>';
+   document.querySelector('#l2RetryScoring')?.addEventListener('click',()=>void renderQuizResult());
+   return;
+  }
+  pct=result.score;
+  passed=!!result.passed;
+  st.moduleScores[m.id]=pct;
+  if(passed)st.moduleProgress[m.id]=true;
+ }else{
+  pct=total?Math.round((correctCount/total)*100):0;
+  passed=review||ungradedReview?true:pct>=threshold;
+  if(scored)st.moduleScores[m.id]=pct;
+  if(passed)st.moduleProgress[m.id]=true;
+ }
  document.querySelector('#l2QuizResult').innerHTML=ungradedReview
   ?`<div class="feedback-box"><strong>Review complete.</strong> You finished all ${total} source review ${total===1?'item':'items'}. This module is intentionally ungraded until Hannah validates authoritative answer keys.</div>
   <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
@@ -7274,7 +7309,10 @@ async function renderQuizResult(){
   </div>`;
  document.querySelector('#l2RetakeQuiz')?.addEventListener('click',()=>{quizAnswers={};resetModuleModalState();renderModuleModal()});
  document.querySelector('#l2CloseModuleModal')?.addEventListener('click',()=>closeActiveModuleToLesson({focusModuleId:m.id}));
- const saved=await saveProgress(lesson,st,{attempt:moduleUsesScoring(m)});
+ /* Attempt counting and quiz_score are now owned by finalize-module-attempt (server) for
+    remotely-scored modules -- saveProgress() below deliberately omits those fields in that
+    case so it can't clobber the server-computed values with a stale client tally. */
+ const saved=await saveProgress(lesson,st,{attempt:!remoteScoring&&scored});
  if(!saved){
   restoreModuleState(st,m.id,snap);
   return;
