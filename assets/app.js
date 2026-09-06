@@ -750,18 +750,26 @@ function renderReports(){
 }
 $("#scheduleReportBtn").addEventListener("click",()=>openModal(`<span class="eyebrow">Automated reporting</span><h1 class="modal-title">Schedule report</h1><div class="form-grid"><label>Report<select><option>Executive Learning Summary</option><option>Compliance Audit</option><option>Role Readiness</option></select></label><label>Frequency<select><option>Weekly</option><option>Monthly</option><option>Quarterly</option></select></label><label class="full">Recipients<input placeholder="Email addresses"></label></div><button class="primary" id="saveReport">Schedule</button>`));
 
-/* Locations and Role architecture cards are wired to real tables (`locations`, `profiles.role`).
+/* Locations, Role architecture, and Security & governance cards are wired to real tables
+   (`locations`, `profiles.role`, `audit_log`, `courses`/`course_versions`, `sign_offs`).
    Role set is the 4 system roles enforced by the profiles_role_check constraint today
    (learner/facilitator/manager/administrator) — the broader D-03 role list is a roadmap
    candidate, not yet ratified, so it is intentionally not introduced here.
-   Assignment automations and Security & governance remain illustrative pending their own
-   backend work (roadmap ADM-001). */
+   The guardrails listed in Security & governance mirror real, already-deployed database
+   triggers (prevent_role_self_escalation, protect_profile_privileged_fields) and the
+   audit_log_select_admin RLS policy — nothing there is illustrative copy.
+   Assignment automations remains illustrative pending an email/notification integration
+   (roadmap ADM-001) — no connector is currently available to send the reminders it lists. */
 const ROLE_LABELS={learner:"Learner",facilitator:"Facilitator",manager:"Manager",administrator:"Administrator"};
-const adminData={locations:[],loaded:false,error:null,profiles:[],profilesLoaded:false,profilesError:null};
+const adminData={locations:[],loaded:false,error:null,profiles:[],profilesLoaded:false,profilesError:null,auditLog:[],auditLoaded:false,auditError:null,courseStatuses:[],versionStatuses:[],signOffStatuses:[]};
 async function adminLoadAll(){
- const [locRes,profRes]=await Promise.all([
+ const [locRes,profRes,auditRes,courseRes,versionRes,signRes]=await Promise.all([
   sb.from("locations").select("id,name,code,market,active").order("name",{ascending:true}),
-  sb.from("profiles").select("id,full_name,email,role").order("full_name",{ascending:true})
+  sb.from("profiles").select("id,full_name,email,role").order("full_name",{ascending:true}),
+  sb.from("audit_log").select("id,occurred_at,action,entity_type,before_state,after_state,actor:profiles(full_name,email)").order("occurred_at",{ascending:false}).limit(8),
+  sb.from("courses").select("status"),
+  sb.from("course_versions").select("status"),
+  sb.from("sign_offs").select("status")
  ]);
  adminData.error=locRes.error?.message||null;
  adminData.locations=locRes.data||[];
@@ -769,11 +777,49 @@ async function adminLoadAll(){
  adminData.profilesError=profRes.error?.message||null;
  adminData.profiles=profRes.data||[];
  adminData.profilesLoaded=!adminData.profilesError;
+ adminData.auditError=auditRes.error?.message||null;
+ adminData.auditLog=auditRes.data||[];
+ adminData.auditLoaded=!adminData.auditError;
+ adminData.courseStatuses=(courseRes.data||[]).map(c=>c.status);
+ adminData.versionStatuses=(versionRes.data||[]).map(v=>v.status);
+ adminData.signOffStatuses=(signRes.data||[]).map(s=>s.status);
+}
+function auditRowSummary(row){
+ const actorName=row.actor?(row.actor.full_name||row.actor.email):"System";
+ const when=new Date(row.occurred_at).toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"});
+ const b=row.before_state||{},a=row.after_state||{};
+ let text;
+ if(row.action==="profile_role_or_status_change"){
+  const parts=[];
+  if(b.role!==a.role)parts.push(`role ${ROLE_LABELS[b.role]||b.role||"—"} → ${ROLE_LABELS[a.role]||a.role||"—"}`);
+  if(b.active!==a.active)parts.push(a.active?"reactivated":"deactivated");
+  text=`Changed a team member's ${parts.join(", ")||"profile"}`;
+ } else if(row.action==="sign_off_decision"){
+  text=`Marked a competency sign-off as ${a.status||"updated"}`;
+ } else if(row.action==="certificate_issued"){
+  text="Issued a certificate";
+ } else {
+  text=row.action.replace(/_/g," ");
+ }
+ return `<div class="list-item"><div><strong>${escapeHtml(actorName)}</strong><span>${escapeHtml(text)}</span></div><span class="badge neutral">${escapeHtml(when)}</span></div>`;
+}
+function renderSecurityCard(){
+ const guardrails=[
+  "Only administrators can change a team member's role — enforced at the database level, independent of this screen.",
+  "Only administrators can change a profile's location, manager, job title, employee ID, or active status.",
+  "Role changes, sign-off decisions, and certificate issuance are written to the audit log automatically."
+ ];
+ const guardrailBody=`<ul style="margin:0 0 4px 18px;padding:0;color:var(--ink);font-size:13px;line-height:1.55">${guardrails.map(g=>`<li style="margin-bottom:6px">${escapeHtml(g)}</li>`).join("")}</ul>`;
+ const auditBody=!adminData.auditLoaded?`<p class="cs-empty">${adminData.auditError?escapeHtml(adminData.auditError):"Loading audit log…"}</p>`:(adminData.auditLog.length?adminData.auditLog.map(auditRowSummary).join(""):'<p class="cs-empty">No audited actions recorded yet.</p>');
+ const publishedCourses=adminData.courseStatuses.filter(s=>s==="published").length;
+ const pendingVersions=adminData.versionStatuses.filter(s=>s&&s!=="published").length;
+ const pendingSignOffs=adminData.signOffStatuses.filter(s=>s==="pending").length;
+ const approvalNote=adminData.versionStatuses.length?`${pendingVersions} version${pendingVersions===1?"":"s"} awaiting review, ${publishedCourses} published course${publishedCourses===1?"":"s"} live.`:`All ${publishedCourses} published course${publishedCourses===1?"":"s"} went live directly — staged review (draft → learning review → clinical review → approved) will appear here once a course version enters that workflow. ${pendingSignOffs} competency sign-off${pendingSignOffs===1?"":"s"} currently pending separately.`;
+ return `<section class="panel span-2"><h2>Security &amp; governance</h2><p style="color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em;font-weight:850;margin:14px 0 6px">Active guardrails</p>${guardrailBody}<p style="color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em;font-weight:850;margin:14px 0 6px">Recent audit log</p>${auditBody}<p style="color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em;font-weight:850;margin:14px 0 6px">Content approval routing</p><p style="color:var(--ink);font-size:13px;line-height:1.55;margin:0">${escapeHtml(approvalNote)}</p><p style="color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em;font-weight:850;margin:14px 0 6px">Retention policy</p><p style="color:var(--ink);font-size:13px;line-height:1.55;margin:0">No retention or legal-hold schedule has been configured yet. Per roadmap decision D-11, this requires a written retention schedule and legal-hold process, ratified by leadership, before it can be enforced.</p></section>`;
 }
 function renderAdmin(){
  const staticCards=[
-  ["Assignment automations",["Assign Foundations to new hires","Enroll Academy when role changes","Send expiration reminders","Send manager overdue digest"]],
-  ["Security & governance",["Role-based permissions","Content approval routing","Audit logs","Retention policy"]]
+  ["Assignment automations",["Assign Foundations to new hires","Enroll Academy when role changes","Send expiration reminders","Send manager overdue digest"]]
  ];
  const renderStatic=(c,isToggle)=>`<section class="panel"><h2>${c[0]}</h2>${c[1].map((x,i)=>isToggle?`<div class="setting-row"><div><strong>${x}</strong><span>${i<3?"Enabled":"Optional"}</span></div><label class="switch"><input type="checkbox" ${i<3?"checked":""}><span></span></label></div>`:`<div class="setting-row"><div><strong>${x}</strong><span>Active configuration</span></div><button class="secondary">Configure</button></div>`).join("")}</section>`;
  const roleSelectStyle="border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:10px;padding:8px 10px;font-size:12px";
@@ -783,7 +829,7 @@ function renderAdmin(){
  const roleCard=`<section class="panel"><div class="section-head"><h2>Role architecture</h2></div><p style="color:var(--muted);font-size:12px;margin:0 0 12px">${roleSummary}</p>${roleBody}</section>`;
  const locBody=!adminData.loaded?`<p class="cs-empty">${adminData.error?escapeHtml(adminData.error):"Loading locations…"}</p>`:(adminData.locations.length?adminData.locations.map(l=>`<div class="list-item"><div><strong>${escapeHtml(l.name)}${l.active?"":" (Inactive)"}</strong><span>${escapeHtml(l.code)}${l.market?" • "+escapeHtml(l.market):""}</span></div><div class="cs-row-actions"><span class="badge ${l.active?"good":"neutral"}">${l.active?"Active":"Inactive"}</span><button class="admin-loc-edit" data-id="${l.id}">Edit</button><button class="${l.active?"cs-danger admin-loc-toggle":"admin-loc-toggle"}" data-id="${l.id}" data-active="${l.active}">${l.active?"Deactivate":"Activate"}</button></div></div>`).join(""):'<p class="cs-empty">No locations yet. Use “Add location” to create one.</p>');
  const locCard=`<section class="panel"><div class="section-head"><h2>Locations</h2><button class="secondary" id="adminAddLocationBtn">Add location</button></div>${locBody}</section>`;
- $("#adminGrid").innerHTML=roleCard+renderStatic(staticCards[0],true)+locCard+renderStatic(staticCards[1],false);
+ $("#adminGrid").innerHTML=roleCard+renderStatic(staticCards[0],true)+locCard+renderSecurityCard();
  $("#adminAddLocationBtn")?.addEventListener("click",()=>locationForm());
  $$(".admin-loc-edit").forEach(b=>b.addEventListener("click",()=>locationForm(b.dataset.id)));
  $$(".admin-loc-toggle").forEach(b=>b.addEventListener("click",()=>void adminToggleLocation(b.dataset.id,b.dataset.active==="true")));
